@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Target;
+use App\Models\RollingText;
 
 class DashboardController extends Controller
 {
@@ -13,6 +15,16 @@ class DashboardController extends Controller
         $thnIni = (int) $request->input('tahun', date('Y'));
         $blnIni = (int) $request->input('bulan', date('n'));
         $thnLalu = $thnIni - 1;
+
+        // -------------------------------------------------------------
+        // QUERY DATA TARGET & ROLLING TEXT DARI DATABASE
+        // -------------------------------------------------------------
+        
+        // Ambil Target Tahunan dari DB berdasarkan tahun filter
+        $target = Target::where('tahun', $thnIni)->first();
+
+        // Ambil Rolling Text Harian Terbaru dari DB
+        $rollingText = RollingText::latest('tanggal')->first();
 
         // -------------------------------------------------------------
         // QUERY CARD UTAMA (KUMULATIF S.D. BULAN FILTER)
@@ -89,6 +101,8 @@ class DashboardController extends Controller
         return view('dashboard.index', compact(
             'thnIni',
             'blnIni',
+            'target',
+            'rollingText',
             'penerimaanSaatIni',
             'penerimaanBlnLalu',
             'penerimaanThnLalu',

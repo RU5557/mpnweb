@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin - Kelola Target & Info</title>
-    <!-- Tailwind CSS & FontAwesome CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-100 font-sans min-h-screen text-slate-800">
 
-    <!-- TOPBAR ADMIN -->
     <header class="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
         <div class="flex items-center gap-3">
             <div class="bg-blue-600 p-2 rounded-lg text-white flex items-center justify-center w-8 h-8">
@@ -25,7 +23,6 @@
 
     <main class="max-w-6xl mx-auto p-8 space-y-8">
 
-        <!-- NOTIFIKASI SUKSES -->
         @if(session('success'))
             <div class="bg-emerald-100 border-l-4 border-emerald-500 text-emerald-800 p-4 rounded-lg shadow-sm flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -85,7 +82,7 @@
             </form>
         </section>
 
-        <!-- FORM 2: UPDATE TARGET TAHUNAN -->
+        <!-- FORM 2: UPDATE TARGET TAHUNAN (DENGAN MASKING RUPIAH OTOMATIS) -->
         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -102,38 +99,38 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target Kantor (Global)</label>
-                        <input type="number" step="0.01" name="target_kantor" value="{{ old('target_kantor', $target->target_kantor ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_kantor" value="{{ old('target_kantor', isset($target->target_kantor) ? number_format($target->target_kantor, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PPM</label>
-                        <input type="number" step="0.01" name="target_ppm" value="{{ old('target_ppm', $target->target_ppm ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_ppm" value="{{ old('target_ppm', isset($target->target_ppm) ? number_format($target->target_ppm, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PKM (Total)</label>
-                        <input type="number" step="0.01" name="target_pkm" value="{{ old('target_pkm', $target->target_pkm ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_pkm" value="{{ old('target_pkm', isset($target->target_pkm) ? number_format($target->target_pkm, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PBP</label>
-                        <input type="number" step="0.01" name="target_pbp" value="{{ old('target_pbp', $target->target_pbp ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_pbp" value="{{ old('target_pbp', isset($target->target_pbp) ? number_format($target->target_pbp, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PKM Pengawasan</label>
-                        <input type="number" step="0.01" name="target_pkm_pengawasan" value="{{ old('target_pkm_pengawasan', $target->target_pkm_pengawasan ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_pkm_pengawasan" value="{{ old('target_pkm_pengawasan', isset($target->target_pkm_pengawasan) ? number_format($target->target_pkm_pengawasan, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PKM Pemeriksaan</label>
-                        <input type="number" step="0.01" name="target_pkm_pemeriksaan" value="{{ old('target_pkm_pemeriksaan', $target->target_pkm_pemeriksaan ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_pkm_pemeriksaan" value="{{ old('target_pkm_pemeriksaan', isset($target->target_pkm_pemeriksaan) ? number_format($target->target_pkm_pemeriksaan, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Target PKM Penagihan</label>
-                        <input type="number" step="0.01" name="target_pkm_penagihan" value="{{ old('target_pkm_penagihan', $target->target_pkm_penagihan ?? 0) }}" required
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
+                        <input type="text" name="target_pkm_penagihan" value="{{ old('target_pkm_penagihan', isset($target->target_pkm_penagihan) ? number_format($target->target_pkm_penagihan, 0, ',', '.') : 0) }}" required
+                            class="rupiah-input w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                 </div>
 
@@ -146,6 +143,31 @@
         </section>
 
     </main>
+
+    <!-- SCRIPT FORMATTING MASKING RUPIAH -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const rupiahInputs = document.querySelectorAll('.rupiah-input');
+
+            rupiahInputs.forEach(function (input) {
+                input.addEventListener('input', function (e) {
+                    let value = this.value.replace(/[^,\d]/g, '').toString();
+                    let split = value.split(',');
+                    let sisa = split[0].length % 3;
+                    let rupiah = split[0].substr(0, sisa);
+                    let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+                    if (ribuan) {
+                        let separator = sisa ? '.' : '';
+                        rupiah += separator + ribuan.join('.');
+                    }
+
+                    rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+                    this.value = rupiah;
+                });
+            });
+        });
+    </script>
 
 </body>
 </html>

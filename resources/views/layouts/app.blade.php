@@ -49,28 +49,41 @@
     <!-- AREA KONTEN UTAMA -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
         
-        <!-- TOPBAR HEADER (FIXED DI ATAS AREA SCROLL) -->
-        <header class="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
-            
-            <!-- TENGAH: Rolling Text Slot (Lebar, Ditengah, Text Lebih Besar) -->
-            <div class="flex-1 mx-6 overflow-hidden flex items-center justify-center">
-                <marquee class="text-base font-bold text-slate-700 align-middle w-full" scrollamount="6">
-                    📢 <span class="text-blue-600 font-extrabold">Informasi:</span> Pasang pesan rolling text atau pengumuman penerimaan kamu di sini bro!
-                </marquee>
-            </div>
+<!-- TOPBAR HEADER (FIXED DI ATAS AREA SCROLL) -->
+<header class="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
+    
+    <!-- TENGAH: Rolling Text Slot Dinamis dari DB -->
+    <div class="flex-1 mx-6 overflow-hidden flex items-center justify-center">
+        <marquee class="text-base font-bold text-slate-700 align-middle w-full" scrollamount="6">
+            @if(isset($rollingText) && $rollingText)
+                📊 <span class="text-blue-600 font-extrabold">Update Performa ({{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d F Y') }}):</span> 
+                NKO: <span class="text-emerald-600 font-extrabold">{{ number_format($rollingText->nko, 2, ',', '.') }}%</span> | 
+                Peringkat Nasional: <span class="text-blue-600 font-extrabold">#{{ $rollingText->ranking_nasional }}</span> | 
+                Peringkat Kanwil: <span class="text-indigo-600 font-extrabold">#{{ $rollingText->ranking_kanwil }}</span>
+                @if($rollingText->pesan_tambahan)
+                    | <span class="text-slate-800 font-semibold">{{ $rollingText->pesan_tambahan }}</span>
+                @endif
+            @else
+                📢 <span class="text-blue-600 font-bold">Informasi:</span> Belum ada data info harian. Silakan update melalui Panel Admin.
+            @endif
+        </marquee>
+    </div>
 
-            <!-- KANAN: User Profile -->
-            <div class="flex items-center gap-4 flex-shrink-0">
-                <div class="text-right">
-                    <div class="text-sm font-bold text-slate-800">Admin KPP</div>
-                    <div class="text-xs text-slate-400">Seksi Pengolahan Data</div>
-                </div>
-                <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold shadow-sm">
-                    A
-                </div>
-            </div>
+    <!-- KANAN: User Profile & Tombol Admin -->
+    <div class="flex items-center gap-4 flex-shrink-0">
+        <div class="text-right">
+            <div class="text-sm font-bold text-slate-800">Admin KPP</div>
+            <div class="text-xs text-slate-400">Seksi Pengolahan Data</div>
+        </div>
+        
+        <!-- Tombol Akses Kelola Admin -->
+        <a href="{{ route('admin.index') }}" title="Kelola Target & Info Harian" 
+           class="w-9 h-9 rounded-full bg-slate-800 hover:bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm transition duration-200">
+            <i class="fa-solid fa-user-gear text-sm"></i>
+        </a>
+    </div>
 
-        </header>
+</header>
 
         <!-- Main Content Scroll Area (Scroll terjadi di bawah Header) -->
         <main class="flex-1 p-8 overflow-y-auto">
