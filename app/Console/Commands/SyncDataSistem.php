@@ -12,20 +12,30 @@ class SyncDataSistem extends Command
     /**
      * Opsi runner:
      *   php artisan sync:data-sistem
-     *   php artisan sync:data-sistem --only=ref
-     *   php artisan sync:data-sistem --only=master
-     *   php artisan sync:data-sistem --only=tx
+     *   php artisan sync:data-sistem --only=tx --thnsetor=2026 --blnsetor=09
+     *   php artisan sync:data-sistem --only=tx --thnsetor=2026
      */
-    protected $signature = 'sync:data-sistem {--only=all : Pilihan target: all, ref, master, tx}';
+    protected $signature = 'sync:data-sistem 
+                            {--only=all : Pilihan target: all, ref, master, tx}
+                            {--thnsetor= : Filter tahun setor (contoh: 2026)}
+                            {--blnsetor= : Filter bulan setor (contoh: 09 atau 9)}';
 
-    protected $description = 'ETL data dari mpninfo (legacy) ke mpnweb (operasional)';
+    protected $description = 'ETL data dari mpninfo (legacy) ke mpnweb (operasional) dengan filter periode transaksi';
 
     public function handle()
     {
         $target = $this->option('only');
+        $thnSetor = $this->option('thnsetor');
+        $blnSetor = $this->option('blnsetor');
 
         $this->info("====================================================");
         $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
+        if ($thnSetor || $blnSetor) {
+            $infoPeriode = [];
+            if ($thnSetor) $infoPeriode[] = "Tahun: {$thnSetor}";
+            if ($blnSetor) $infoPeriode[] = "Bulan: {$blnSetor}";
+            $this->info("  FILTER PERIODE -> " . implode(', ', $infoPeriode));
+        }
         $this->info("====================================================");
         $startTime = microtime(true);
 
@@ -50,7 +60,7 @@ class SyncDataSistem extends Command
 
             // 3. Sinkronisasi Transaksi & Rebuild Summary Mart
             if (in_array($target, ['all', 'tx'])) {
-                $this->syncDetilTransaksiWp();
+                $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
 
                 $this->newLine();
                 $this->comment('-> Memicu otomatis rekapitulasi summary mart...');
@@ -148,10 +158,40 @@ class SyncDataSistem extends Command
         $this->info('   [OK] Tabel masterfile_wp synchronized.');
     }
 
-    private function syncDetilTransaksiWp()
+    private function syncDetilTransaksiWp($thnSetor = null, $blnSetor = null)
     {
         $this->comment('-> Synchronizing: detil_transaksi_wp...');
-        DB::statement('TRUNCATE TABLE mpnweb.detil_transaksi_wp;');
+
+        // Susun Klausal WHERE secara dinamis berdasarkan parameter
+        $whereConditions = [];
+        
+        if (!empty($thnSetor)) {
+            $whereConditions[] = "thnsetor = " . (int)$thnSetor;
+        }
+
+        if (!empty($blnSetor)) {
+            // Memastikan format bulan aman (misal: '09' atau 9)
+            $whereConditions[] = "blnsetor = " . (int)$blnSetor;
+        }
+
+        $whereSql = "";
+        if (count($whereConditions) > 0) {
+            $whereSql = " WHERE " . implode(' AND ', $whereConditions);
+
+            // Jika diparsing filter periode tertentu, hapus HANYA data pada periode tersebut di target
+            $deleteWhereConditions = [];
+            if (!empty($thnSetor)) $deleteWhereConditions[] = "thn_setor = " . (int)$thnSetor;
+            if (!empty($blnSetor)) $deleteWhereConditions[] = "bln_setor = " . (int)$blnSetor;
+            $deleteWhereSql = " WHERE " . implode(' AND ', $deleteWhereConditions);
+
+            DB::statement("DELETE FROM mpnweb.detil_transaksi_wp{$deleteWhereSql};");
+            $this->comment("   [i] Menghapus data periode tertentu di mpnweb.detil_transaksi_wp sebelum re-sync.");
+        } else {
+            // Jika TANPA filter (sync full), TRUNCATE seluruh tabel
+            DB::statement('TRUNCATE TABLE mpnweb.detil_transaksi_wp;');
+        }
+
+        // Eksekusi INSERT INTO ... SELECT
         DB::statement("
             INSERT IGNORE INTO mpnweb.detil_transaksi_wp (
                 kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
@@ -164,7 +204,9 @@ class SyncDataSistem extends Command
                 nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
                 jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
             FROM mpninfo.ppmpkm_drm
+            {$whereSql}
         ");
+
         $this->info('   [OK] Tabel detil_transaksi_wp synchronized.');
     }
 }
