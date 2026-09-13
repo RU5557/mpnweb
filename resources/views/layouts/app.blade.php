@@ -47,25 +47,32 @@
     </aside>
 
     <!-- AREA KONTEN UTAMA -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
         
-        <!-- Top Utility Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-            <div class="text-sm text-slate-500 font-medium">
-                Sistem Informasi Penerimaan & Kinerja PKM
+        <!-- TOPBAR HEADER (FIXED DI ATAS AREA SCROLL) -->
+        <header class="bg-white border-b border-gray-200 px-8 py-3 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
+            
+            <!-- TENGAH: Rolling Text Slot (Lebar, Ditengah, Text Lebih Besar) -->
+            <div class="flex-1 mx-6 overflow-hidden flex items-center justify-center">
+                <marquee class="text-base font-bold text-slate-700 align-middle w-full" scrollamount="6">
+                    📢 <span class="text-blue-600 font-extrabold">Informasi:</span> Pasang pesan rolling text atau pengumuman penerimaan kamu di sini bro!
+                </marquee>
             </div>
-            <div class="flex items-center gap-4">
+
+            <!-- KANAN: User Profile -->
+            <div class="flex items-center gap-4 flex-shrink-0">
                 <div class="text-right">
-                    <div class="text-sm font-semibold text-slate-800">Admin KPP</div>
+                    <div class="text-sm font-bold text-slate-800">Admin KPP</div>
                     <div class="text-xs text-slate-400">Seksi Pengolahan Data</div>
                 </div>
-                <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold">
+                <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold shadow-sm">
                     A
                 </div>
             </div>
+
         </header>
 
-        <!-- Main Content Scroll Area -->
+        <!-- Main Content Scroll Area (Scroll terjadi di bawah Header) -->
         <main class="flex-1 p-8 overflow-y-auto">
             @yield('content')
         </main>
