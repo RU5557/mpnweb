@@ -110,10 +110,10 @@
 
     <!-- Card 1: PPM -->
     @php
-        $targetPPM = 1000000000000;
-        $persenPPM = $targetPPM > 0 ? (($realisasiPPM ?? 0) / $targetPPM) * 100 : 0;
+        $targetPpm = $target->target_ppm ?? 0;
+        $persenPPM = $targetPpm > 0 ? (($realisasiPPM ?? 0) / $targetPpm) * 100 : 0;
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PPM</h3>
@@ -124,17 +124,17 @@
             </span>
         </div>
         <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPPM, 0, ',', '.') }}</span></div>
+            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPpm, 0, ',', '.') }}</span></div>
             <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPPM ?? 0, 0, ',', '.') }}</span></div>
         </div>
     </div>
 
     <!-- Card 2: PKM -->
     @php
-        $targetPKM = 500000000000;
-        $persenPKM = $targetPKM > 0 ? (($realisasiPKM ?? 0) / $targetPKM) * 100 : 0;
+        $targetPkm = $target->target_pkm ?? 0;
+        $persenPKM = $targetPkm > 0 ? (($realisasiPKM ?? 0) / $targetPkm) * 100 : 0;
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PKM</h3>
@@ -145,18 +145,18 @@
             </span>
         </div>
         <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPKM, 0, ',', '.') }}</span></div>
+            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPkm, 0, ',', '.') }}</span></div>
             <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPKM ?? 0, 0, ',', '.') }}</span></div>
         </div>
     </div>
 
     <!-- Card 3: PBP -->
     @php
-        $targetPBP = 250000000000;
-        $persenPBP = $targetPBP > 0 ? (($realisasiPBP ?? 0) / $targetPBP) * 100 : 0;
-        $sisaPBP = $targetPBP - ($realisasiPBP ?? 0);
+        $targetPbp = $target->target_pbp ?? 0;
+        $persenPBP = $targetPbp > 0 ? (($realisasiPBP ?? 0) / $targetPbp) * 100 : 0;
+        $sisaPBP = $targetPbp - ($realisasiPBP ?? 0);
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PBP</h3>
@@ -167,18 +167,21 @@
             </span>
         </div>
         <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPBP, 0, ',', '.') }}</span></div>
+            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPbp, 0, ',', '.') }}</span></div>
             <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPBP ?? 0, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between text-rose-500 pt-1 font-semibold"><span>Sisa Target:</span> <span>Rp {{ number_format(max(0, $sisaPBP), 0, ',', '.') }}</span></div>
+            <div class="flex justify-between text-rose-500 pt-1 font-semibold">
+                <span>Sisa Target:</span> 
+                <span>Rp {{ number_format(max(0, $targetPbp - ($realisasiPBP ?? 0)), 0, ',', '.') }}</span>
+            </div>
         </div>
     </div>
 
     <!-- Card 4: PKM Pengawasan -->
     @php
-        $targetPengawasan = 120000000000;
+        $targetPengawasan = $target->target_pkm_pengawasan ?? 0;
         $persenPengawasan = $targetPengawasan > 0 ? (($realisasiPengawasan ?? 0) / $targetPengawasan) * 100 : 0;
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PKM Pengawasan</h3>
@@ -196,10 +199,10 @@
 
     <!-- Card 5: PKM Pemeriksaan -->
     @php
-        $targetPemeriksaan = 90000000000;
+        $targetPemeriksaan = $target->target_pkm_pemeriksaan ?? 0;
         $persenPemeriksaan = $targetPemeriksaan > 0 ? (($realisasiPemeriksaan ?? 0) / $targetPemeriksaan) * 100 : 0;
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PKM Pemeriksaan</h3>
@@ -217,10 +220,10 @@
 
     <!-- Card 6: PKM Penagihan -->
     @php
-        $targetPenagihan = 60000000000;
+        $targetPenagihan = $target->target_pkm_penagihan ?? 0;
         $persenPenagihan = $targetPenagihan > 0 ? (($realisasiPenagihan ?? 0) / $targetPenagihan) * 100 : 0;
     @endphp
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h3 class="font-bold text-slate-800 text-base">PKM Penagihan</h3>
@@ -235,6 +238,8 @@
             <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPenagihan ?? 0, 0, ',', '.') }}</span></div>
         </div>
     </div>
+
+</div>
 
 </div>
 @endsection
