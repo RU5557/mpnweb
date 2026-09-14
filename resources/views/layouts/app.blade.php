@@ -77,7 +77,7 @@
 
         <!-- Sidebar Footer -->
         <div class="p-4 border-t border-slate-800 text-xs text-slate-500 flex justify-between items-center">
-            <span x-show="sidebarOpen">© {{ date('Y') }} MPNWEB System</span>
+            <span x-show="sidebarOpen">© {{ date('Y') }} MPNWEB</span>
             <span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[10px] font-mono">v2.0</span>
         </div>
     </aside>
@@ -99,11 +99,11 @@
         <div class="truncate">
             @if(isset($rollingText) && $rollingText)
                 <span class="text-slate-500 font-normal">
-                    (Tanggal update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }}):
+                    Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }} |
                 </span> 
                 NKO: <strong class="text-slate-900">{{ number_format($rollingText->nko, 2) }}%</strong> | 
-                Rank Nasional: <strong class="text-slate-900">#{{ $rollingText->ranking_nasional }}</strong> | 
-                Rank Kanwil: <strong class="text-slate-900">#{{ $rollingText->ranking_kanwil }}</strong>
+                Rank Tingkat Nasional: <strong class="text-slate-900">#{{ $rollingText->ranking_nasional }}</strong> | 
+                Rank Tingkat Kanwil: <strong class="text-slate-900">#{{ $rollingText->ranking_kanwil }}</strong>
                 @if($rollingText->pesan_tambahan)
                     | <span class="text-slate-600">{{ $rollingText->pesan_tambahan }}</span>
                 @endif
