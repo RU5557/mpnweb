@@ -97,6 +97,10 @@ class DashboardController extends Controller
             ->where('bln_setor', '<=', $blnIni)
             ->where('fungsi', 'akt penagihan')
             ->sum('total_setor');
+        
+        // Capain Kantor
+        $targetKantor = $target->target_kantor ?? 0;
+        $capaianKantor = $targetKantor > 0 ? ($penerimaanSaatIni / $targetKantor) * 100 : 0;
 
         return view('dashboard.index', compact(
             'thnIni',
@@ -111,7 +115,8 @@ class DashboardController extends Controller
             'realisasiPBP',
             'realisasiPengawasan',
             'realisasiPemeriksaan',
-            'realisasiPenagihan'
+            'realisasiPenagihan',
+            'capaianKantor'
         ));
     }
 }

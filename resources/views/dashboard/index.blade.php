@@ -62,11 +62,20 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
     
     <!-- Penerimaan Saat Ini -->
-    <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-blue-600">
-        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penerimaan Saat Ini</span>
-        <div class="text-2xl font-extrabold text-blue-600 my-2">
+<div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-blue-600 flex flex-col justify-between">
+    <div>
+        <div class="flex justify-between items-start">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penerimaan Saat Ini</span>
+            <!-- Badge Capaian Kantor -->
+            <span class="bg-blue-100 text-blue-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">
+                {{ number_format($capaianKantor, 1, ',', '.') }}% Capaian
+            </span>
+        </div>
+
+        <div class="text-2xl font-black text-blue-600 my-2">
             Rp {{ number_format($penerimaanSaatIni ?? 0, 0, ',', '.') }}
         </div>
+    </div>
         <div class="flex items-center gap-4 text-xs font-semibold text-slate-600 pt-3 border-t border-slate-100">
             @php
                 $growthMoM = ($penerimaanBlnLalu ?? 0) > 0 ? (($penerimaanSaatIni - $penerimaanBlnLalu) / $penerimaanBlnLalu) * 100 : 0;
