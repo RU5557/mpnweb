@@ -124,27 +124,26 @@ class DashboardController extends Controller
             ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
             ->where('fungsi', 'akt penagihan')->sum('total_setor');
 
-return view('dashboard.index', compact(
-    'thnIni',
-    'blnIni',
-    'target',
-    'rollingText',
-    'capaianKantor',
-    'penerimaanSaatIni',
-    'penerimaanBlnLalu',
-    'penerimaanThnLalu',
-    'realisasiPPM',
-    'realisasiPKM',
-    'realisasiPBP',
-    'realisasiPengawasan',
-    'realisasiPemeriksaan',
-    'realisasiPenagihan',
-    // Kirim data tahun lalu untuk hitung pertumbuhan YoY
-    'realisasiPPMLalu',
-    'realisasiPKMLalu',
-    'realisasiPengawasanLalu',
-    'realisasiPemeriksaanLalu',
-    'realisasiPenagihanLalu'
-));
+return view('penerimaan.dashboard', compact(
+            'thnIni',
+            'blnIni',
+            'target',
+            'rollingText',
+            'capaianKantor',
+            'penerimaanSaatIni',
+            'penerimaanBlnLalu',
+            'penerimaanThnLalu',
+            'realisasiPPM',
+            'realisasiPKM',
+            'realisasiPBP',
+            'realisasiPengawasan',
+            'realisasiPemeriksaan',
+            'realisasiPenagihan',
+            'realisasiPPMLalu',
+            'realisasiPKMLalu',
+            'realisasiPengawasanLalu',
+            'realisasiPemeriksaanLalu',
+            'realisasiPenagihanLalu'
+        ));
     }
 }

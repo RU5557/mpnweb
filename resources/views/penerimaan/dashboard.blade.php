@@ -1,60 +1,50 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Header Halaman -->
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">Dashboard Ringkasan</h1>
-    <p class="text-slate-500 text-sm">Overview penerimaan, capaian target, dan performa PKM</p>
-</div>
+<!-- HEADER & FILTER CONTAINER (SEJAJAR) -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    
+    <!-- Judul & Subjudul (Kiri) -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard Ringkasan</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Overview penerimaan, capaian target, dan performa PKM</p>
+    </div>
 
-<!-- FILTER MONTH & YEAR (TAILWIND VERSION) -->
-<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6">
-    <form action="{{ route('dashboard') }}" method="GET" class="flex flex-wrap items-end gap-4">
+    <!-- Form Filter Compact (Kanan) -->
+    <form action="{{ route('penerimaan.dashboard') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2 px-3 shadow-sm flex items-center gap-2">
         
-        <!-- Filter Bulan -->
-        <div class="w-full sm:w-48">
-            <label for="bulan" class="block text-xs font-bold text-slate-700 mb-1">Bulan</label>
-            <select name="bulan" id="bulan" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium">
+        <!-- Select Bulan -->
+        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(1, 12) as $m)
                 @php
-                    $namaBulan = [
-                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                    ];
+                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
                 @endphp
-                @foreach($namaBulan as $k => $v)
-                    <option value="{{ $k }}" {{ (request('bulan', $blnIni) == $k) ? 'selected' : '' }}>
-                        {{ $v }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+                <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
+                    {{ $monthName }}
+                </option>
+            @endforeach
+        </select>
 
-        <!-- Filter Tahun -->
-        <div class="w-full sm:w-36">
-            <label for="tahun" class="block text-xs font-bold text-slate-700 mb-1">Tahun</label>
-            <select name="tahun" id="tahun" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 font-medium">
-                @php
-                    $tahunSekarang = (int) date('Y');
-                @endphp
-                @for($i = $tahunSekarang; $i >= $tahunSekarang - 5; $i--)
-                    <option value="{{ $i }}" {{ (request('tahun', $thnIni) == $i) ? 'selected' : '' }}>
-                        {{ $i }}
-                    </option>
-                @endfor
-            </select>
-        </div>
+        <!-- Select Tahun -->
+        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(date('Y') - 3, date('Y')) as $year)
+                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
+            @endforeach
+        </select>
 
-        <!-- Tombol Action -->
-        <div class="flex items-center gap-2">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-filter text-xs"></i> Terapkan
-            </button>
-            <a href="{{ route('dashboard') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-                Reset
+        <!-- Tombol Terapkan -->
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm shadow-blue-500/20 flex items-center gap-1.5">
+            Terapkan
+        </button>
+
+        <!-- Tombol Reset (Jika sedang difilter) -->
+        @if(request()->has('bulan') || request()->has('tahun'))
+            <a href="{{ route('penerimaan.dashboard') }}" class="text-slate-400 hover:text-slate-600 text-xs px-2 py-2 transition" title="Reset Filter">
+                <i class="fa-solid fa-rotate-left"></i>
             </a>
-        </div>
-
+        @endif
     </form>
 </div>
 

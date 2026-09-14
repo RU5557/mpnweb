@@ -9,16 +9,28 @@
 </head>
 <body class="bg-slate-100 font-sans min-h-screen text-slate-800">
 
-    <header class="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
+<header class="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
         <div class="flex items-center gap-3">
             <div class="bg-blue-600 p-2 rounded-lg text-white flex items-center justify-center w-8 h-8">
                 <i class="fa-solid fa-gears text-sm"></i>
             </div>
             <span class="font-bold text-lg tracking-wide">Panel Pengelola Data MPNWEB</span>
         </div>
-        <a href="{{ url('/dashboard') }}" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-2 rounded-lg transition border border-slate-700">
-            <i class="fa-solid fa-arrow-left text-xs"></i> Kembali ke Dashboard
-        </a>
+
+        <!-- Tombol Aksi Kanan Topbar -->
+        <div class="flex items-center gap-3">
+            <a href="{{ url('/penerimaan') }}" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-2 rounded-lg transition border border-slate-700 font-medium">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Kembali ke Dashboard
+            </a>
+
+            <!-- Form Logout Admin -->
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg transition font-medium shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i> Logout
+                </button>
+            </form>
+        </div>
     </header>
 
     <main class="max-w-6xl mx-auto p-8 space-y-8">
