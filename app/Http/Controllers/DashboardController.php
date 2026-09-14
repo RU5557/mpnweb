@@ -102,21 +102,49 @@ class DashboardController extends Controller
         $targetKantor = $target->target_kantor ?? 0;
         $capaianKantor = $targetKantor > 0 ? ($penerimaanSaatIni / $targetKantor) * 100 : 0;
 
-        return view('dashboard.index', compact(
-            'thnIni',
-            'blnIni',
-            'target',
-            'rollingText',
-            'penerimaanSaatIni',
-            'penerimaanBlnLalu',
-            'penerimaanThnLalu',
-            'realisasiPPM',
-            'realisasiPKM',
-            'realisasiPBP',
-            'realisasiPengawasan',
-            'realisasiPemeriksaan',
-            'realisasiPenagihan',
-            'capaianKantor'
-        ));
+        // Realisasi Kinerja Jenis - TAHUN LALU (s.d. Bulan yang sama)
+        $realisasiPPMLalu = DB::table('summary_mart_penerimaan')
+            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
+            ->where('jenis', 'PPM')->sum('total_setor');
+
+        $realisasiPKMLalu = DB::table('summary_mart_penerimaan')
+            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
+            ->whereIn('jenis', ['PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA'])->sum('total_setor');
+
+        // Realisasi Kinerja Fungsi - TAHUN LALU (s.d. Bulan yang sama)
+        $realisasiPengawasanLalu = DB::table('summary_mart_penerimaan')
+            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
+            ->whereIn('fungsi', ['akt pengawasan', 'lainnya', 'wra pengawasan'])->sum('total_setor');
+
+        $realisasiPemeriksaanLalu = DB::table('summary_mart_penerimaan')
+            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
+            ->where('fungsi', 'akt pemeriksaan')->sum('total_setor');
+
+        $realisasiPenagihanLalu = DB::table('summary_mart_penerimaan')
+            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
+            ->where('fungsi', 'akt penagihan')->sum('total_setor');
+
+return view('dashboard.index', compact(
+    'thnIni',
+    'blnIni',
+    'target',
+    'rollingText',
+    'capaianKantor',
+    'penerimaanSaatIni',
+    'penerimaanBlnLalu',
+    'penerimaanThnLalu',
+    'realisasiPPM',
+    'realisasiPKM',
+    'realisasiPBP',
+    'realisasiPengawasan',
+    'realisasiPemeriksaan',
+    'realisasiPenagihan',
+    // Kirim data tahun lalu untuk hitung pertumbuhan YoY
+    'realisasiPPMLalu',
+    'realisasiPKMLalu',
+    'realisasiPengawasanLalu',
+    'realisasiPemeriksaanLalu',
+    'realisasiPenagihanLalu'
+));
     }
 }

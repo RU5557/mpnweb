@@ -121,20 +121,30 @@
     @php
         $targetPpm = $target->target_ppm ?? 0;
         $persenPPM = $targetPpm > 0 ? (($realisasiPPM ?? 0) / $targetPpm) * 100 : 0;
+        $growthPPM = ($realisasiPPMLalu ?? 0) > 0 ? ((($realisasiPPM ?? 0) - $realisasiPPMLalu) / $realisasiPPMLalu) * 100 : 0;
     @endphp
-<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PPM</h3>
-                <p class="text-xs text-slate-400">Capaian Target</p>
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">PPM</h3>
+                    <p class="text-xs text-slate-400">Capaian Target</p>
+                </div>
+                <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                    {{ number_format($persenPPM, 1, ',', '.') }}%
+                </span>
             </div>
-            <span class="bg-blue-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
-                {{ number_format($persenPPM, 1, ',', '.') }}%
-            </span>
+            <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
+                <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPpm, 0, ',', '.') }}</span></div>
+                <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPPM ?? 0, 0, ',', '.') }}</span></div>
+            </div>
         </div>
-        <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPpm, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPPM ?? 0, 0, ',', '.') }}</span></div>
+        <div class="text-xs pt-3 mt-2 border-t border-slate-100 flex justify-between items-center font-semibold">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPPM >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-bold">
+                <i class="fa-solid {{ $growthPPM >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-[10px]"></i> 
+                {{ number_format(abs($growthPPM), 2, ',', '.') }}%
+            </span>
         </div>
     </div>
 
@@ -142,20 +152,30 @@
     @php
         $targetPkm = $target->target_pkm ?? 0;
         $persenPKM = $targetPkm > 0 ? (($realisasiPKM ?? 0) / $targetPkm) * 100 : 0;
+        $growthPKM = ($realisasiPKMLalu ?? 0) > 0 ? ((($realisasiPKM ?? 0) - $realisasiPKMLalu) / $realisasiPKMLalu) * 100 : 0;
     @endphp
-<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PKM</h3>
-                <p class="text-xs text-slate-400">Capaian Target</p>
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">PKM</h3>
+                    <p class="text-xs text-slate-400">Capaian Target</p>
+                </div>
+                <span class="bg-sky-400 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                    {{ number_format($persenPKM, 1, ',', '.') }}%
+                </span>
             </div>
-            <span class="bg-sky-400 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
-                {{ number_format($persenPKM, 1, ',', '.') }}%
-            </span>
+            <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
+                <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPkm, 0, ',', '.') }}</span></div>
+                <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPKM ?? 0, 0, ',', '.') }}</span></div>
+            </div>
         </div>
-        <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPkm, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPKM ?? 0, 0, ',', '.') }}</span></div>
+        <div class="text-xs pt-3 mt-2 border-t border-slate-100 flex justify-between items-center font-semibold">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPKM >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-bold">
+                <i class="fa-solid {{ $growthPKM >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-[10px]"></i> 
+                {{ number_format(abs($growthPKM), 2, ',', '.') }}%
+            </span>
         </div>
     </div>
 
@@ -189,20 +209,30 @@
     @php
         $targetPengawasan = $target->target_pkm_pengawasan ?? 0;
         $persenPengawasan = $targetPengawasan > 0 ? (($realisasiPengawasan ?? 0) / $targetPengawasan) * 100 : 0;
+        $growthPengawasan = ($realisasiPengawasanLalu ?? 0) > 0 ? ((($realisasiPengawasan ?? 0) - $realisasiPengawasanLalu) / $realisasiPengawasanLalu) * 100 : 0;
     @endphp
-<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PKM Pengawasan</h3>
-                <p class="text-xs text-slate-400">Capaian Target</p>
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">PKM Pengawasan</h3>
+                    <p class="text-xs text-slate-400">Capaian Target</p>
+                </div>
+                <span class="bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                    {{ number_format($persenPengawasan, 1, ',', '.') }}%
+                </span>
             </div>
-            <span class="bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
-                {{ number_format($persenPengawasan, 1, ',', '.') }}%
-            </span>
+            <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
+                <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPengawasan, 0, ',', '.') }}</span></div>
+                <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPengawasan ?? 0, 0, ',', '.') }}</span></div>
+            </div>
         </div>
-        <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPengawasan, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPengawasan ?? 0, 0, ',', '.') }}</span></div>
+        <div class="text-xs pt-3 mt-2 border-t border-slate-100 flex justify-between items-center font-semibold">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPengawasan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-bold">
+                <i class="fa-solid {{ $growthPengawasan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-[10px]"></i> 
+                {{ number_format(abs($growthPengawasan), 2, ',', '.') }}%
+            </span>
         </div>
     </div>
 
@@ -210,20 +240,30 @@
     @php
         $targetPemeriksaan = $target->target_pkm_pemeriksaan ?? 0;
         $persenPemeriksaan = $targetPemeriksaan > 0 ? (($realisasiPemeriksaan ?? 0) / $targetPemeriksaan) * 100 : 0;
+        $growthPemeriksaan = ($realisasiPemeriksaanLalu ?? 0) > 0 ? ((($realisasiPemeriksaan ?? 0) - $realisasiPemeriksaanLalu) / $realisasiPemeriksaanLalu) * 100 : 0;
     @endphp
-<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PKM Pemeriksaan</h3>
-                <p class="text-xs text-slate-400">Capaian Target</p>
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">PKM Pemeriksaan</h3>
+                    <p class="text-xs text-slate-400">Capaian Target</p>
+                </div>
+                <span class="bg-slate-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                    {{ number_format($persenPemeriksaan, 1, ',', '.') }}%
+                </span>
             </div>
-            <span class="bg-slate-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
-                {{ number_format($persenPemeriksaan, 1, ',', '.') }}%
-            </span>
+            <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
+                <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPemeriksaan, 0, ',', '.') }}</span></div>
+                <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPemeriksaan ?? 0, 0, ',', '.') }}</span></div>
+            </div>
         </div>
-        <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPemeriksaan, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPemeriksaan ?? 0, 0, ',', '.') }}</span></div>
+        <div class="text-xs pt-3 mt-2 border-t border-slate-100 flex justify-between items-center font-semibold">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPemeriksaan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-bold">
+                <i class="fa-solid {{ $growthPemeriksaan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-[10px]"></i> 
+                {{ number_format(abs($growthPemeriksaan), 2, ',', '.') }}%
+            </span>
         </div>
     </div>
 
@@ -231,24 +271,32 @@
     @php
         $targetPenagihan = $target->target_pkm_penagihan ?? 0;
         $persenPenagihan = $targetPenagihan > 0 ? (($realisasiPenagihan ?? 0) / $targetPenagihan) * 100 : 0;
+        $growthPenagihan = ($realisasiPenagihanLalu ?? 0) > 0 ? ((($realisasiPenagihan ?? 0) - $realisasiPenagihanLalu) / $realisasiPenagihanLalu) * 100 : 0;
     @endphp
-<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">PKM Penagihan</h3>
-                <p class="text-xs text-slate-400">Capaian Target</p>
+<div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">PKM Penagihan</h3>
+                    <p class="text-xs text-slate-400">Capaian Target</p>
+                </div>
+                <span class="bg-slate-900 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                    {{ number_format($persenPenagihan, 1, ',', '.') }}%
+                </span>
             </div>
-            <span class="bg-slate-900 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-sm">
-                {{ number_format($persenPenagihan, 1, ',', '.') }}%
+            <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
+                <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPenagihan, 0, ',', '.') }}</span></div>
+                <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPenagihan ?? 0, 0, ',', '.') }}</span></div>
+            </div>
+        </div>
+        <div class="text-xs pt-3 mt-2 border-t border-slate-100 flex justify-between items-center font-semibold">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPenagihan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-bold">
+                <i class="fa-solid {{ $growthPenagihan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-[10px]"></i> 
+                {{ number_format(abs($growthPenagihan), 2, ',', '.') }}%
             </span>
         </div>
-        <div class="space-y-2 text-xs text-slate-600 border-t pt-3 border-slate-100">
-            <div class="flex justify-between"><span>Target:</span> <span class="font-bold text-slate-800">Rp {{ number_format($targetPenagihan, 0, ',', '.') }}</span></div>
-            <div class="flex justify-between"><span>Realisasi:</span> <span class="font-bold text-slate-800">Rp {{ number_format($realisasiPenagihan ?? 0, 0, ',', '.') }}</span></div>
-        </div>
     </div>
-
-</div>
 
 </div>
 @endsection
