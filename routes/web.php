@@ -58,13 +58,6 @@ Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login
 Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-// Proteksi Panel Admin dengan Middleware admin.auth
-Route::prefix('admin')->middleware('admin.auth')->name('admin.')->group(function () {
-    Route::get('/', [AdminController::class, 'index'])->name('index');
-    Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
-    Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
-});
-
 // Route 3: PKM Pengawasan
 Route::get('/penerimaan/pkm-pengawasan', [PkmPengawasanController::class, 'index'])->name('penerimaan.pkmpengawasan');
 
@@ -73,3 +66,10 @@ Route::get('/penerimaan/pkm-pemeriksaan', [PkmPemeriksaanController::class, 'ind
 
 // Route 5: PKM Penagihan
 Route::get('/penerimaan/pkm-penagihan', [PkmPenagihanController::class, 'index'])->name('penerimaan.pkmpenagihan');
+
+// Proteksi Panel Admin dengan Middleware admin.auth
+Route::prefix('admin')->middleware('admin.auth')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('index');
+    Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
+    Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
+});

@@ -143,4 +143,4 @@
     </div>
 
 </body>
-</html><?php /**PATH C:\xampp\htdocs\mpnweb\resources\views\layouts\app.blade.php ENDPATH**/ ?>
+</html><?php /**PATH C:\xampp\htdocs\mpnweb\resources\views/layouts/app.blade.php ENDPATH**/ ?>
