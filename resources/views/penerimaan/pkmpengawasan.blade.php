@@ -4,6 +4,24 @@
 
 @section('content')
 
+@php
+    // Helper function untuk URL Sort
+    function sortUrl($column, $currentSort, $currentDir) {
+        $direction = ($currentSort === $column && $currentDir === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort' => $column, 'direction' => $direction]);
+    }
+
+    // Helper icon Sort
+    function sortIcon($column, $currentSort, $currentDir) {
+        if ($currentSort !== $column) {
+            return '<i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>';
+        }
+        return $currentDir === 'asc' 
+            ? '<i class="fa-solid fa-sort-up text-emerald-600 ml-1 text-xs"></i>' 
+            : '<i class="fa-solid fa-sort-down text-emerald-600 ml-1 text-xs"></i>';
+    }
+@endphp
+
 <!-- HEADER & FILTER (SEJAJAR) -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
@@ -11,9 +29,13 @@
         <p class="text-base text-slate-500 mt-1">Rincian realisasi PKM Pengawasan s.d. bulan terpilih per Seksi dan Account Representative (AR)</p>
     </div>
 
-    <!-- Filter Form (Diperbesar font & padding) -->
+    <!-- Filter Form -->
     <form action="{{ route('penerimaan.pkmpengawasan') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2.5 px-4 shadow-sm flex items-center gap-3">
-        <!-- Filter Seksi Sumber Query -->
+        <!-- Preserve Current Sort State -->
+        <input type="hidden" name="sort" value="{{ request('sort', 'nama_seksi') }}">
+        <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+
+        <!-- Filter Seksi -->
         <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
             <option value="">-- Semua Seksi --</option>
             @foreach($daftarSeksi as $seksi)
@@ -39,7 +61,7 @@
             Terapkan
         </button>
 
-        @if(request()->has('bulan') || request()->has('tahun') || request()->has('seksi'))
+        @if(request()->has('bulan') || request()->has('tahun') || request()->has('seksi') || request()->has('sort'))
             <a href="{{ route('penerimaan.pkmpengawasan') }}" class="text-slate-400 hover:text-slate-600 text-base px-2 py-2 transition" title="Reset Filter">
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
@@ -54,23 +76,58 @@
             <div class="w-3.5 h-3.5 rounded-full bg-emerald-500"></div>
             <h2 class="text-lg font-bold text-slate-800">Tabel Penerimaan PKM Pengawasan</h2>
         </div>
-        <!-- Perbaikan 2: Tulisan Total AR dihapus -->
     </div>
 
     <div class="overflow-x-auto">
-        <!-- Perbaikan 3: Font tabel dinaikkan ke text-base (16px) -->
         <table class="w-full text-left text-base">
             <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-sm">
                 <tr>
-                    <th class="py-4 px-4 w-14 text-center">No</th>
-                    <th class="py-4 px-4">Nama Seksi</th>
-                    <th class="py-4 px-4">Nama AR</th>
-                    <th class="py-4 px-4 text-right">Akt Pengawasan (Rp)</th>
-                    <th class="py-4 px-4 text-right">Lainnya (Rp)</th>
-                    <th class="py-4 px-4 text-right">WRA Pengawasan (Rp)</th>
-                    <th class="py-4 px-4 text-right">Total PKM Pengawasan (Rp)</th>
+                    <th class="py-4 px-4 w-14 text-center whitespace-nowrap">No</th>
+                    
+                    <!-- Header Sort Nama Seksi -->
+                    <th class="py-4 px-4 whitespace-nowrap">
+                        <a href="{{ sortUrl('nama_seksi', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
+                            Nama Seksi {!! sortIcon('nama_seksi', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
+
+                    <!-- Header Sort Nama AR -->
+                    <th class="py-4 px-4 whitespace-nowrap">
+                        <a href="{{ sortUrl('nama_ar', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
+                            Nama AR {!! sortIcon('nama_ar', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
+
+                    <!-- Header Sort Akt Pengawasan -->
+                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                        <a href="{{ sortUrl('total_akt_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
+                            Akt Pengawasan {!! sortIcon('total_akt_pengawasan', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
+
+                    <!-- Header Sort Lainnya -->
+                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                        <a href="{{ sortUrl('total_lainnya', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
+                            Lainnya {!! sortIcon('total_lainnya', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
+
+                    <!-- Header Sort WRA Pengawasan -->
+                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                        <a href="{{ sortUrl('total_wra_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
+                            WRA Pengawasan {!! sortIcon('total_wra_pengawasan', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
+
+                    <!-- Header Sort Total PKM Pengawasan -->
+                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                        <a href="{{ sortUrl('total_pkm_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
+                            Total PKM Pengawasan {!! sortIcon('total_pkm_pengawasan', $sortColumn, $sortDirection) !!}
+                        </a>
+                    </th>
                 </tr>
             </thead>
+            <!-- Rest of tbody & tfoot tetap sama -->
             <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                 @forelse($pkmData as $index => $row)
                     <tr class="hover:bg-slate-50/80 transition">

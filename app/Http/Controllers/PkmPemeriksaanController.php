@@ -9,35 +9,52 @@ class PkmPemeriksaanController extends Controller
 {
     public function index(Request $request)
     {
-        $bulan = $request->input('bulan', date('m'));
-        $tahun = $request->input('tahun', date('Y'));
-        $seksiFilter = $request->input('seksi');
+        $bulan = (int) $request->input('bulan', date('m'));
+        $tahun = (int) $request->input('tahun', date('Y'));
+        $search = $request->input('search');
 
-        // Query data PKM Pemeriksaan
-        $pkmData = DB::table('pkm_pemeriksaan')
+        // Parameter Sorting
+        $sortColumn = $request->input('sort', 'total_akt_pemeriksaan');
+        $sortDirection = $request->input('direction', 'desc');
+
+        // Mapping nama kolom yang diizinkan untuk di-sort
+        $allowedSorts = [
+            'npwp' => 'dt.npwp15',
+            'nama_wp' => 'nama_wp',
+            'kd_klu' => 'kd_klu',
+            'nm_klu' => 'nm_klu',
+            'total_akt_pemeriksaan' => 'total_akt_pemeriksaan',
+        ];
+
+        $sortBy = $allowedSorts[$sortColumn] ?? 'total_akt_pemeriksaan';
+        $sortDir = strtolower($sortDirection) === 'asc' ? 'asc' : 'desc';
+
+        $pkmData = DB::table('detil_transaksi_wp as dt')
+            ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+            ->leftJoin('klu as k', 'mw.klu', '=', 'k.kd_klu')
             ->select(
-                'nama_seksi',
-                'nama_fungsional',
-                DB::raw('SUM(pkm_pemeriksaan) as total_pkm_pemeriksaan'),
-                DB::raw('SUM(pkm_lainnya) as total_lainnya'),
-                DB::raw('SUM(pkm_pemeriksaan + pkm_lainnya) as total_pkm')
+                'dt.npwp15',
+                DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar') as nama_wp"),
+                DB::raw("COALESCE(mw.klu, '-') as kd_klu"),
+                DB::raw("COALESCE(k.nm_klu, '-') as nm_klu"),
+                DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pemeriksaan' THEN dt.jml_setor ELSE 0 END) as total_akt_pemeriksaan")
             )
-            ->whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->when($seksiFilter, function ($query, $seksi) {
-                return $query->where('nama_seksi', $seksi);
+            ->where(DB::raw('LOWER(dt.fungsi)'), 'akt pemeriksaan')
+            ->whereBetween('dt.bln_setor', [1, $bulan])
+            ->where('dt.thn_setor', $tahun)
+            ->when($search, function ($query, $keyword) {
+                return $query->where(function ($q) use ($keyword) {
+                    $q->where('dt.npwp15', 'LIKE', "%{$keyword}%")
+                      ->orWhere('mw.nama', 'LIKE', "%{$keyword}%")
+                      ->orWhere('mw.klu', 'LIKE', "%{$keyword}%")
+                      ->orWhere('k.nm_klu', 'LIKE', "%{$keyword}%");
+                });
             })
-            ->groupBy('nama_seksi', 'nama_fungsional')
-            ->orderBy('nama_seksi', 'asc')
-            ->orderBy('total_pkm', 'desc')
-            ->get();
+            ->groupBy('dt.npwp15', 'mw.nama', 'mw.klu', 'k.nm_klu')
+            ->orderBy($sortBy, $sortDir)
+            ->paginate(10) // Paginasi diubah menjadi 10
+            ->withQueryString();
 
-        $daftarSeksi = DB::table('pkm_pemeriksaan')
-            ->select('nama_seksi')
-            ->distinct()
-            ->orderBy('nama_seksi')
-            ->pluck('nama_seksi');
-
-        return view('penerimaan.pkmpemeriksaan', compact('pkmData', 'daftarSeksi'));
+        return view('penerimaan.pkmpemeriksaan', compact('pkmData', 'sortColumn', 'sortDirection'));
     }
 }

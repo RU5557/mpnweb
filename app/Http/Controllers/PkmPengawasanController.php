@@ -13,11 +13,28 @@ class PkmPengawasanController extends Controller
         $tahun = (int) $request->input('tahun', date('Y'));
         $seksiFilter = $request->input('seksi');
 
+        // Parameter Sorting (Default berdasarkan nama_seksi ASC)
+        $sortColumn = $request->input('sort', 'nama_seksi');
+        $sortDirection = $request->input('direction', 'asc');
+
+        // Mapping kolom yang diizinkan untuk di-sort
+        $allowedSorts = [
+            'nama_seksi' => DB::raw("COALESCE(s.nama, 'Unassign')"),
+            'nama_ar' => DB::raw("COALESCE(p.nama, 'Unassign')"),
+            'total_akt_pengawasan' => 'total_akt_pengawasan',
+            'total_lainnya' => 'total_lainnya',
+            'total_wra_pengawasan' => 'total_wra_pengawasan',
+            'total_pkm_pengawasan' => 'total_pkm_pengawasan',
+        ];
+
+        $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(s.nama, 'Unassign')");
+        $sortDir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+
         // Subquery pegawai difilter berdasarkan tahun terpilih
         $subPegawai = DB::table('pegawai')
             ->where('tahun', $tahun);
 
-        $pkmData = DB::table('detil_transaksi_wp as dt')
+        $query = DB::table('detil_transaksi_wp as dt')
             ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
             ->leftJoinSub($subPegawai, 'p', function ($join) {
                 $join->on('mw.nip_ar', '=', 'p.nip');
@@ -35,31 +52,35 @@ class PkmPengawasanController extends Controller
             ->whereIn(DB::raw('LOWER(dt.fungsi)'), ['akt pengawasan', 'lainnya', 'wra pengawasan'])
             ->whereBetween('dt.bln_setor', [1, $bulan])
             ->where('dt.thn_setor', $tahun)
-            ->when($seksiFilter, function ($query, $seksi) {
+            ->when($seksiFilter, function ($q, $seksi) {
                 if ($seksi === 'Unassign') {
-                    return $query->whereNull('s.nama');
+                    return $q->whereNull('s.nama');
                 }
-                return $query->where('s.nama', $seksi);
+                return $q->where('s.nama', $seksi);
             })
             ->groupBy(
                 DB::raw("COALESCE(mw.nip_ar, 'Unassign')"),
                 DB::raw("COALESCE(p.nama, 'Unassign')"),
                 DB::raw("COALESCE(s.nama, 'Unassign')")
-            )
-            ->orderBy(DB::raw("COALESCE(s.nama, 'Unassign')"), 'asc')
-            ->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc')
+            );
+
+        // Terapkan Order By berdasarkan sort parameter
+        $pkmData = $query->orderBy($sortBy, $sortDir)
+            // Secondary sort agar tampilan tetap konsisten saat sorting nama_seksi
+            ->when($sortColumn === 'nama_seksi', function ($q) use ($sortDir) {
+                return $q->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc');
+            })
             ->get();
 
-        // PERBAIKAN: Ambil seksi yang mengandung kata 'Pengawasan' dari master tabel seksi
+        // Ambil seksi yang mengandung kata 'Pengawasan'
         $daftarSeksi = DB::table('seksi')
             ->where('nama', 'LIKE', '%Pengawasan%')
             ->orderBy('nama', 'asc')
             ->pluck('nama')
             ->toArray();
 
-        // Tambahkan opsi Unassign ke daftar seksi
         $daftarSeksi[] = 'Unassign';
 
-        return view('penerimaan.pkmpengawasan', compact('pkmData', 'daftarSeksi'));
+        return view('penerimaan.pkmpengawasan', compact('pkmData', 'daftarSeksi', 'sortColumn', 'sortDirection'));
     }
 }
