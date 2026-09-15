@@ -22,48 +22,57 @@
     }
 @endphp
 
-<!-- HEADER & FILTER -->
-<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+<!-- HEADER & FILTER CONTAINER (COMPACT & SEJAJAR) -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+    
+    <!-- Judul & Subjudul -->
     <div>
-        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Penagihan</h1>
-        <p class="text-base text-slate-500 mt-1">Rincian realisasi PKM Penagihan s.d. bulan terpilih per Juru Sita Pajak Negara (JSPN)</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Penagihan</h1>
+        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rincian realisasi PKM Penagihan s.d. bulan terpilih per Juru Sita Pajak Negara (JSPN)</p>
     </div>
 
-    <!-- Form Filter -->
-    <form action="{{ route('penerimaan.pkmpenagihan') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2.5 px-4 shadow-sm flex flex-wrap items-center gap-3">
+    <!-- Form Filter Compact -->
+    <form action="{{ route('penerimaan.pkmpenagihan') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex flex-wrap items-center gap-2.5">
         <!-- State Preserve Sort -->
         <input type="hidden" name="sort" value="{{ request('sort', 'nip_jspn') }}">
         <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
 
         <!-- Filter Dropdown DSPC / NON-DSPC -->
-        <select name="dspc_filter" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <select name="dspc_filter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             <option value="">-- Semua Kategori --</option>
             <option value="DSPC" {{ request('dspc_filter') == 'DSPC' ? 'selected' : '' }}>DSPC</option>
             <option value="NON-DSPC" {{ request('dspc_filter') == 'NON-DSPC' ? 'selected' : '' }}>NON-DSPC</option>
         </select>
 
         <!-- Filter Bulan -->
-        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             @foreach(range(1, 12) as $m)
+                @php
+                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+                @endphp
                 <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
-                    s.d. {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                    {{ $monthName }}
                 </option>
             @endforeach
         </select>
 
         <!-- Filter Tahun -->
-        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             @foreach(range(date('Y') - 3, date('Y')) as $year)
-                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>{{ $year }}</option>
+                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
             @endforeach
         </select>
 
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-5 py-2.5 rounded-xl transition shadow-sm">
+        <!-- Tombol Terapkan -->
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
             Terapkan
         </button>
 
+        <!-- Tombol Reset -->
         @if(request()->has('bulan') || request()->has('tahun') || request()->has('dspc_filter') || request()->has('sort'))
-            <a href="{{ route('penerimaan.pkmpenagihan') }}" class="text-slate-400 hover:text-slate-600 text-base px-2 py-2 transition" title="Reset Filter">
+            <a href="{{ route('penerimaan.pkmpenagihan') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
         @endif
@@ -71,61 +80,62 @@
 </div>
 
 <!-- TABEL PKM PENAGIHAN -->
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-3.5 h-3.5 rounded-full bg-amber-500"></div>
-            <h2 class="text-lg font-bold text-slate-800">Tabel Realisasi PKM Penagihan</h2>
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+            <h2 class="text-base font-bold text-slate-800">Tabel Realisasi PKM Penagihan</h2>
         </div>
-        <span class="text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
+        <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
             Total Data: {{ $pkmData->count() }} Baris
         </span>
     </div>
 
     <div class="overflow-x-auto">
-        <table class="w-full text-left text-base">
-            <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-sm">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-xs">
                 <tr>
-                    <th class="py-4 px-4 w-14 text-center whitespace-nowrap">No</th>
+                    <th class="py-3 px-3.5 w-12 text-center whitespace-nowrap">No</th>
                     
                     <!-- Header Sort NIP JSPN -->
-                    <th class="py-4 px-4 whitespace-nowrap">
+                    <th class="py-3 px-3.5 whitespace-nowrap">
                         <a href="{{ sortUrl('nip_jspn', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
                             NIP JSPN {!! sortIcon('nip_jspn', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort NAMA JSPN -->
-                    <th class="py-4 px-4 whitespace-nowrap">
+                    <th class="py-3 px-3.5 whitespace-nowrap">
                         <a href="{{ sortUrl('nama_jspn', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
                             NAMA JSPN {!! sortIcon('nama_jspn', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort DSPC / NON-DSPC -->
-                    <th class="py-4 px-4 text-center whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-center whitespace-nowrap">
                         <a href="{{ sortUrl('flag_skp', $sortColumn, $sortDirection) }}" class="flex items-center justify-center gap-1 hover:text-amber-600 transition select-none">
                             DSPC / NON-DSPC {!! sortIcon('flag_skp', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort AKT PENAGIHAN -->
-                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
                         <a href="{{ sortUrl('akt_penagihan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-amber-600 transition select-none">
-                            AKT PENAGIHAN {!! sortIcon('akt_penagihan', $sortColumn, $sortDirection) !!}
+                            TOTAL PKM PENAGIHAN {!! sortIcon('akt_penagihan', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
                 </tr>
             </thead>
+
             <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                 @forelse($pkmData as $index => $row)
                     <tr class="hover:bg-slate-50/80 transition">
-                        <td class="py-4 px-4 text-center text-slate-400 font-mono text-sm">
+                        <td class="py-2.5 px-3.5 text-center text-slate-400 font-mono text-xs">
                             {{ $index + 1 }}
                         </td>
                         
                         <!-- NIP JSPN -->
-                        <td class="py-4 px-4 font-mono font-bold text-slate-800 whitespace-nowrap">
+                        <td class="py-2.5 px-3.5 font-mono font-semibold text-slate-800 whitespace-nowrap text-xs">
                             @if($row->nip_jspn === 'Unassign')
                                 <span class="text-rose-600 italic font-sans font-medium">Unassign</span>
                             @else
@@ -133,8 +143,8 @@
                             @endif
                         </td>
 
-                        <!-- NAMA JSPN -->
-                        <td class="py-4 px-4 text-slate-900 font-bold">
+                        <!-- NAMA JSPN: Font dikecilkan sedikit ke 13px -->
+                        <td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
                             @if($row->nama_jspn === 'Unassign')
                                 <span class="text-rose-600 italic font-medium">Unassign</span>
                             @else
@@ -143,36 +153,37 @@
                         </td>
 
                         <!-- DSPC / NON-DSPC -->
-                        <td class="py-4 px-4 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-3.5 text-center whitespace-nowrap">
                             @if(strtoupper($row->flag_skp) === 'DSPC')
-                                <span class="bg-amber-100 text-amber-800 border border-amber-300 text-xs px-3 py-1 rounded-full font-bold">
+                                <span class="bg-amber-100 text-amber-800 border border-amber-300 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
                                     DSPC
                                 </span>
                             @else
-                                <span class="bg-slate-100 text-slate-600 border border-slate-200 text-xs px-3 py-1 rounded-full font-semibold">
+                                <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] px-2.5 py-0.5 rounded-full font-semibold">
                                     NON-DSPC
                                 </span>
                             @endif
                         </td>
 
                         <!-- AKT PENAGIHAN -->
-                        <td class="py-4 px-4 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
+                        <td class="py-2.5 px-3.5 text-right font-mono font-bold text-amber-600 whitespace-nowrap">
                             Rp {{ number_format($row->akt_penagihan ?? 0, 0, ',', '.') }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="py-12 text-center text-slate-400 italic text-base">
+                        <td colspan="5" class="py-10 text-center text-slate-400 italic text-sm">
                             Tidak ada data PKM Penagihan yang sesuai dengan filter.
                         </td>
                     </tr>
                 @endforelse
             </tbody>
+
             @if($pkmData->count() > 0)
-                <tfoot class="bg-slate-100/90 font-bold text-slate-900 border-t-2 border-slate-200 text-base">
+                <tfoot class="bg-slate-100/90 font-bold text-slate-900 border-t-2 border-slate-200 text-sm">
                     <tr>
-                        <td colspan="4" class="py-4 px-4 text-center tracking-wider">TOTAL KESELURUHAN</td>
-                        <td class="py-4 px-4 text-right font-mono text-amber-700 whitespace-nowrap">
+                        <td colspan="4" class="py-3 px-3.5 text-center tracking-wider">TOTAL KESELURUHAN</td>
+                        <td class="py-3 px-3.5 text-right font-mono text-amber-700 whitespace-nowrap">
                             Rp {{ number_format($pkmData->sum('akt_penagihan'), 0, ',', '.') }}
                         </td>
                     </tr>
