@@ -163,7 +163,7 @@
                                 </span>
                             <?php endif; ?>
                         </td>
-<td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[14px]">
+<td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
     <?php if($row->nama_ar === 'Unassign'): ?>
         <span class="text-rose-600 italic">Unassign</span>
     <?php else: ?>
