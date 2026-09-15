@@ -1,32 +1,55 @@
 @extends('layouts.app')
 
+@section('title', 'PKM Pengawasan - MPNWEB')
+
 @section('content')
-<div class="space-y-6">
 
-    <!-- Header & Filter -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800">Penerimaan PPM</h1>
-            <p class="text-xs text-slate-500">Breakdown Top 10 Kontributor PPM</p>
-        </div>
-
-        <!-- Filter Form -->
-        <form method="GET" action="{{ route('penerimaan.ppm') }}" class="flex items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-            <select name="bulan" class="text-xs border-slate-200 rounded-lg focus:ring-blue-500">
-                @foreach(range(1, 12) as $m)
-                    <option value="{{ sprintf('%02d', $m) }}" {{ $blnIni == $m ? 'selected' : '' }}>
-                        {{ DateTime::createFromFormat('!m', $m)->format('F') }}
-                    </option>
-                @endforeach
-            </select>
-            <select name="tahun" class="text-xs border-slate-200 rounded-lg focus:ring-blue-500">
-                @foreach([2024, 2025, 2026] as $y)
-                    <option value="{{ $y }}" {{ $thnIni == $y ? 'selected' : '' }}>{{ $y }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-700">Terapkan</button>
-        </form>
+<!-- HEADER & FILTER CONTAINER (SEJAJAR) -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    
+    <!-- Judul & Subjudul (Kiri) -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard Ringkasan</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Overview penerimaan, capaian target, dan performa PKM</p>
     </div>
+
+    <!-- Form Filter Compact (Kanan) -->
+    <form action="{{ route('penerimaan.dashboard') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2 px-3 shadow-sm flex items-center gap-2">
+        
+        <!-- Select Bulan -->
+        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(1, 12) as $m)
+                @php
+                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+                @endphp
+                <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
+                    {{ $monthName }}
+                </option>
+            @endforeach
+        </select>
+
+        <!-- Select Tahun -->
+        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(date('Y') - 3, date('Y')) as $year)
+                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
+            @endforeach
+        </select>
+
+        <!-- Tombol Terapkan -->
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm shadow-blue-500/20 flex items-center gap-1.5">
+            Terapkan
+        </button>
+
+        <!-- Tombol Reset (Jika sedang difilter) -->
+        @if(request()->has('bulan') || request()->has('tahun'))
+            <a href="{{ route('penerimaan.dashboard') }}" class="text-slate-400 hover:text-slate-600 text-xs px-2 py-2 transition" title="Reset Filter">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        @endif
+    </form>
+</div>
 
     <!-- Baris 1: 3 Card Utama (WP, Kategori/Sektor, Jenis Pajak) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">

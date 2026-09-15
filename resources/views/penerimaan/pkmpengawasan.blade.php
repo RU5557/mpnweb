@@ -8,7 +8,7 @@
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Pengawasan</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Rincian realisasi dan capaian target PKM per Seksi & Account Representative (AR)</p>
+        <p class="text-xs text-slate-500 mt-0.5">Rincian realisasi PKM Pengawasan per Seksi dan Account Representative (AR)</p>
     </div>
 
     <!-- Filter Form -->
@@ -37,16 +37,23 @@
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm">
             Terapkan
         </button>
+
+        @if(request()->has('bulan') || request()->has('tahun') || request()->has('seksi'))
+            <a href="{{ route('penerimaan.pkmpengawasan') }}" class="text-slate-400 hover:text-slate-600 text-xs px-2 py-2 transition" title="Reset Filter">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        @endif
     </form>
 </div>
 
-<!-- TABEL PKM PER SEKSI PER AR -->
+<!-- TABEL PKM PENGAWASAN PER SEKSI & AR -->
 <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
     <div class="p-5 border-b border-slate-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
             <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-            <h2 class="text-sm font-bold text-slate-800">Capaian Realisasi PKM per Seksi & AR</h2>
+            <h2 class="text-sm font-bold text-slate-800">Tabel Penerimaan PKM Pengawasan</h2>
         </div>
+        <span class="text-xs text-slate-400 font-medium">Total: {{ $pkmData->count() }} AR</span>
     </div>
 
     <div class="overflow-x-auto">
@@ -54,40 +61,65 @@
             <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
                     <th class="py-3.5 px-4 w-12 text-center">No</th>
-                    <th class="py-3.5 px-4">Seksi Pengawasan</th>
+                    <th class="py-3.5 px-4">Nama Seksi</th>
                     <th class="py-3.5 px-4">Nama AR</th>
-                    <th class="py-3.5 px-4 text-right">Target (Rp)</th>
-                    <th class="py-3.5 px-4 text-right">Realisasi (Rp)</th>
-                    <th class="py-3.5 px-4 text-center">Capaian (%)</th>
+                    <th class="py-3.5 px-4 text-right">Akt Pengawasan (Rp)</th>
+                    <th class="py-3.5 px-4 text-right">Lainnya (Rp)</th>
+                    <th class="py-3.5 px-4 text-right">WRA Pengawasan (Rp)</th>
+                    <th class="py-3.5 px-4 text-right">Total PKM Pengawasan (Rp)</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                 @forelse($pkmData as $index => $row)
-                    @php
-                        $capaian = $row->target_ar > 0 ? ($row->total_realisasi / $row->target_ar) * 100 : 0;
-                    @endphp
                     <tr class="hover:bg-slate-50/80 transition">
                         <td class="py-3 px-4 text-center text-slate-400 font-mono">{{ $index + 1 }}</td>
                         <td class="py-3 px-4 font-semibold text-slate-800">
-                            <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] border border-slate-200">
+                            <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-[11px] border border-slate-200">
                                 {{ $row->nama_seksi }}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-slate-900 font-semibold">{{ $row->nama_ar }}</td>
-                        <td class="py-3 px-4 text-right font-mono text-slate-600">Rp {{ number_format($row->target_ar ?? 0, 0, ',', '.') }}</td>
-                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">Rp {{ number_format($row->total_realisasi ?? 0, 0, ',', '.') }}</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border {{ $capaian >= 100 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-amber-100 text-amber-800 border-amber-300' }}">
-                                {{ number_format($capaian, 1) }}%
-                            </span>
+                        <td class="py-3 px-4 text-slate-900 font-bold">{{ $row->nama_ar }}</td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600">
+                            Rp {{ number_format($row->total_akt_pengawasan ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600">
+                            Rp {{ number_format($row->total_lainnya ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono text-slate-600">
+                            Rp {{ number_format($row->total_wra_pengawasan ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="py-3 px-4 text-right font-mono font-bold text-emerald-600">
+                            Rp {{ number_format($row->total_pkm_pengawasan ?? 0, 0, ',', '.') }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="py-8 text-center text-slate-400 italic">Tidak ada data PKM Pengawasan.</td>
+                        <td colspan="7" class="py-8 text-center text-slate-400 italic">
+                            Tidak ada data PKM Pengawasan untuk filter bulan/tahun ini.
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
+            <!-- FOOTER TOTAL / SUMMARY -->
+            @if($pkmData->count() > 0)
+                <tfoot class="bg-slate-100/80 font-bold text-slate-900 border-t-2 border-slate-200">
+                    <tr>
+                        <td colspan="3" class="py-3.5 px-4 text-center">TOTAL KESELURUHAN</td>
+                        <td class="py-3.5 px-4 text-right font-mono">
+                            Rp {{ number_format($pkmData->sum('total_akt_pengawasan'), 0, ',', '.') }}
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-mono">
+                            Rp {{ number_format($pkmData->sum('total_lainnya'), 0, ',', '.') }}
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-mono">
+                            Rp {{ number_format($pkmData->sum('total_wra_pengawasan'), 0, ',', '.') }}
+                        </td>
+                        <td class="py-3.5 px-4 text-right font-mono text-emerald-700">
+                            Rp {{ number_format($pkmData->sum('total_pkm_pengawasan'), 0, ',', '.') }}
+                        </td>
+                    </tr>
+                </tfoot>
+            @endif
         </table>
     </div>
 </div>
