@@ -13,23 +13,23 @@
         <p class="text-sm text-slate-500 mt-1">Overview penerimaan, capaian target, dan performa PPM</p>
     </div>
 
-<!-- Form Filter versi Proporsional / Sama Besar -->
-<form action="{{ route('penerimaan.ppm') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2.5 px-4 shadow-sm flex flex-wrap items-center gap-3">
+<!-- Form Filter Compact & Sejajar -->
+<form action="{{ route('penerimaan.ppm') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
     
     <!-- Select Bulan -->
-    <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none transition cursor-pointer">
+    <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
         @foreach(range(1, 12) as $m)
             @php
                 $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
             @endphp
             <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
-                s.d. {{ $monthName }}
+                {{ $monthName }}
             </option>
         @endforeach
     </select>
 
     <!-- Select Tahun -->
-    <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none transition cursor-pointer">
+    <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
         @foreach(range(date('Y') - 3, date('Y')) as $year)
             <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
                 {{ $year }}
@@ -38,13 +38,13 @@
     </select>
 
     <!-- Tombol Terapkan -->
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-5 py-2.5 rounded-xl transition shadow-sm">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
         Terapkan
     </button>
 
     <!-- Tombol Reset -->
     @if(request()->has('bulan') || request()->has('tahun'))
-        <a href="{{ route('penerimaan.ppm') }}" class="text-slate-400 hover:text-slate-600 text-base px-2 py-2 transition" title="Reset Filter">
+        <a href="{{ route('penerimaan.ppm') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
             <i class="fa-solid fa-rotate-left"></i>
         </a>
     @endif

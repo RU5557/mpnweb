@@ -1,46 +1,51 @@
 <?php $__env->startSection('content'); ?>
 <!-- HEADER & FILTER CONTAINER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     
     <!-- Judul & Subjudul -->
     <div>
-        <h1 class="text-2xl font-bold text-slate-800 tracking-normal">Dashboard Ringkasan</h1>
-        <p class="text-sm text-slate-500 mt-1 font-normal">Overview penerimaan, capaian target, dan performa PKM</p>
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Dashboard Ringkasan</h1>
+        <p class="text-sm text-slate-500 mt-1">Overview penerimaan, capaian target, dan performa PPM</p>
     </div>
 
-    <!-- Form Filter Compact -->
-    <form action="<?php echo e(route('penerimaan.dashboard')); ?>" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
-        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <?php
-                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
-                ?>
-                <option value="<?php echo e($m); ?>" <?php echo e(request('bulan', date('m')) == $m ? 'selected' : ''); ?>>
-                    <?php echo e($monthName); ?>
+<!-- Form Filter Compact & Sejajar -->
+<form action="<?php echo e(route('penerimaan.ppm')); ?>" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
+    
+    <!-- Select Bulan -->
+    <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+        <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php
+                $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+            ?>
+            <option value="<?php echo e($m); ?>" <?php echo e(request('bulan', date('m')) == $m ? 'selected' : ''); ?>>
+                <?php echo e($monthName); ?>
 
-                </option>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </select>
+            </option>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    </select>
 
-        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <?php $__currentLoopData = range(date('Y') - 3, date('Y')); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <option value="<?php echo e($year); ?>" <?php echo e(request('tahun', date('Y')) == $year ? 'selected' : ''); ?>>
-                    <?php echo e($year); ?>
+    <!-- Select Tahun -->
+    <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+        <?php $__currentLoopData = range(date('Y') - 3, date('Y')); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <option value="<?php echo e($year); ?>" <?php echo e(request('tahun', date('Y')) == $year ? 'selected' : ''); ?>>
+                <?php echo e($year); ?>
 
-                </option>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </select>
+            </option>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    </select>
 
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
-            Terapkan
-        </button>
+    <!-- Tombol Terapkan -->
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
+        Terapkan
+    </button>
 
-        <?php if(request()->has('bulan') || request()->has('tahun')): ?>
-            <a href="<?php echo e(route('penerimaan.dashboard')); ?>" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
-                <i class="fa-solid fa-rotate-left"></i>
-            </a>
-        <?php endif; ?>
-    </form>
+    <!-- Tombol Reset -->
+    <?php if(request()->has('bulan') || request()->has('tahun')): ?>
+        <a href="<?php echo e(route('penerimaan.ppm')); ?>" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
+            <i class="fa-solid fa-rotate-left"></i>
+        </a>
+    <?php endif; ?>
+</form>
 </div>
 
 <!-- BARIS 1: CARD RINGKASAN UTAMA (3 KOLOM) -->
