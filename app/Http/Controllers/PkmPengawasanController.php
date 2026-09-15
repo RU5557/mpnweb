@@ -34,43 +34,33 @@ class PkmPengawasanController extends Controller
         $subPegawai = DB::table('pegawai')
             ->where('tahun', $tahun);
 
-        $query = DB::table('detil_transaksi_wp as dt')
-            ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-            ->leftJoinSub($subPegawai, 'p', function ($join) {
-                $join->on('mw.nip_ar', '=', 'p.nip');
-            })
-            ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
-            ->select(
-                DB::raw("COALESCE(mw.nip_ar, 'Unassign') as nip_ar"),
-                DB::raw("COALESCE(p.nama, 'Unassign') as nama_ar"),
-                DB::raw("COALESCE(s.nama, 'Unassign') as nama_seksi"),
-                DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pengawasan' THEN dt.jml_setor ELSE 0 END) as total_akt_pengawasan"),
-                DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'lainnya' THEN dt.jml_setor ELSE 0 END) as total_lainnya"),
-                DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'wra pengawasan' THEN dt.jml_setor ELSE 0 END) as total_wra_pengawasan"),
-                DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN dt.jml_setor ELSE 0 END) as total_pkm_pengawasan")
-            )
-            ->whereIn(DB::raw('LOWER(dt.fungsi)'), ['akt pengawasan', 'lainnya', 'wra pengawasan'])
-            ->whereBetween('dt.bln_setor', [1, $bulan])
-            ->where('dt.thn_setor', $tahun)
-            ->when($seksiFilter, function ($q, $seksi) {
-                if ($seksi === 'Unassign') {
-                    return $q->whereNull('s.nama');
-                }
-                return $q->where('s.nama', $seksi);
-            })
-            ->groupBy(
-                DB::raw("COALESCE(mw.nip_ar, 'Unassign')"),
-                DB::raw("COALESCE(p.nama, 'Unassign')"),
-                DB::raw("COALESCE(s.nama, 'Unassign')")
-            );
-
-        // Terapkan Order By berdasarkan sort parameter
-        $pkmData = $query->orderBy($sortBy, $sortDir)
-            // Secondary sort agar tampilan tetap konsisten saat sorting nama_seksi
-            ->when($sortColumn === 'nama_seksi', function ($q) use ($sortDir) {
-                return $q->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc');
-            })
-            ->get();
+$data = DB::table('detil_transaksi_wp as dt')
+    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+    ->leftJoin('pegawai as p', function($join) use ($thnIni) {
+        $join->on('mw.nip_ar', '=', 'p.nip')
+             ->where('p.tahun', '=', $thnIni);
+    })
+    ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
+    ->whereIn(DB::raw('LOWER(dt.fungsi)'), ['akt pengawasan', 'lainnya', 'wra pengawasan'])
+    ->where('dt.thn_setor', $thnIni)
+    ->whereBetween('dt.bln_setor', [1, $blnIni])
+    ->selectRaw("
+        COALESCE(mw.nip_ar, 'Unassign') as nip_ar,
+        COALESCE(p.nama, 'Unassign') as nama_ar,
+        COALESCE(s.nama, 'Unassign') as nama_seksi,
+        SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pengawasan' THEN dt.jml_setor ELSE 0 END) as total_akt_pengawasan,
+        SUM(CASE WHEN LOWER(dt.fungsi) = 'lainnya' THEN dt.jml_setor ELSE 0 END) as total_lainnya,
+        SUM(CASE WHEN LOWER(dt.fungsi) = 'wra pengawasan' THEN dt.jml_setor ELSE 0 END) as total_wra_pengawasan,
+        SUM(dt.jml_setor) as total_pkm_pengawasan
+    ")
+    ->groupBy(
+        DB::raw("COALESCE(mw.nip_ar, 'Unassign')"),
+        DB::raw("COALESCE(p.nama, 'Unassign')"),
+        DB::raw("COALESCE(s.nama, 'Unassign')")
+    )
+    ->orderBy(DB::raw("COALESCE(s.nama, 'Unassign')"), 'asc')
+    ->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc')
+    ->get();
 
         // Ambil seksi yang mengandung kata 'Pengawasan'
         $daftarSeksi = DB::table('seksi')

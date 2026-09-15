@@ -1,146 +1,333 @@
-<!DOCTYPE html>
-<html lang="id" x-data="{ 
-    sidebarOpen: false, 
-    isPinned: false,
-    handleMouseEnter() { if (!this.isPinned) this.sidebarOpen = true; },
-    handleMouseLeave() { if (!this.isPinned) this.sidebarOpen = false; }
-}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'MPNWEB')</title>
+@extends('layouts.app')
 
-    <!-- Tailwind CSS & Font Awesome -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+@section('content')
+<!-- HEADER & FILTER CONTAINER -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
     
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-slate-100 font-sans text-slate-800 text-base min-h-screen flex antialiased">
-
-    <!-- ==================== SIDEBAR (AUTO COLLAPSE & PIN) ==================== -->
-    <aside 
-        @mouseenter="handleMouseEnter()"
-        @mouseleave="handleMouseLeave()"
-        :class="sidebarOpen || isPinned ? 'w-64' : 'w-20'" 
-        class="bg-slate-900 text-slate-300 min-h-screen transition-all duration-300 flex flex-col justify-between fixed left-0 top-0 bottom-0 z-40 border-r border-slate-800 shadow-xl">
-        
-        <div>
-            <!-- Sidebar Header -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-                <div x-show="sidebarOpen || isPinned" class="flex items-center gap-3 overflow-hidden">
-                    <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold flex items-center justify-center w-10 h-10 shadow-md shadow-blue-500/20 shrink-0">
-                        <i class="fa-solid fa-chart-pie text-lg"></i>
-                    </div>
-                    <span class="font-extrabold text-white text-xl tracking-wide">MPNWEB</span>
-                </div>
-                
-                <!-- Lock / Pin Button (Nonaktifkan Auto Collapse) -->
-                <button @click="isPinned = !isPinned; sidebarOpen = isPinned" 
-                        class="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition mx-auto flex items-center justify-center"
-                        :title="isPinned ? 'Matikan Pin (Aktifkan Auto-Collapse)' : 'Kunci Sidebar (Matikan Auto-Collapse)'">
-                    <i class="fa-solid text-base" :class="isPinned ? 'fa-thumbtack text-blue-400' : (sidebarOpen ? 'fa-bars-staggered' : 'fa-bars')"></i>
-                </button>
-            </div>
-
-            <!-- Navigation Links -->
-            <nav class="p-3 space-y-2">
-                <!-- 1. Dashboard -->
-                <a href="{{ route('penerimaan.dashboard') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-border-all text-lg w-7 text-center shrink-0"></i>
-                    <span x-show="sidebarOpen || isPinned" class="truncate">Dashboard</span>
-                </a>
-
-                <!-- 2. PPM -->
-                <a href="{{ route('penerimaan.ppm') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-wallet text-lg w-7 text-center shrink-0"></i>
-                    <span x-show="sidebarOpen || isPinned" class="truncate">Penerimaan PPM</span>
-                </a>
-
-                <!-- 3. PKM Pengawasan -->
-                <a href="{{ route('penerimaan.pkmpengawasan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpengawasan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-user-check text-lg w-7 text-center shrink-0"></i>
-                    <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pengawasan</span>
-                </a>
-
-                <!-- 4. PKM Pemeriksaan -->
-                <a href="{{ route('penerimaan.pkmpemeriksaan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpemeriksaan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-magnifying-glass-chart text-lg w-7 text-center shrink-0"></i>
-                    <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pemeriksaan</span>
-                </a>
-
-                <!-- 5. PKM Penagihan -->
-                <a href="{{ route('penerimaan.pkmpenagihan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpenagihan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-gavel text-lg w-7 text-center shrink-0"></i>
-                    <span x-show="sidebarOpen || isPinned" class="truncate">PKM Penagihan</span>
-                </a>
-            </nav>
-        </div>
-
-        <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
-            <span x-show="sidebarOpen || isPinned" class="font-medium">© {{ date('Y') }} MPNWEB</span>
-            <span class="bg-slate-800 text-slate-300 px-2 py-1 rounded-md text-xs font-mono">v2.0</span>
-        </div>
-    </aside>
-
-    <!-- ==================== CONTENT WRAPPER ==================== -->
-    <div :class="sidebarOpen || isPinned ? 'ml-64' : 'ml-20'" class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
-        
-        <!-- TOPBAR NAV -->
-        <header class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-            <div class="flex items-center gap-3 text-base font-medium text-slate-700 overflow-hidden max-w-4xl">
-                <span class="bg-pink-100 text-pink-700 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-                    <i class="fa-solid fa-bullhorn text-pink-500"></i> Informasi
-                </span>
-                
-                <div class="truncate text-sm md:text-base">
-                    @if(isset($rollingText) && $rollingText)
-                        <span class="text-slate-500">
-                            Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }} |
-                        </span> 
-                        NKO: <strong class="text-slate-900">{{ number_format($rollingText->nko, 2) }}%</strong> | 
-                        Rank Nasional: <strong class="text-slate-900">#{{ $rollingText->ranking_nasional }}</strong> | 
-                        Rank Kanwil: <strong class="text-slate-900">#{{ $rollingText->ranking_kanwil }}</strong>
-                    @else
-                        <span class="text-slate-400 italic">Belum ada data info harian.</span>
-                    @endif
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 hover:bg-slate-100 p-2 px-3 rounded-xl transition border border-slate-200/60">
-                    <div class="text-right">
-                        <div class="text-base font-bold text-slate-800 leading-none">Admin KPP</div>
-                        <div class="text-xs text-slate-500 mt-1">Seksi Pengolahan Data</div>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm">
-                        <i class="fa-solid fa-user-gear text-base"></i>
-                    </div>
-                </a>
-            </div>
-        </header>
-
-        <!-- MAIN CONTENT CONTAINER -->
-        <main class="p-8 flex-grow bg-slate-50">
-            @if(session('success'))
-                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-base p-4 rounded-xl mb-6 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-2 font-medium">
-                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
-                        <span>{{ session('success') }}</span>
-                    </div>
-                </div>
-            @endif
-
-            @yield('content')
-        </main>
+    <!-- Judul & Subjudul -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-normal">Dashboard Ringkasan</h1>
+        <p class="text-sm text-slate-500 mt-1 font-normal">Overview penerimaan, capaian target, dan performa PKM</p>
     </div>
 
-</body>
-</html>
+    <!-- Form Filter Compact -->
+    <form action="{{ route('penerimaan.dashboard') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
+        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(1, 12) as $m)
+                @php
+                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+                @endphp
+                <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
+                    {{ $monthName }}
+                </option>
+            @endforeach
+        </select>
+
+        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+            @foreach(range(date('Y') - 3, date('Y')) as $year)
+                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
+            @endforeach
+        </select>
+
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
+            Terapkan
+        </button>
+
+        @if(request()->has('bulan') || request()->has('tahun'))
+            <a href="{{ route('penerimaan.dashboard') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        @endif
+    </form>
+</div>
+
+<!-- BARIS 1: CARD RINGKASAN UTAMA (3 KOLOM) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    
+    <!-- Penerimaan Saat Ini -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 border-l-4 border-l-blue-600 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penerimaan Saat Ini</span>
+                <span class="bg-blue-50 text-blue-700 border border-blue-200/60 text-xs font-semibold px-3 py-1 rounded-md">
+                    {{ number_format($capaianKantor ?? 0, 2) }}% Capaian
+                </span>
+            </div>
+
+            <div class="text-2xl md:text-3xl font-bold text-slate-900 my-2 tracking-normal tabular-nums">
+                <span class="text-slate-500 text-xl font-normal">Rp</span> {{ number_format($penerimaanSaatIni ?? 0, 0, ',', '.') }}
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-medium text-slate-600 pt-4 border-t border-slate-100">
+            @php
+                $growthMoM = ($penerimaanBlnLalu ?? 0) > 0 ? (($penerimaanSaatIni - $penerimaanBlnLalu) / $penerimaanBlnLalu) * 100 : 0;
+                $growthYoY = ($penerimaanThnLalu ?? 0) > 0 ? (($penerimaanSaatIni - $penerimaanThnLalu) / $penerimaanThnLalu) * 100 : 0;
+            @endphp
+            <span>MoM: 
+                <span class="{{ $growthMoM >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                    <i class="fa-solid {{ $growthMoM >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                    {{ number_format(abs($growthMoM), 2, ',', '.') }}%
+                </span>
+            </span>
+            <span>YoY: 
+                <span class="{{ $growthYoY >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                    <i class="fa-solid {{ $growthYoY >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                    {{ number_format(abs($growthYoY), 2, ',', '.') }}%
+                </span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Penerimaan Bulan Lalu -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 border-l-4 border-l-sky-500 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penerimaan Bulan Lalu</span>
+        <div class="text-2xl md:text-3xl font-bold text-slate-900 my-2 tracking-normal tabular-nums">
+            <span class="text-slate-500 text-xl font-normal">Rp</span> {{ number_format($penerimaanBlnLalu ?? 0, 0, ',', '.') }}
+        </div>
+        <div class="text-xs font-normal text-slate-400 border-t border-slate-100 pt-4">
+            Pembanding bulan sebelumnya
+        </div>
+    </div>
+
+    <!-- Penerimaan Tahun Lalu -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 border-l-4 border-l-amber-500 flex flex-col justify-between">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Penerimaan Tahun Lalu</span>
+        <div class="text-2xl md:text-3xl font-bold text-slate-900 my-2 tracking-normal tabular-nums">
+            <span class="text-slate-500 text-xl font-normal">Rp</span> {{ number_format($penerimaanThnLalu ?? 0, 0, ',', '.') }}
+        </div>
+        <div class="text-xs font-normal text-slate-400 border-t border-slate-100 pt-4">
+            Pembanding tahun lalu (YoY)
+        </div>
+    </div>
+
+</div>
+
+<!-- BARIS 2 & 3: GRID PERFORMANCE CARD (3 KOLOM x 2 BARIS) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Card 1: PPM -->
+    @php
+        $targetPpm = $target->target_ppm ?? 0;
+        $persenPPM = $targetPpm > 0 ? (($realisasiPPM ?? 0) / $targetPpm) * 100 : 0;
+        $growthPPM = ($realisasiPPMLalu ?? 0) > 0 ? ((($realisasiPPM ?? 0) - $realisasiPPMLalu) / $realisasiPPMLalu) * 100 : 0;
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PPM</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-blue-50 text-blue-700 border border-blue-200/60 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPPM, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPpm, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPPM ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPPM >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                <i class="fa-solid {{ $growthPPM >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                {{ number_format(abs($growthPPM), 2, ',', '.') }}%
+            </span>
+        </div>
+    </div>
+
+    <!-- Card 2: PKM -->
+    @php
+        $targetPkm = $target->target_pkm ?? 0;
+        $persenPKM = $targetPkm > 0 ? (($realisasiPKM ?? 0) / $targetPkm) * 100 : 0;
+        $growthPKM = ($realisasiPKMLalu ?? 0) > 0 ? ((($realisasiPKM ?? 0) - $realisasiPKMLalu) / $realisasiPKMLalu) * 100 : 0;
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PKM</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-sky-50 text-sky-700 border border-sky-200/60 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPKM, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPkm, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPKM ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPKM >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                <i class="fa-solid {{ $growthPKM >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                {{ number_format(abs($growthPKM), 2, ',', '.') }}%
+            </span>
+        </div>
+    </div>
+
+    <!-- Card 3: PBP -->
+    @php
+        $targetPbp = $target->target_pbp ?? 0;
+        $persenPBP = $targetPbp > 0 ? (($realisasiPBP ?? 0) / $targetPbp) * 100 : 0;
+        $sisaPBP = max(0, $targetPbp - ($realisasiPBP ?? 0));
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PBP</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-amber-50 text-amber-700 border border-amber-200/60 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPBP, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPbp, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPBP ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Sisa Target:</span>
+            <span class="text-rose-600 font-semibold tabular-nums">
+                Rp {{ number_format($sisaPBP, 0, ',', '.') }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Card 4: PKM Pengawasan -->
+    @php
+        $targetPengawasan = $target->target_pkm_pengawasan ?? 0;
+        $persenPengawasan = $targetPengawasan > 0 ? (($realisasiPengawasan ?? 0) / $targetPengawasan) * 100 : 0;
+        $growthPengawasan = ($realisasiPengawasanLalu ?? 0) > 0 ? ((($realisasiPengawasan ?? 0) - $realisasiPengawasanLalu) / $realisasiPengawasanLalu) * 100 : 0;
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PKM Pengawasan</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPengawasan, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPengawasan, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPengawasan ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPengawasan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                <i class="fa-solid {{ $growthPengawasan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                {{ number_format(abs($growthPengawasan), 2, ',', '.') }}%
+            </span>
+        </div>
+    </div>
+
+    <!-- Card 5: PKM Pemeriksaan -->
+    @php
+        $targetPemeriksaan = $target->target_pkm_pemeriksaan ?? 0;
+        $persenPemeriksaan = $targetPemeriksaan > 0 ? (($realisasiPemeriksaan ?? 0) / $targetPemeriksaan) * 100 : 0;
+        $growthPemeriksaan = ($realisasiPemeriksaanLalu ?? 0) > 0 ? ((($realisasiPemeriksaan ?? 0) - $realisasiPemeriksaanLalu) / $realisasiPemeriksaanLalu) * 100 : 0;
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PKM Pemeriksaan</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPemeriksaan, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPemeriksaan, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPemeriksaan ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPemeriksaan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                <i class="fa-solid {{ $growthPemeriksaan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                {{ number_format(abs($growthPemeriksaan), 2, ',', '.') }}%
+            </span>
+        </div>
+    </div>
+
+    <!-- Card 6: PKM Penagihan -->
+    @php
+        $targetPenagihan = $target->target_pkm_penagihan ?? 0;
+        $persenPenagihan = $targetPenagihan > 0 ? (($realisasiPenagihan ?? 0) / $targetPenagihan) * 100 : 0;
+        $growthPenagihan = ($realisasiPenagihanLalu ?? 0) > 0 ? ((($realisasiPenagihan ?? 0) - $realisasiPenagihanLalu) / $realisasiPenagihanLalu) * 100 : 0;
+    @endphp
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">PKM Penagihan</h3>
+                    <p class="text-xs text-slate-400 font-normal">Capaian Target</p>
+                </div>
+                <span class="bg-slate-100 text-slate-800 border border-slate-200 font-semibold text-sm px-3 py-1 rounded-md tracking-normal tabular-nums">
+                    {{ number_format($persenPenagihan, 1, ',', '.') }}%
+                </span>
+            </div>
+            <div class="space-y-2.5 text-sm text-slate-600 border-t pt-4 border-slate-100">
+                <div class="flex justify-between">
+                    <span>Target:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($targetPenagihan, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Realisasi:</span> 
+                    <span class="font-semibold text-slate-800 tabular-nums">Rp {{ number_format($realisasiPenagihan ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-xs pt-4 mt-4 border-t border-slate-100 flex justify-between items-center font-medium">
+            <span class="text-slate-500">Pertumbuhan YoY:</span>
+            <span class="{{ $growthPenagihan >= 0 ? 'text-emerald-600' : 'text-rose-600' }} font-semibold tabular-nums">
+                <i class="fa-solid {{ $growthPenagihan >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i> 
+                {{ number_format(abs($growthPenagihan), 2, ',', '.') }}%
+            </span>
+        </div>
+    </div>
+
+</div>
+@endsection

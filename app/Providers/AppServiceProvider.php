@@ -19,12 +19,15 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+public function boot(): void
     {
-        // Share variabel $rollingText ke SEMUA view Blade (*)
-        View::composer('*', function ($view) {
+        // Bagikan data ke seluruh view TANPA me-trigger event listener berulang kali
+        try {
             $rollingText = RollingText::latest('tanggal')->first();
-            $view->with('rollingText', $rollingText);
-        });
+            View::share('rollingText', $rollingText);
+        } catch (\Exception $e) {
+            // Menghindari error saat migrasi database belum berjalan
+            View::share('rollingText', null);
+        }
     }
 }

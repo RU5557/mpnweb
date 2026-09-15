@@ -11,120 +11,75 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Ambil Filter Bulan & Tahun dari Request (Default: Bulan & Tahun saat ini)
+        // 1. Ambil Filter Bulan & Tahun dari Request
         $thnIni = (int) $request->input('tahun', date('Y'));
         $blnIni = (int) $request->input('bulan', date('n'));
         $thnLalu = $thnIni - 1;
 
-        // -------------------------------------------------------------
-        // QUERY DATA TARGET & ROLLING TEXT DARI DATABASE
-        // -------------------------------------------------------------
-        
-        // Ambil Target Tahunan dari DB berdasarkan tahun filter
+        // 2. Query Target & RollingText
+        // Menggunakan optional() agar tidak error crash/memory exhausted jika target bernilai null
         $target = Target::where('tahun', $thnIni)->first();
 
-        // Ambil Rolling Text Harian Terbaru dari DB
         $rollingText = RollingText::latest('tanggal')->first();
 
-        // -------------------------------------------------------------
-        // QUERY CARD UTAMA (KUMULATIF S.D. BULAN FILTER)
-        // -------------------------------------------------------------
-
-        // Realisasi Saat Ini: Jan s.d. Bulan Filter
-        $penerimaanSaatIni = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
+        // 3. OPTIMASI QUERY: Gabungkan semua query aggregate menjadi 1 Query Single-Pass
+        $penerimaanData = DB::table('summary_mart_penerimaan')
+            ->whereIn('thn_setor', [$thnIni, $thnLalu])
             ->where('bln_setor', '<=', $blnIni)
-            ->sum('total_setor');
+            ->selectRaw("
+                -- Realisasi Utama Tahun Ini
+                SUM(CASE WHEN thn_setor = {$thnIni} THEN total_setor ELSE 0 END) as penerimaanSaatIni,
+                SUM(CASE WHEN thn_setor = {$thnIni} AND bln_setor < {$blnIni} THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
+                
+                -- Realisasi Utama Tahun Lalu
+                SUM(CASE WHEN thn_setor = {$thnLalu} THEN total_setor ELSE 0 END) as penerimaanThnLalu,
 
-        // Realisasi Bulan Lalu: Jan s.d. (Bulan Filter - 1)
-        $penerimaanBlnLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<', $blnIni)
-            ->sum('total_setor');
+                -- Kinerja Jenis (Tahun Ini)
+                SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPM,
+                SUM(CASE WHEN thn_setor = {$thnIni} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKM,
+                SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PBP' THEN total_setor ELSE 0 END) as realisasiPBP,
 
-        // Realisasi Tahun Lalu: Jan s.d. Bulan Filter Tahun Sebelumnya
-        $penerimaanThnLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)
-            ->where('bln_setor', '<=', $blnIni)
-            ->sum('total_setor');
+                -- Kinerja Fungsi (Tahun Ini)
+                SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasan,
+                SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
+                SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihan,
 
-        // -------------------------------------------------------------
-        // QUERY CARD KINERJA JENIS (KUMULATIF S.D. BULAN FILTER)
-        // -------------------------------------------------------------
+                -- Kinerja Jenis (Tahun Lalu)
+                SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
+                SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
 
-        // 1. PPM
-        $realisasiPPM = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->where('jenis', 'PPM')
-            ->sum('total_setor');
+                -- Kinerja Fungsi (Tahun Lalu)
+                SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
+                SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
+                SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
+            ")
+            ->first();
 
-        // 2. PKM (Seluruh varian PKM)
-        $realisasiPKM = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->whereIn('jenis', ['PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA'])
-            ->sum('total_setor');
+        // Assign nilai variabel dari hasil query agregat tunggal
+        $penerimaanSaatIni   = $penerimaanData->penerimaanSaatIni ?? 0;
+        $penerimaanBlnLalu   = $penerimaanData->penerimaanBlnLalu ?? 0;
+        $penerimaanThnLalu   = $penerimaanData->penerimaanThnLalu ?? 0;
 
-        // 3. PBP
-        $realisasiPBP = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->where('jenis', 'PBP')
-            ->sum('total_setor');
+        $realisasiPPM        = $penerimaanData->realisasiPPM ?? 0;
+        $realisasiPKM        = $penerimaanData->realisasiPKM ?? 0;
+        $realisasiPBP        = $penerimaanData->realisasiPBP ?? 0;
 
-        // -------------------------------------------------------------
-        // QUERY CARD KINERJA FUNGSI (KUMULATIF S.D. BULAN FILTER)
-        // -------------------------------------------------------------
+        $realisasiPengawasan = $penerimaanData->realisasiPengawasan ?? 0;
+        $realisasiPemeriksaan= $penerimaanData->realisasiPemeriksaan ?? 0;
+        $realisasiPenagihan  = $penerimaanData->realisasiPenagihan ?? 0;
 
-        // 4. PKM Pengawasan (akt pengawasan + lainnya + wra pengawasan)
-        $realisasiPengawasan = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->whereIn('fungsi', ['akt pengawasan', 'lainnya', 'wra pengawasan'])
-            ->sum('total_setor');
+        $realisasiPPMLalu    = $penerimaanData->realisasiPPMLalu ?? 0;
+        $realisasiPKMLalu    = $penerimaanData->realisasiPKMLalu ?? 0;
 
-        // 5. PKM Pemeriksaan (akt pemeriksaan)
-        $realisasiPemeriksaan = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->where('fungsi', 'akt pemeriksaan')
-            ->sum('total_setor');
+        $realisasiPengawasanLalu  = $penerimaanData->realisasiPengawasanLalu ?? 0;
+        $realisasiPemeriksaanLalu = $penerimaanData->realisasiPemeriksaanLalu ?? 0;
+        $realisasiPenagihanLalu   = $penerimaanData->realisasiPenagihanLalu ?? 0;
 
-        // 6. PKM Penagihan (akt penagihan)
-        $realisasiPenagihan = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnIni)
-            ->where('bln_setor', '<=', $blnIni)
-            ->where('fungsi', 'akt penagihan')
-            ->sum('total_setor');
-        
-        // Capain Kantor
-        $targetKantor = $target->target_kantor ?? 0;
+        // Capaian Kantor
+        $targetKantor  = $target->target_kantor ?? 0;
         $capaianKantor = $targetKantor > 0 ? ($penerimaanSaatIni / $targetKantor) * 100 : 0;
 
-        // Realisasi Kinerja Jenis - TAHUN LALU (s.d. Bulan yang sama)
-        $realisasiPPMLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
-            ->where('jenis', 'PPM')->sum('total_setor');
-
-        $realisasiPKMLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
-            ->whereIn('jenis', ['PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA'])->sum('total_setor');
-
-        // Realisasi Kinerja Fungsi - TAHUN LALU (s.d. Bulan yang sama)
-        $realisasiPengawasanLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
-            ->whereIn('fungsi', ['akt pengawasan', 'lainnya', 'wra pengawasan'])->sum('total_setor');
-
-        $realisasiPemeriksaanLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
-            ->where('fungsi', 'akt pemeriksaan')->sum('total_setor');
-
-        $realisasiPenagihanLalu = DB::table('summary_mart_penerimaan')
-            ->where('thn_setor', $thnLalu)->where('bln_setor', '<=', $blnIni)
-            ->where('fungsi', 'akt penagihan')->sum('total_setor');
-
-return view('penerimaan.dashboard', compact(
+        return view('penerimaan.dashboard', compact(
             'thnIni',
             'blnIni',
             'target',
