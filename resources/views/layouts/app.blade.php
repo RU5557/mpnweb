@@ -17,90 +17,90 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 text-base min-h-screen flex antialiased">
+<body class="bg-slate-100 font-sans text-slate-800 text-sm min-h-screen flex antialiased">
 
     <!-- ==================== SIDEBAR (AUTO COLLAPSE & PIN) ==================== -->
     <aside 
         @mouseenter="handleMouseEnter()"
         @mouseleave="handleMouseLeave()"
-        :class="sidebarOpen || isPinned ? 'w-64' : 'w-20'" 
+        :class="sidebarOpen || isPinned ? 'w-60' : 'w-20'" 
         class="bg-slate-900 text-slate-300 min-h-screen transition-all duration-300 flex flex-col justify-between fixed left-0 top-0 bottom-0 z-40 border-r border-slate-800 shadow-xl">
         
         <div>
             <!-- Sidebar Header -->
             <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
                 <div x-show="sidebarOpen || isPinned" class="flex items-center gap-3 overflow-hidden">
-                    <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold flex items-center justify-center w-10 h-10 shadow-md shadow-blue-500/20 shrink-0">
-                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                    <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold flex items-center justify-center w-9 h-9 shadow-md shadow-blue-500/20 shrink-0">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
                     </div>
                     <span class="font-extrabold text-white text-xl tracking-wide">MPNWEB</span>
                 </div>
                 
-                <!-- Lock / Pin Button (Nonaktifkan Auto Collapse) -->
+                <!-- Lock / Pin Button -->
                 <button @click="isPinned = !isPinned; sidebarOpen = isPinned" 
-                        class="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition mx-auto flex items-center justify-center"
+                        class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition mx-auto flex items-center justify-center"
                         :title="isPinned ? 'Matikan Pin (Aktifkan Auto-Collapse)' : 'Kunci Sidebar (Matikan Auto-Collapse)'">
                     <i class="fa-solid text-base" :class="isPinned ? 'fa-thumbtack text-blue-400' : (sidebarOpen ? 'fa-bars-staggered' : 'fa-bars')"></i>
                 </button>
             </div>
 
-            <!-- Navigation Links -->
-            <nav class="p-3 space-y-2">
+            <!-- Navigation Links (Nyaman Dibaca & Proporsional) -->
+            <nav class="p-3 space-y-1.5">
                 <!-- 1. Dashboard -->
                 <a href="{{ route('penerimaan.dashboard') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-border-all text-lg w-7 text-center shrink-0"></i>
+                   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i class="fa-solid fa-border-all text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">Dashboard</span>
                 </a>
 
                 <!-- 2. PPM -->
                 <a href="{{ route('penerimaan.ppm') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-wallet text-lg w-7 text-center shrink-0"></i>
+                   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i class="fa-solid fa-wallet text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">Penerimaan PPM</span>
                 </a>
 
                 <!-- 3. PKM Pengawasan -->
                 <a href="{{ route('penerimaan.pkmpengawasan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpengawasan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-user-check text-lg w-7 text-center shrink-0"></i>
+                   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpengawasan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i class="fa-solid fa-user-check text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pengawasan</span>
                 </a>
 
                 <!-- 4. PKM Pemeriksaan -->
                 <a href="{{ route('penerimaan.pkmpemeriksaan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpemeriksaan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-magnifying-glass-chart text-lg w-7 text-center shrink-0"></i>
+                   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpemeriksaan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i class="fa-solid fa-magnifying-glass-chart text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pemeriksaan</span>
                 </a>
 
                 <!-- 5. PKM Penagihan -->
                 <a href="{{ route('penerimaan.pkmpenagihan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpenagihan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
-                    <i class="fa-solid fa-gavel text-lg w-7 text-center shrink-0"></i>
+                   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpenagihan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                    <i class="fa-solid fa-gavel text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Penagihan</span>
                 </a>
             </nav>
         </div>
 
         <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+        <div class="p-3.5 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
             <span x-show="sidebarOpen || isPinned" class="font-medium">© {{ date('Y') }} MPNWEB</span>
-            <span class="bg-slate-800 text-slate-300 px-2 py-1 rounded-md text-xs font-mono">v2.0</span>
+            <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[11px] font-mono">v2.0</span>
         </div>
     </aside>
 
     <!-- ==================== CONTENT WRAPPER ==================== -->
-    <div :class="sidebarOpen || isPinned ? 'ml-64' : 'ml-20'" class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
+    <div :class="sidebarOpen || isPinned ? 'ml-60' : 'ml-20'" class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
         
         <!-- TOPBAR NAV -->
-        <header class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-            <div class="flex items-center gap-3 text-base font-medium text-slate-700 overflow-hidden max-w-4xl">
-                <span class="bg-pink-100 text-pink-700 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div class="flex items-center gap-3 text-[13px] font-medium text-slate-700 overflow-hidden max-w-4xl">
+                <span class="bg-pink-100 text-pink-700 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
                     <i class="fa-solid fa-bullhorn text-pink-500"></i> Informasi
                 </span>
                 
-                <div class="truncate text-sm md:text-base">
+                <div class="truncate text-[13px] md:text-sm">
                     @if(isset($rollingText) && $rollingText)
                         <span class="text-slate-500">
                             Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }} |
@@ -114,25 +114,25 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 hover:bg-slate-100 p-2 px-3 rounded-xl transition border border-slate-200/60">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 hover:bg-slate-100 p-1.5 px-3 rounded-xl transition border border-slate-200/60">
                     <div class="text-right">
-                        <div class="text-base font-bold text-slate-800 leading-none">Admin KPP</div>
-                        <div class="text-xs text-slate-500 mt-1">Seksi Pengolahan Data</div>
+                        <div class="text-xs font-bold text-slate-800 leading-none">Admin KPP</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">Seksi Pengolahan Data</div>
                     </div>
-                    <div class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm">
-                        <i class="fa-solid fa-user-gear text-base"></i>
+                    <div class="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm">
+                        <i class="fa-solid fa-user-gear text-sm"></i>
                     </div>
                 </a>
             </div>
         </header>
 
         <!-- MAIN CONTENT CONTAINER -->
-        <main class="p-8 flex-grow bg-slate-50">
+        <main class="p-6 flex-grow bg-slate-50">
             @if(session('success'))
-                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-base p-4 rounded-xl mb-6 flex items-center justify-between shadow-sm">
+                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3.5 rounded-xl mb-5 flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-2 font-medium">
-                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
                         <span>{{ session('success') }}</span>
                     </div>
                 </div>
