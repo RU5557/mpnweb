@@ -50,8 +50,15 @@ class PkmPengawasanController extends Controller
             ->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc')
             ->get();
 
-        // Perbaikan 1: Ambil daftar nama_seksi unik langsung dari hasil query $pkmData
-        $daftarSeksi = $pkmData->pluck('nama_seksi')->unique()->filter()->values();
+        // PERBAIKAN: Ambil seksi yang mengandung kata 'Pengawasan' dari master tabel seksi
+        $daftarSeksi = DB::table('seksi')
+            ->where('nama', 'LIKE', '%Pengawasan%')
+            ->orderBy('nama', 'asc')
+            ->pluck('nama')
+            ->toArray();
+
+        // Tambahkan opsi Unassign ke daftar seksi
+        $daftarSeksi[] = 'Unassign';
 
         return view('penerimaan.pkmpengawasan', compact('pkmData', 'daftarSeksi'));
     }
