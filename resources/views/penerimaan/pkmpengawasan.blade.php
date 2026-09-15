@@ -22,47 +22,58 @@
     }
 @endphp
 
-<!-- HEADER & FILTER (SEJAJAR) -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+<!-- HEADER & FILTER CONTAINER (COMPACT & SEJAJAR) -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+    
+    <!-- Judul & Subjudul -->
     <div>
-        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Pengawasan</h1>
-        <p class="text-base text-slate-500 mt-1">Rincian realisasi PKM Pengawasan s.d. bulan terpilih per Seksi dan Account Representative (AR)</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Pengawasan</h1>
+        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rincian realisasi PKM Pengawasan s.d. bulan terpilih per Seksi dan AR</p>
     </div>
 
-    <!-- Filter Form -->
-    <form action="{{ route('penerimaan.pkmpengawasan') }}" method="GET" class="bg-white border border-slate-200/80 rounded-2xl p-2.5 px-4 shadow-sm flex items-center gap-3">
+    <!-- Form Filter Compact -->
+    <form action="{{ route('penerimaan.pkmpengawasan') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
         <!-- Preserve Current Sort State -->
         <input type="hidden" name="sort" value="{{ request('sort', 'nama_seksi') }}">
         <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
 
-        <!-- Filter Seksi -->
-        <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <!-- Select Seksi -->
+        <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
             <option value="">-- Semua Seksi --</option>
             @foreach($daftarSeksi as $seksi)
                 <option value="{{ $seksi }}" {{ request('seksi') == $seksi ? 'selected' : '' }}>{{ $seksi }}</option>
             @endforeach
         </select>
 
-        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <!-- Select Bulan (s.d. Format) -->
+        <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
             @foreach(range(1, 12) as $m)
+                @php
+                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+                @endphp
                 <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
-                    s.d. {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                    {{ $monthName }}
                 </option>
             @endforeach
         </select>
 
-        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-base rounded-xl px-4 py-2.5 font-medium outline-none">
+        <!-- Select Tahun -->
+        <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
             @foreach(range(date('Y') - 3, date('Y')) as $year)
-                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>{{ $year }}</option>
+                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                    {{ $year }}
+                </option>
             @endforeach
         </select>
 
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold px-5 py-2.5 rounded-xl transition shadow-sm">
+        <!-- Tombol Terapkan -->
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
             Terapkan
         </button>
 
+        <!-- Tombol Reset -->
         @if(request()->has('bulan') || request()->has('tahun') || request()->has('seksi') || request()->has('sort'))
-            <a href="{{ route('penerimaan.pkmpengawasan') }}" class="text-slate-400 hover:text-slate-600 text-base px-2 py-2 transition" title="Reset Filter">
+            <a href="{{ route('penerimaan.pkmpengawasan') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
         @endif
@@ -70,122 +81,123 @@
 </div>
 
 <!-- TABEL PKM PENGAWASAN PER SEKSI & AR -->
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-3.5 h-3.5 rounded-full bg-emerald-500"></div>
-            <h2 class="text-lg font-bold text-slate-800">Tabel Penerimaan PKM Pengawasan</h2>
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+            <h2 class="text-base font-bold text-slate-800">Tabel Penerimaan PKM Pengawasan</h2>
         </div>
     </div>
 
     <div class="overflow-x-auto">
-        <table class="w-full text-left text-base">
-            <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-sm">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-xs">
                 <tr>
-                    <th class="py-4 px-4 w-14 text-center whitespace-nowrap">No</th>
+                    <th class="py-3 px-3.5 w-12 text-center whitespace-nowrap">No</th>
                     
                     <!-- Header Sort Nama Seksi -->
-                    <th class="py-4 px-4 whitespace-nowrap">
+                    <th class="py-3 px-3.5 whitespace-nowrap">
                         <a href="{{ sortUrl('nama_seksi', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
                             Nama Seksi {!! sortIcon('nama_seksi', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort Nama AR -->
-                    <th class="py-4 px-4 whitespace-nowrap">
+                    <th class="py-3 px-3.5 whitespace-nowrap">
                         <a href="{{ sortUrl('nama_ar', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
                             Nama AR {!! sortIcon('nama_ar', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort Akt Pengawasan -->
-                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
                         <a href="{{ sortUrl('total_akt_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
                             Akt Pengawasan {!! sortIcon('total_akt_pengawasan', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort Lainnya -->
-                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
                         <a href="{{ sortUrl('total_lainnya', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
                             Lainnya {!! sortIcon('total_lainnya', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort WRA Pengawasan -->
-                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
                         <a href="{{ sortUrl('total_wra_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
                             WRA Pengawasan {!! sortIcon('total_wra_pengawasan', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
 
                     <!-- Header Sort Total PKM Pengawasan -->
-                    <th class="py-4 px-4 text-right whitespace-nowrap">
+                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
                         <a href="{{ sortUrl('total_pkm_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
                             Total PKM Pengawasan {!! sortIcon('total_pkm_pengawasan', $sortColumn, $sortDirection) !!}
                         </a>
                     </th>
                 </tr>
             </thead>
-            <!-- Rest of tbody & tfoot tetap sama -->
+
             <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                 @forelse($pkmData as $index => $row)
                     <tr class="hover:bg-slate-50/80 transition">
-                        <td class="py-4 px-4 text-center text-slate-400 font-mono text-sm">{{ $index + 1 }}</td>
-                        <td class="py-4 px-4 font-semibold text-slate-800">
+                        <td class="py-2.5 px-3.5 text-center text-slate-400 font-mono text-xs">{{ $index + 1 }}</td>
+                        <td class="py-2.5 px-3.5 font-semibold text-slate-800">
                             @if($row->nama_seksi === 'Unassign')
-                                <span class="bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg text-sm border border-rose-200 inline-block font-bold">
+                                <span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md text-xs border border-rose-200 inline-block font-bold">
                                     Unassign
                                 </span>
                             @else
-                                <span class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm border border-slate-200 inline-block">
+                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs border border-slate-200 inline-block">
                                     {{ $row->nama_seksi }}
                                 </span>
                             @endif
                         </td>
-                        <td class="py-4 px-4 text-slate-900 font-bold">
-                            @if($row->nama_ar === 'Unassign')
-                                <span class="text-rose-600 italic">Unassign</span>
-                            @else
-                                {{ $row->nama_ar }}
-                            @endif
-                        </td>
-                        <td class="py-4 px-4 text-right font-mono text-slate-600">
+<td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
+    @if($row->nama_ar === 'Unassign')
+        <span class="text-rose-600 italic">Unassign</span>
+    @else
+        {{ $row->nama_ar }}
+    @endif
+</td>
+                        <td class="py-2.5 px-3.5 text-right font-mono text-slate-600">
                             Rp {{ number_format($row->total_akt_pengawasan ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono text-slate-600">
+                        <td class="py-2.5 px-3.5 text-right font-mono text-slate-600">
                             Rp {{ number_format($row->total_lainnya ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono text-slate-600">
+                        <td class="py-2.5 px-3.5 text-right font-mono text-slate-600">
                             Rp {{ number_format($row->total_wra_pengawasan ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono font-bold text-emerald-600">
+                        <td class="py-2.5 px-3.5 text-right font-mono font-bold text-emerald-600">
                             Rp {{ number_format($row->total_pkm_pengawasan ?? 0, 0, ',', '.') }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-12 text-center text-slate-400 italic text-base">
+                        <td colspan="7" class="py-10 text-center text-slate-400 italic text-sm">
                             Tidak ada data PKM Pengawasan untuk filter bulan/tahun ini.
                         </td>
                     </tr>
                 @endforelse
             </tbody>
+
             <!-- FOOTER TOTAL / SUMMARY -->
             @if($pkmData->count() > 0)
-                <tfoot class="bg-slate-100/90 font-bold text-slate-900 border-t-2 border-slate-200 text-base">
+                <tfoot class="bg-slate-100/90 font-bold text-slate-900 border-t-2 border-slate-200 text-sm">
                     <tr>
-                        <td colspan="3" class="py-4 px-4 text-center tracking-wider">TOTAL KESELURUHAN</td>
-                        <td class="py-4 px-4 text-right font-mono">
+                        <td colspan="3" class="py-3 px-3.5 text-center tracking-wider">TOTAL KESELURUHAN</td>
+                        <td class="py-3 px-3.5 text-right font-mono">
                             Rp {{ number_format($pkmData->sum('total_akt_pengawasan'), 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono">
+                        <td class="py-3 px-3.5 text-right font-mono">
                             Rp {{ number_format($pkmData->sum('total_lainnya'), 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono">
+                        <td class="py-3 px-3.5 text-right font-mono">
                             Rp {{ number_format($pkmData->sum('total_wra_pengawasan'), 0, ',', '.') }}
                         </td>
-                        <td class="py-4 px-4 text-right font-mono text-emerald-700">
+                        <td class="py-3 px-3.5 text-right font-mono text-emerald-700">
                             Rp {{ number_format($pkmData->sum('total_pkm_pengawasan'), 0, ',', '.') }}
                         </td>
                     </tr>
