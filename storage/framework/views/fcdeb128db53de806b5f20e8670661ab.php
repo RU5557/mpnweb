@@ -28,23 +28,23 @@
         
         <div>
             <!-- Sidebar Header -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-                <div x-show="sidebarOpen || isPinned" class="flex items-center gap-3 overflow-hidden">
-                    <div class="bg-blue-600 text-white p-2.5 rounded-xl font-bold flex items-center justify-center w-9 h-9 shadow-md shadow-blue-500/20 shrink-0">
-                        <i class="fa-solid fa-chart-pie text-base"></i>
+            <div class="h-12 flex items-center justify-between px-4 border-b border-slate-800">
+                <div x-show="sidebarOpen || isPinned" class="flex items-center gap-2.5 overflow-hidden">
+                    <div class="bg-blue-600 text-white p-1.5 rounded-lg font-bold flex items-center justify-center w-7 h-7 shadow-md shadow-blue-500/20 shrink-0">
+                        <i class="fa-solid fa-chart-pie text-xs"></i>
                     </div>
-                    <span class="font-extrabold text-white text-xl tracking-wide">MPNWEB</span>
+                    <span class="font-extrabold text-white text-lg tracking-wide">MPNWEB</span>
                 </div>
                 
                 <!-- Lock / Pin Button -->
                 <button @click="isPinned = !isPinned; sidebarOpen = isPinned" 
-                        class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition mx-auto flex items-center justify-center"
+                        class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition mx-auto flex items-center justify-center"
                         :title="isPinned ? 'Matikan Pin (Aktifkan Auto-Collapse)' : 'Kunci Sidebar (Matikan Auto-Collapse)'">
-                    <i class="fa-solid text-base" :class="isPinned ? 'fa-thumbtack text-blue-400' : (sidebarOpen ? 'fa-bars-staggered' : 'fa-bars')"></i>
+                    <i class="fa-solid text-sm" :class="isPinned ? 'fa-thumbtack text-blue-400' : (sidebarOpen ? 'fa-bars-staggered' : 'fa-bars')"></i>
                 </button>
             </div>
 
-            <!-- Navigation Links (Nyaman Dibaca & Proporsional) -->
+            <!-- Navigation Links -->
             <nav class="p-3 space-y-1.5">
                 <!-- 1. Dashboard -->
                 <a href="<?php echo e(route('penerimaan.dashboard')); ?>" 
@@ -84,7 +84,7 @@
         </div>
 
         <!-- Sidebar Footer -->
-        <div class="p-3.5 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+        <div class="p-3 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
             <span x-show="sidebarOpen || isPinned" class="font-medium">© <?php echo e(date('Y')); ?> MPNWEB</span>
             <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[11px] font-mono">v2.0</span>
         </div>
@@ -93,10 +93,10 @@
     <!-- ==================== CONTENT WRAPPER ==================== -->
     <div :class="sidebarOpen || isPinned ? 'ml-60' : 'ml-20'" class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
         
-        <!-- TOPBAR NAV -->
-        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+        <!-- TOPBAR NAV (LEBIH TIPIK / COMPACT: h-12) -->
+        <header class="h-12 bg-white border-b border-slate-200 px-5 flex items-center justify-between sticky top-0 z-30 shadow-sm">
             <div class="flex items-center gap-3 text-[13px] font-medium text-slate-700 overflow-hidden max-w-4xl">
-                <span class="bg-pink-100 text-pink-700 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                <span class="bg-pink-100 text-pink-700 text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
                     <i class="fa-solid fa-bullhorn text-pink-500"></i> Informasi
                 </span>
                 
@@ -115,13 +115,13 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="<?php echo e(route('admin.index')); ?>" class="flex items-center gap-3 hover:bg-slate-100 p-1.5 px-3 rounded-xl transition border border-slate-200/60">
+                <a href="<?php echo e(route('admin.index')); ?>" class="flex items-center gap-2.5 hover:bg-slate-100 py-1 px-2.5 rounded-lg transition border border-slate-200/60">
                     <div class="text-right">
-                        <div class="text-xs font-bold text-slate-800 leading-none">Admin KPP</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">Seksi Pengolahan Data</div>
+                        <div class="text-xs font-bold text-slate-800 leading-tight">Admin KPP</div>
+                        <div class="text-[10px] text-slate-500 leading-none">Seksi Pengolahan Data</div>
                     </div>
-                    <div class="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm">
-                        <i class="fa-solid fa-user-gear text-sm"></i>
+                    <div class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                        <i class="fa-solid fa-user-gear text-xs"></i>
                     </div>
                 </a>
             </div>
@@ -130,7 +130,7 @@
         <!-- MAIN CONTENT CONTAINER -->
         <main class="p-6 flex-grow bg-slate-50">
             <?php if(session('success')): ?>
-                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3.5 rounded-xl mb-5 flex items-center justify-between shadow-sm">
+                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3 rounded-xl mb-5 flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-2 font-medium">
                         <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
                         <span><?php echo e(session('success')); ?></span>
