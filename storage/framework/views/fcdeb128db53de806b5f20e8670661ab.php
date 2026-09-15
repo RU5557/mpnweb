@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'MPNWEB')</title>
+    <title><?php echo $__env->yieldContent('title', 'MPNWEB'); ?></title>
 
     <!-- Tailwind CSS & Font Awesome -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,36 +47,36 @@
             <!-- Navigation Links -->
             <nav class="p-3 space-y-2">
                 <!-- 1. Dashboard -->
-                <a href="{{ route('penerimaan.dashboard') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <a href="<?php echo e(route('penerimaan.dashboard')); ?>" 
+                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.dashboard') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
                     <i class="fa-solid fa-border-all text-lg w-7 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">Dashboard</span>
                 </a>
 
                 <!-- 2. PPM -->
-                <a href="{{ route('penerimaan.ppm') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <a href="<?php echo e(route('penerimaan.ppm')); ?>" 
+                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
                     <i class="fa-solid fa-wallet text-lg w-7 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">Penerimaan PPM</span>
                 </a>
 
                 <!-- 3. PKM Pengawasan -->
-                <a href="{{ route('penerimaan.pkmpengawasan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpengawasan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <a href="<?php echo e(route('penerimaan.pkmpengawasan')); ?>" 
+                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.pkmpengawasan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
                     <i class="fa-solid fa-user-check text-lg w-7 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pengawasan</span>
                 </a>
 
                 <!-- 4. PKM Pemeriksaan -->
-                <a href="{{ route('penerimaan.pkmpemeriksaan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpemeriksaan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <a href="<?php echo e(route('penerimaan.pkmpemeriksaan')); ?>" 
+                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.pkmpemeriksaan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
                     <i class="fa-solid fa-magnifying-glass-chart text-lg w-7 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Pemeriksaan</span>
                 </a>
 
                 <!-- 5. PKM Penagihan -->
-                <a href="{{ route('penerimaan.pkmpenagihan') }}" 
-                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors {{ request()->routeIs('penerimaan.pkmpenagihan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+                <a href="<?php echo e(route('penerimaan.pkmpenagihan')); ?>" 
+                   class="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-base font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.pkmpenagihan') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
                     <i class="fa-solid fa-gavel text-lg w-7 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Penagihan</span>
                 </a>
@@ -85,7 +85,7 @@
 
         <!-- Sidebar Footer -->
         <div class="p-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
-            <span x-show="sidebarOpen || isPinned" class="font-medium">© {{ date('Y') }} MPNWEB</span>
+            <span x-show="sidebarOpen || isPinned" class="font-medium">© <?php echo e(date('Y')); ?> MPNWEB</span>
             <span class="bg-slate-800 text-slate-300 px-2 py-1 rounded-md text-xs font-mono">v2.0</span>
         </div>
     </aside>
@@ -101,21 +101,21 @@
                 </span>
                 
                 <div class="truncate text-sm md:text-base">
-                    @if(isset($rollingText) && $rollingText)
+                    <?php if(isset($rollingText) && $rollingText): ?>
                         <span class="text-slate-500">
-                            Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }} |
+                            Update: <?php echo e(\Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y')); ?> |
                         </span> 
-                        NKO: <strong class="text-slate-900">{{ number_format($rollingText->nko, 2) }}%</strong> | 
-                        Rank Nasional: <strong class="text-slate-900">#{{ $rollingText->ranking_nasional }}</strong> | 
-                        Rank Kanwil: <strong class="text-slate-900">#{{ $rollingText->ranking_kanwil }}</strong>
-                    @else
+                        NKO: <strong class="text-slate-900"><?php echo e(number_format($rollingText->nko, 2)); ?>%</strong> | 
+                        Rank Nasional: <strong class="text-slate-900">#<?php echo e($rollingText->ranking_nasional); ?></strong> | 
+                        Rank Kanwil: <strong class="text-slate-900">#<?php echo e($rollingText->ranking_kanwil); ?></strong>
+                    <?php else: ?>
                         <span class="text-slate-400 italic">Belum ada data info harian.</span>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="flex items-center gap-4">
-                <a href="{{ route('admin.index') }}" class="flex items-center gap-3 hover:bg-slate-100 p-2 px-3 rounded-xl transition border border-slate-200/60">
+                <a href="<?php echo e(route('admin.index')); ?>" class="flex items-center gap-3 hover:bg-slate-100 p-2 px-3 rounded-xl transition border border-slate-200/60">
                     <div class="text-right">
                         <div class="text-base font-bold text-slate-800 leading-none">Admin KPP</div>
                         <div class="text-xs text-slate-500 mt-1">Seksi Pengolahan Data</div>
@@ -129,18 +129,18 @@
 
         <!-- MAIN CONTENT CONTAINER -->
         <main class="p-8 flex-grow bg-slate-50">
-            @if(session('success'))
+            <?php if(session('success')): ?>
                 <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-base p-4 rounded-xl mb-6 flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-2 font-medium">
                         <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
-                        <span>{{ session('success') }}</span>
+                        <span><?php echo e(session('success')); ?></span>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
         </main>
     </div>
 
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\mpnweb\resources\views/layouts/app.blade.php ENDPATH**/ ?>
