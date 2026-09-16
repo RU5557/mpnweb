@@ -39,7 +39,7 @@
 
         <!-- Filter Dropdown DSPC / NON-DSPC -->
         <select name="dspc_filter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
-            <option value="">-- Semua Kategori --</option>
+            <option value="">DSPC/NON-DSPC</option>
             <option value="DSPC" {{ request('dspc_filter') == 'DSPC' ? 'selected' : '' }}>DSPC</option>
             <option value="NON-DSPC" {{ request('dspc_filter') == 'NON-DSPC' ? 'selected' : '' }}>NON-DSPC</option>
         </select>
@@ -80,7 +80,7 @@
 <a href="{{ route('pkm.penagihan.export-detil', request()->all()) }}" 
    class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
     <i class="fa-solid fa-file-excel text-xs"></i>
-    <span>Export Excel</span>
+    <span>Export CSV</span>
 </a>
     </form>
 </div>

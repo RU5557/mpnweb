@@ -146,7 +146,7 @@ class PkmPenagihanController extends Controller
             foreach ($data as $index => $row) {
                 fputcsv($file, [
                     $index + 1,
-                    "'{$row->npwp15}", // Menambahkan petik (') agar NPWP tidak terformat ilmiah (E+) di Excel
+                    $row->npwp15,
                     $row->nama_wp,
                     $row->nip_jspn,
                     $row->nama_jspn,
