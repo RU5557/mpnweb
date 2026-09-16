@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Exception;
 
 class SyncDataSistem extends Command
@@ -20,7 +21,7 @@ class SyncDataSistem extends Command
                             {--thnsetor= : Filter tahun setor (contoh: 2026)}
                             {--blnsetor= : Filter bulan setor (contoh: 09 atau 9)}';
 
-    protected $description = 'ETL data dari mpninfo (legacy) ke mpnweb (operasional) dengan filter periode transaksi';
+    protected $description = 'ETL data dari mpninfo (legacy) ke mpnweb (operasional) dengan auto rebuild mart dan cache invalidation';
 
     public function handle()
     {
@@ -58,15 +59,33 @@ class SyncDataSistem extends Command
                 $this->syncMasterfileWp();
             }
 
-            // 3. Sinkronisasi Transaksi & Rebuild Summary Mart
+            // 3. Sinkronisasi Transaksi & Auto-Pipeline (Rebuild Summary Marts + Clear Cache)
             if (in_array($target, ['all', 'tx'])) {
                 $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
 
                 $this->newLine();
-                $this->comment('-> Memicu otomatis rekapitulasi summary mart...');
+                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
                 Artisan::call('summary:rebuild');
-                $this->info('   [OK] Summary Mart berhasil diperbarui!');
+                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
+
+                $this->newLine();
+                $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
+                
+                // Meneruskan parameter --tahun jika filter tahun diset
+                $ppmParams = [];
+                if (!empty($thnSetor)) {
+                    $ppmParams['--tahun'] = $thnSetor;
+                }
+                Artisan::call('app:populate-summary-mart-ppm', $ppmParams);
+                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
             }
+
+            // 4. Optimalisasi & Invalidation Cache Laravel (Terjadi pada SEMUA mode sync)
+            $this->newLine();
+            $this->comment('-> Membersihkan dan mengoptimalkan Cache Laravel...');
+            Cache::flush();
+            Artisan::call('cache:clear');
+            $this->info('   [OK] Cache aplikasi berhasil dibersihkan!');
 
             DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
             DB::statement('SET UNIQUE_CHECKS = 1;');
@@ -162,7 +181,6 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: detil_transaksi_wp...');
 
-        // Susun Klausal WHERE secara dinamis berdasarkan parameter
         $whereConditions = [];
         
         if (!empty($thnSetor)) {
@@ -170,7 +188,6 @@ class SyncDataSistem extends Command
         }
 
         if (!empty($blnSetor)) {
-            // Memastikan format bulan aman (misal: '09' atau 9)
             $whereConditions[] = "blnsetor = " . (int)$blnSetor;
         }
 
@@ -178,7 +195,6 @@ class SyncDataSistem extends Command
         if (count($whereConditions) > 0) {
             $whereSql = " WHERE " . implode(' AND ', $whereConditions);
 
-            // Jika diparsing filter periode tertentu, hapus HANYA data pada periode tersebut di target
             $deleteWhereConditions = [];
             if (!empty($thnSetor)) $deleteWhereConditions[] = "thn_setor = " . (int)$thnSetor;
             if (!empty($blnSetor)) $deleteWhereConditions[] = "bln_setor = " . (int)$blnSetor;
@@ -187,11 +203,9 @@ class SyncDataSistem extends Command
             DB::statement("DELETE FROM mpnweb.detil_transaksi_wp{$deleteWhereSql};");
             $this->comment("   [i] Menghapus data periode tertentu di mpnweb.detil_transaksi_wp sebelum re-sync.");
         } else {
-            // Jika TANPA filter (sync full), TRUNCATE seluruh tabel
             DB::statement('TRUNCATE TABLE mpnweb.detil_transaksi_wp;');
         }
 
-        // Eksekusi INSERT INTO ... SELECT
         DB::statement("
             INSERT IGNORE INTO mpnweb.detil_transaksi_wp (
                 kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
