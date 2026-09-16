@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Exports\DetilTransaksiExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PkmPengawasanController extends Controller
 {
@@ -84,4 +86,23 @@ public function index(Request $request)
 
     return view('penerimaan.pkmpengawasan', compact('pkmData', 'daftarSeksi', 'sortColumn', 'sortDirection'));
 }
+
+/**
+     * Handle Export Excel Detil Transaksi
+     */
+    public function exportDetil(Request $request)
+    {
+        // Tangkap filter dari Request Form UI
+        $filters = [
+            'thn_setor' => $request->input('thn_setor', date('Y')),
+            'bln_setor' => $request->input('bln_setor'),
+            'fungsi'    => $request->input('fungsi', 'PENGAWASAN'), // Sesuaikan: PENGAWASAN, PEMERIKSAAN, atau PENAGIHAN
+            'jenis'     => $request->input('jenis'),
+            'nip_ar'    => $request->input('nip_ar'),
+        ];
+
+        $namaFile = 'Detil_Transaksi_' . $filters['fungsi'] . '_' . date('Ymd_His') . '.xlsx';
+
+        return Excel::download(new DetilTransaksiExport($filters), $namaFile);
+    }
 }

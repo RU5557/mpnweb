@@ -67,6 +67,18 @@ Route::get('/penerimaan/pkm-pemeriksaan', [PkmPemeriksaanController::class, 'ind
 // Route 5: PKM Penagihan
 Route::get('/penerimaan/pkm-penagihan', [PkmPenagihanController::class, 'index'])->name('penerimaan.pkmpenagihan');
 
+// Route Export PKM Pengawasan
+Route::get('/pkm-pengawasan/export-detil', [PkmPengawasanController::class, 'exportDetil'])
+    ->name('pkm.pengawasan.export-detil');
+
+// Route Export PKM Pemeriksaan
+Route::get('/pkm-pemeriksaan/export-detil', [PkmPemeriksaanController::class, 'exportDetil'])
+    ->name('pkm.pemeriksaan.export-detil');
+
+// Route Export PKM Penagihan
+Route::get('/pkm-penagihan/export-detil', [PkmPenagihanController::class, 'exportDetil'])
+    ->name('pkm.penagihan.export-detil');
+
 // Proteksi Panel Admin dengan Middleware admin.auth
 Route::prefix('admin')->middleware('admin.auth')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('index');
