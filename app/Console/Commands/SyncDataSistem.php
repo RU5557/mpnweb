@@ -52,16 +52,6 @@ class SyncDataSistem extends Command
                 $this->syncKlu();
                 $this->syncKdmap();
                 $this->syncPegawai();
-            }
-
-            // 2. Sinkronisasi Masterfile WP
-            if (in_array($target, ['all', 'master'])) {
-                $this->syncMasterfileWp();
-            }
-
-            // 3. Sinkronisasi Transaksi & Auto-Pipeline (Rebuild Summary Marts + Clear Cache)
-            if (in_array($target, ['all', 'tx'])) {
-                $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
 
                 $this->newLine();
                 $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
@@ -70,7 +60,34 @@ class SyncDataSistem extends Command
 
                 $this->newLine();
                 $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
-                
+                Artisan::call('app:populate-summary-mart-ppm');
+                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
+            }
+
+            // 2. Sinkronisasi Masterfile WP
+            if (in_array($target, ['all', 'master'])) {
+                $this->syncMasterfileWp();
+
+                $this->newLine();
+                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
+                Artisan::call('summary:rebuild');
+                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
+
+                $this->newLine();
+                $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
+                Artisan::call('app:populate-summary-mart-ppm');
+                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
+            }
+
+            // 3. Sinkronisasi Transaksi & Auto-Pipeline (Rebuild Summary Marts + Clear Cache)
+            if (in_array($target, ['all', 'tx', ])) {
+                $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
+
+                $this->newLine();
+                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
+                Artisan::call('summary:rebuild');
+                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
+
                 // Meneruskan parameter --tahun jika filter tahun diset
                 $ppmParams = [];
                 if (!empty($thnSetor)) {
