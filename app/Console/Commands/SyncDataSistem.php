@@ -23,107 +23,91 @@ class SyncDataSistem extends Command
 
     protected $description = 'ETL data dari mpninfo (legacy) ke mpnweb (operasional) dengan auto rebuild mart dan cache invalidation';
 
-    public function handle()
-    {
-        $target = $this->option('only');
-        $thnSetor = $this->option('thnsetor');
-        $blnSetor = $this->option('blnsetor');
+public function handle()
+{
+    $target = $this->option('only');
+    $thnSetor = $this->option('thnsetor');
+    $blnSetor = $this->option('blnsetor');
 
-        $this->info("====================================================");
-        $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
-        if ($thnSetor || $blnSetor) {
-            $infoPeriode = [];
-            if ($thnSetor) $infoPeriode[] = "Tahun: {$thnSetor}";
-            if ($blnSetor) $infoPeriode[] = "Bulan: {$blnSetor}";
-            $this->info("  FILTER PERIODE -> " . implode(', ', $infoPeriode));
-        }
-        $this->info("====================================================");
-        $startTime = microtime(true);
-
-        DB::disableQueryLog();
-
-        try {
-            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
-            DB::statement('SET UNIQUE_CHECKS = 0;');
-
-            // 1. Sinkronisasi Referensi
-            if (in_array($target, ['all', 'ref'])) {
-                $this->syncSeksi();
-                $this->syncKlu();
-                $this->syncKdmap();
-                $this->syncPegawai();
-
-                $this->newLine();
-                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
-                Artisan::call('summary:rebuild');
-                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
-
-                $this->newLine();
-                $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
-                Artisan::call('app:populate-summary-mart-ppm');
-                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
-            }
-
-            // 2. Sinkronisasi Masterfile WP
-            if (in_array($target, ['all', 'master'])) {
-                $this->syncMasterfileWp();
-
-                $this->newLine();
-                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
-                Artisan::call('summary:rebuild');
-                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
-
-                $this->newLine();
-                $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
-                Artisan::call('app:populate-summary-mart-ppm');
-                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
-            }
-
-            // 3. Sinkronisasi Transaksi & Auto-Pipeline (Rebuild Summary Marts + Clear Cache)
-            if (in_array($target, ['all', 'tx', ])) {
-                $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
-
-                $this->newLine();
-                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
-                Artisan::call('summary:rebuild');
-                $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
-
-                // Meneruskan parameter --tahun jika filter tahun diset
-                $ppmParams = [];
-                if (!empty($thnSetor)) {
-                    $ppmParams['--tahun'] = $thnSetor;
-                }
-                Artisan::call('app:populate-summary-mart-ppm', $ppmParams);
-                $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
-            }
-
-            // 4. Optimalisasi & Invalidation Cache Laravel (Terjadi pada SEMUA mode sync)
-            $this->newLine();
-            $this->comment('-> Membersihkan dan mengoptimalkan Cache Laravel...');
-            Cache::flush();
-            Artisan::call('cache:clear');
-            $this->info('   [OK] Cache aplikasi berhasil dibersihkan!');
-
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            DB::statement('SET UNIQUE_CHECKS = 1;');
-
-            $executionTime = round(microtime(true) - $startTime, 2);
-            $this->newLine();
-            $this->info("====================================================");
-            $this->info("  ETL SINKRONISASI SELESAI DALAM {$executionTime} DETIK!");
-            $this->info("====================================================");
-
-            return Command::SUCCESS;
-
-        } catch (Exception $e) {
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            DB::statement('SET UNIQUE_CHECKS = 1;');
-
-            $this->newLine();
-            $this->error("ETL ERROR DETECTED: " . $e->getMessage());
-            return Command::FAILURE;
-        }
+    $this->info("====================================================");
+    $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
+    if ($thnSetor || $blnSetor) {
+        $infoPeriode = [];
+        if ($thnSetor) $infoPeriode[] = "Tahun: {$thnSetor}";
+        if ($blnSetor) $infoPeriode[] = "Bulan: {$blnSetor}";
+        $this->info("  FILTER PERIODE -> " . implode(', ', $infoPeriode));
     }
+    $this->info("====================================================");
+    $startTime = microtime(true);
+
+    DB::disableQueryLog();
+
+    try {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+        DB::statement('SET UNIQUE_CHECKS = 0;');
+
+        // 1. Sinkronisasi Referensi
+        if (in_array($target, ['all', 'ref'])) {
+            $this->syncSeksi();
+            $this->syncKlu();
+            $this->syncKdmap();
+            $this->syncPegawai();
+        }
+
+        // 2. Sinkronisasi Masterfile WP
+        if (in_array($target, ['all', 'master'])) {
+            $this->syncMasterfileWp();
+        }
+
+        // 3. Sinkronisasi Transaksi
+        if (in_array($target, ['all', 'tx'])) {
+            $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
+        }
+
+        // ====================================================
+        // ALWAYS EXECUTE: Rekapitulasi Mart & Cache Invalidation
+        // (Berjalan 1X untuk opsi target APA PUN: all, ref, master, tx)
+        // ====================================================
+        $this->newLine();
+        $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
+        Artisan::call('summary:rebuild');
+        $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
+
+        $this->newLine();
+        $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
+        $ppmParams = [];
+        if (!empty($thnSetor)) {
+            $ppmParams['--tahun'] = $thnSetor;
+        }
+        Artisan::call('app:populate-summary-mart-ppm', $ppmParams);
+        $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
+
+        $this->newLine();
+        $this->comment('-> Membersihkan dan mengoptimalkan Cache Laravel...');
+        Cache::flush();
+        Artisan::call('cache:clear');
+        $this->info('   [OK] Cache aplikasi berhasil dibersihkan!');
+
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        DB::statement('SET UNIQUE_CHECKS = 1;');
+
+        $executionTime = round(microtime(true) - $startTime, 2);
+        $this->newLine();
+        $this->info("====================================================");
+        $this->info("  ETL SINKRONISASI SELESAI DALAM {$executionTime} DETIK!");
+        $this->info("====================================================");
+
+        return Command::SUCCESS;
+
+    } catch (Exception $e) {
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        DB::statement('SET UNIQUE_CHECKS = 1;');
+
+        $this->newLine();
+        $this->error("ETL ERROR DETECTED: " . $e->getMessage());
+        return Command::FAILURE;
+    }
+}
 
     private function syncSeksi()
     {
