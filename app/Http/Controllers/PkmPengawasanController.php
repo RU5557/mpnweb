@@ -90,19 +90,91 @@ public function index(Request $request)
 /**
      * Handle Export Excel Detil Transaksi
      */
-    public function exportDetil(Request $request)
-    {
-        // Tangkap filter dari Request Form UI
-        $filters = [
-            'thn_setor' => $request->input('thn_setor', date('Y')),
-            'bln_setor' => $request->input('bln_setor'),
-            'fungsi'    => $request->input('fungsi', 'PENGAWASAN'), // Sesuaikan: PENGAWASAN, PEMERIKSAAN, atau PENAGIHAN
-            'jenis'     => $request->input('jenis'),
-            'nip_ar'    => $request->input('nip_ar'),
-        ];
+public function exportDetil(Request $request)
+{
+    $bulan = (int) $request->input('bulan', date('m'));
+    $tahun = (int) $request->input('tahun', date('Y'));
+    $seksiFilter = $request->input('seksi', '');
 
-        $namaFile = 'Detil_Transaksi_' . $filters['fungsi'] . '_' . date('Ymd_His') . '.xlsx';
+    // Subquery pegawai disesuaikan dengan method index()
+    $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
 
-        return Excel::download(new DetilTransaksiExport($filters), $namaFile);
-    }
+    $query = DB::table('detil_transaksi_wp as dt')
+        ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+        ->leftJoinSub($subPegawai, 'p', function ($join) {
+            $join->on('mw.nip_ar', '=', 'p.nip');
+        })
+        ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
+        ->select(
+            'dt.npwp15',
+            // Gunakan COALESCE untuk mengantisipasi jika nama WP null di masterfile
+            DB::raw("COALESCE(mw.nama, '-') as nama_wp"),
+            'dt.kd_map',
+            'dt.kd_bayar',
+            'dt.jml_setor',
+            'dt.thn_setor',
+            'dt.bln_setor',
+            'dt.fungsi',
+            DB::raw("COALESCE(mw.nip_ar, 'Unassign') as nip_ar"),
+            DB::raw("COALESCE(p.nama, 'Unassign') as nama_ar"),
+            DB::raw("COALESCE(s.nama, 'Unassign') as nama_seksi")
+        )
+        ->whereIn('dt.fungsi', ['Akt Pengawasan', 'Lainnya', 'WRA Pengawasan', 'akt pengawasan', 'lainnya', 'wra pengawasan'])
+        ->where('dt.thn_setor', $tahun)
+        ->whereBetween('dt.bln_setor', [1, $bulan])
+        ->when($seksiFilter, function ($q, $seksi) {
+            if ($seksi === 'Unassign') {
+                return $q->whereNull('s.nama');
+            }
+            return $q->where('s.nama', $seksi);
+        })
+        ->orderBy('s.nama', 'asc')
+        ->orderBy('p.nama', 'asc');
+
+    $data = $query->get();
+
+    $filename = "Export_Detil_PKM_Pengawasan_{$tahun}_{$bulan}.csv";
+
+    $headers = [
+        "Content-type"        => "text/csv; charset=UTF-8",
+        "Content-Disposition" => "attachment; filename={$filename}",
+        "Pragma"              => "no-cache",
+        "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+        "Expires"             => "0"
+    ];
+
+    $callback = function () use ($data) {
+        $file = fopen('php://output', 'w');
+        
+        // Tambahkan BOM UTF-8 agar karakter/angka terbaca rapi di Microsoft Excel
+        fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Header Kolom CSV
+        fputcsv($file, [
+            'NO', 'NPWP', 'NAMA WP', 'SEKSI', 'NAMA AR', 
+            'FUNGSI', 'KD MAP', 'KD BAYAR', 'BULAN', 'TAHUN', 'JUMLAH SETOR'
+        ]);
+
+        // Isi Data Transaksi
+        foreach ($data as $index => $row) {
+            fputcsv($file, [
+                $index + 1,
+                "'{$row->npwp15}", // Menambahkan petik (') agar NPWP tidak terformat ilmiah (E+) di Excel
+                $row->nama_wp,
+                $row->nama_seksi,
+                $row->nama_ar,
+                $row->fungsi,
+                $row->kd_map,
+                $row->kd_bayar,
+                $row->bln_setor,
+                $row->thn_setor,
+                $row->jml_setor
+            ]);
+        }
+
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
 }
