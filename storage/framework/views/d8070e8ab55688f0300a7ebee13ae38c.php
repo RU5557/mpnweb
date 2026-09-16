@@ -45,6 +45,12 @@
             <i class="fa-solid fa-rotate-left"></i>
         </a>
     <?php endif; ?>
+    <!-- Tombol Export Detil Transaksi (Tailwind Style) -->
+<a href="<?php echo e(route('dashboard.export-detil', request()->all())); ?>" 
+   class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
+    <i class="fa-solid fa-file-excel text-xs"></i>
+    <span>Export CSV</span>
+</a>
 </form>
 </div>
 
