@@ -159,7 +159,7 @@ public function exportDetil(Request $request)
         foreach ($data as $index => $row) {
             fputcsv($file, [
                 $index + 1,
-                "'{$row->npwp15}", // Menambahkan petik (') agar NPWP tidak terformat ilmiah (E+) di Excel
+                $row->npwp15,
                 $row->nama_wp,
                 $row->nama_seksi,
                 $row->nama_ar,

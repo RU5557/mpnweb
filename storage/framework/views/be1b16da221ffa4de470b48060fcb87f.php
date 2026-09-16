@@ -39,7 +39,7 @@
 
         <!-- Select Seksi -->
         <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <option value="">-- Semua Seksi --</option>
+            <option value="">Seksi Pengawasan</option>
             <?php $__currentLoopData = $daftarSeksi; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $seksi): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <option value="<?php echo e($seksi); ?>" <?php echo e(request('seksi') == $seksi ? 'selected' : ''); ?>><?php echo e($seksi); ?></option>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -83,7 +83,7 @@
 <a href="<?php echo e(route('pkm.pengawasan.export-detil', request()->all())); ?>" 
    class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
     <i class="fa-solid fa-file-excel text-xs"></i>
-    <span>Export Excel</span>
+    <span>Export CSV</span>
 </a>
     </form>
 </div>
