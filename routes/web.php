@@ -82,9 +82,3 @@ Route::get('/pkm-penagihan/export-detil', [PkmPenagihanController::class, 'expor
 Route::get('/dashboard/export-detil', [DashboardController::class, 'exportDetil'])->name('dashboard.export-detil');
 Route::get('/ppm/export-detil', [PpmController::class, 'exportDetil'])->name('ppm.export-detil');
 
-// Proteksi Panel Admin dengan Middleware admin.auth
-Route::prefix('admin')->middleware('admin.auth')->name('admin.')->group(function () {
-    Route::get('/', [AdminController::class, 'index'])->name('index');
-    Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
-    Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
-});
