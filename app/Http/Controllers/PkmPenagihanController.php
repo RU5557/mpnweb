@@ -2,167 +2,223 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PkmPenagihanController extends Controller
 {
     public function index(Request $request)
     {
-        $bulan = (int) $request->input('bulan', date('m'));
-        $tahun = (int) $request->input('tahun', date('Y'));
-        $dspcFilter = $request->input('dspc_filter', '');
+        [$tahun, $bulan] = $this->resolvePeriod($request);
+        $dspcFilter = $this->resolveDspcFilter($request);
+        $sortColumn = (string) $request->input('sort', 'nip_jspn');
+        $sortDirection = (string) $request->input('direction', 'asc');
 
-        // Parameter Sorting (Default: nip_jspn ASC)
-        $sortColumn = $request->input('sort', 'nip_jspn');
-        $sortDirection = $request->input('direction', 'asc');
-
-        // Mapping kolom yang diizinkan untuk di-sort
         $allowedSorts = [
-            'nip_jspn'      => DB::raw("COALESCE(mw.nip_js, 'Unassign')"),
-            'nama_jspn'     => DB::raw("COALESCE(p.nama, 'Unassign')"),
-            'flag_skp'      => DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')"),
+            'nip_jspn' => DB::raw("COALESCE(mw.nip_js, 'Unassign')"),
+            'nama_jspn' => DB::raw("COALESCE(p.nama, 'Unassign')"),
+            'flag_skp' => DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')"),
             'akt_penagihan' => 'akt_penagihan',
         ];
 
         $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(mw.nip_js, 'Unassign')");
         $sortDir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+        $sortColumn = array_key_exists($sortColumn, $allowedSorts) ? $sortColumn : 'nip_jspn';
+        $sortDirection = $sortDir;
 
-        // Cache Key Unik berdasarkan parameter request
-        $cacheKey = "pkm_penagihan_{$tahun}_{$bulan}_{$dspcFilter}_{$sortColumn}_{$sortDirection}";
+        $cacheKey = "pkm_penagihan_{$tahun}_{$bulan}_{$dspcFilter}_{$sortColumn}_{$sortDir}";
 
-        // Simpan ke Cache selama 10 Menit (600 detik)
-        $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $dspcFilter, $sortBy, $sortDir) {
-            
-            $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
+        try {
+            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $dspcFilter, $sortBy, $sortDir) {
+                $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
 
-            return DB::table('detil_transaksi_wp as dt')
-                ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-                ->leftJoinSub($subPegawai, 'p', function ($join) {
-                    $join->on('mw.nip_js', '=', 'p.nip');
-                })
-                ->select(
-                    DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
-                    DB::raw("COALESCE(p.nama, 'Unassign') as nama_jspn"),
-                    DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC') as flag_skp"),
-                    DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt penagihan' THEN dt.jml_setor ELSE 0 END) as akt_penagihan")
-                )
-                ->where(DB::raw('LOWER(dt.fungsi)'), 'akt penagihan')
-                ->where('dt.thn_setor', $tahun)
-                ->whereBetween('dt.bln_setor', [1, $bulan])
-                ->when($dspcFilter, function ($query, $flag) {
-                    if ($flag === 'DSPC') {
-                        return $query->where(DB::raw("UPPER(TRIM(dt.flag_skp))"), 'DSPC');
-                    } elseif ($flag === 'NON-DSPC') {
+                return DB::table('detil_transaksi_wp as dt')
+                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+                    ->leftJoinSub($subPegawai, 'p', function ($join) {
+                        $join->on('mw.nip_js', '=', 'p.nip');
+                    })
+                    ->select(
+                        DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
+                        DB::raw("COALESCE(p.nama, 'Unassign') as nama_jspn"),
+                        DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC') as flag_skp"),
+                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt penagihan' THEN dt.jml_setor ELSE 0 END) as akt_penagihan")
+                    )
+                    ->whereRaw('LOWER(dt.fungsi) = ?', ['akt penagihan'])
+                    ->where('dt.thn_setor', $tahun)
+                    ->whereBetween('dt.bln_setor', [1, $bulan])
+                    ->when($dspcFilter !== '', function ($query) use ($dspcFilter) {
+                        if ($dspcFilter === 'DSPC') {
+                            return $query->whereRaw('UPPER(TRIM(dt.flag_skp)) = ?', ['DSPC']);
+                        }
+
                         return $query->where(function ($q) {
-                            $q->where(DB::raw("UPPER(TRIM(dt.flag_skp))"), '!=', 'DSPC')
-                              ->orWhereNull('dt.flag_skp');
+                            $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
+                                ->orWhereNull('dt.flag_skp');
                         });
-                    }
-                })
-                ->groupBy(
-                    DB::raw("COALESCE(mw.nip_js, 'Unassign')"),
-                    DB::raw("COALESCE(p.nama, 'Unassign')"),
-                    DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')")
-                )
-                ->orderBy($sortBy, $sortDir)
-                ->get();
-        });
+                    })
+                    ->groupBy(
+                        DB::raw("COALESCE(mw.nip_js, 'Unassign')"),
+                        DB::raw("COALESCE(p.nama, 'Unassign')"),
+                        DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')")
+                    )
+                    ->orderBy($sortBy, $sortDir)
+                    ->get();
+            });
+        } catch (QueryException $e) {
+            Log::error('Gagal memuat summary PKM Penagihan.', [
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'message' => $e->getMessage(),
+            ]);
+
+            abort(503, 'Data PKM Penagihan sedang tidak tersedia. Silakan coba lagi.');
+        }
 
         return view('penerimaan.pkmpenagihan', compact('pkmData', 'sortColumn', 'sortDirection'));
     }
 
     /**
-     * Handle Export CSV/Excel Detil Transaksi Penagihan
+     * Handle Export CSV Detil Transaksi Penagihan (Streaming & Hemat Memory)
      */
     public function exportDetil(Request $request)
     {
-        $bulan = (int) $request->input('bulan', date('m'));
-        $tahun = (int) $request->input('tahun', date('Y'));
-        $dspcFilter = $request->input('dspc_filter', '');
-
-        $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
-
-        $query = DB::table('detil_transaksi_wp as dt')
-            ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-            ->leftJoinSub($subPegawai, 'p', function ($join) {
-                $join->on('mw.nip_js', '=', 'p.nip');
-            })
-            ->select(
-                'dt.npwp15',
-                DB::raw("COALESCE(mw.nama, '-') as nama_wp"),
-                DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
-                DB::raw("COALESCE(p.nama, 'Unassign') as nama_jspn"),
-                DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC') as flag_skp"),
-                'dt.kd_map',
-                'dt.kd_bayar',
-                'dt.jml_setor',
-                'dt.bln_setor',
-                'dt.thn_setor',
-                'dt.fungsi'
-            )
-            ->where(DB::raw('LOWER(dt.fungsi)'), 'akt penagihan')
-            ->where('dt.thn_setor', $tahun)
-            ->whereBetween('dt.bln_setor', [1, $bulan])
-            ->when($dspcFilter, function ($query, $flag) {
-                if ($flag === 'DSPC') {
-                    return $query->where(DB::raw("UPPER(TRIM(dt.flag_skp))"), 'DSPC');
-                } elseif ($flag === 'NON-DSPC') {
-                    return $query->where(function ($q) {
-                        $q->where(DB::raw("UPPER(TRIM(dt.flag_skp))"), '!=', 'DSPC')
-                          ->orWhereNull('dt.flag_skp');
-                    });
-                }
-            })
-            ->orderBy('p.nama', 'asc')
-            ->orderBy('dt.bln_setor', 'asc');
-
-        $data = $query->get();
+        [$tahun, $bulan] = $this->resolvePeriod($request);
+        $dspcFilter = $this->resolveDspcFilter($request);
 
         $filename = "Export_Detil_PKM_Penagihan_{$tahun}_{$bulan}.csv";
 
-        $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename={$filename}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        return response()->stream(function () use ($tahun, $bulan, $dspcFilter) {
+            set_time_limit(0);
 
-        $callback = function () use ($data) {
             $file = fopen('php://output', 'w');
-            
-            // BOM UTF-8 agar angka/NPWP tidak corrupt di Excel
             fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Header Kolom CSV Detil Penagihan
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'NIP JSPN', 'NAMA JSPN', 'FLAG SKP',
-                'KD MAP', 'KD BAYAR', 'FUNGSI', 'BULAN', 'TAHUN', 'JUMLAH SETOR'
+                'KD MAP', 'KD BAYAR', 'FUNGSI', 'BULAN', 'TAHUN', 'JUMLAH SETOR',
             ]);
 
-            // Data Transaksi
-            foreach ($data as $index => $row) {
-                fputcsv($file, [
-                    $index + 1,
-                    $row->npwp15,
-                    $row->nama_wp,
-                    $row->nip_jspn,
-                    $row->nama_jspn,
-                    $row->flag_skp,
-                    $row->kd_map,
-                    $row->kd_bayar,
-                    $row->fungsi,
-                    $row->bln_setor,
-                    $row->thn_setor,
-                    $row->jml_setor
+            try {
+                $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
+
+                $query = DB::table('detil_transaksi_wp as dt')
+                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+                    ->leftJoinSub($subPegawai, 'p', function ($join) {
+                        $join->on('mw.nip_js', '=', 'p.nip');
+                    })
+                    ->select(
+                        'dt.npwp15',
+                        DB::raw("COALESCE(mw.nama, '-') as nama_wp"),
+                        DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
+                        DB::raw("COALESCE(p.nama, 'Unassign') as nama_jspn"),
+                        DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC') as flag_skp"),
+                        'dt.kd_map',
+                        'dt.kd_bayar',
+                        'dt.jml_setor',
+                        'dt.bln_setor',
+                        'dt.thn_setor',
+                        'dt.fungsi'
+                    )
+                    ->whereRaw('LOWER(dt.fungsi) = ?', ['akt penagihan'])
+                    ->where('dt.thn_setor', $tahun)
+                    ->whereBetween('dt.bln_setor', [1, $bulan])
+                    ->when($dspcFilter !== '', function ($query) use ($dspcFilter) {
+                        if ($dspcFilter === 'DSPC') {
+                            return $query->whereRaw('UPPER(TRIM(dt.flag_skp)) = ?', ['DSPC']);
+                        }
+
+                        return $query->where(function ($q) {
+                            $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
+                                ->orWhereNull('dt.flag_skp');
+                        });
+                    })
+                    ->orderBy('p.nama', 'asc')
+                    ->orderBy('dt.bln_setor', 'asc');
+
+                $index = 1;
+                foreach ($query->cursor() as $row) {
+                    fputcsv($file, [
+                        $index++,
+                        isset($row->npwp15) ? "'{$row->npwp15}" : '',
+                        $row->nama_wp,
+                        $row->nip_jspn,
+                        $row->nama_jspn,
+                        $row->flag_skp,
+                        $row->kd_map,
+                        $row->kd_bayar,
+                        $row->fungsi,
+                        $row->bln_setor,
+                        $row->thn_setor,
+                        $row->jml_setor,
+                    ]);
+
+                    if ($index % 1000 === 0) {
+                        $this->flushOutputBuffer();
+                    }
+                }
+            } catch (QueryException $e) {
+                Log::error('Gagal mengekspor detil PKM Penagihan.', [
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
+                    'message' => $e->getMessage(),
                 ]);
+
+                fputcsv($file, ['ERROR', 'Gagal mengambil data dari database']);
             }
 
             fclose($file);
-        };
+        }, 200, $this->csvDownloadHeaders($filename));
+    }
 
-        return response()->stream($callback, 200, $headers);
+    private function resolveDspcFilter(Request $request): string
+    {
+        $filter = (string) $request->input('dspc_filter', '');
+
+        return in_array($filter, ['DSPC', 'NON-DSPC'], true) ? $filter : '';
+    }
+
+    /**
+     * @return array{0: int, 1: int}
+     */
+    private function resolvePeriod(Request $request): array
+    {
+        $tahun = (int) $request->input('tahun', date('Y'));
+        $bulan = (int) $request->input('bulan', date('n'));
+
+        if ($tahun < 2000 || $tahun > 2100) {
+            $tahun = (int) date('Y');
+        }
+
+        if ($bulan < 1 || $bulan > 12) {
+            $bulan = (int) date('n');
+        }
+
+        return [$tahun, $bulan];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function csvDownloadHeaders(string $filename): array
+    {
+        return [
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+    }
+
+    private function flushOutputBuffer(): void
+    {
+        if (ob_get_level() > 0) {
+            ob_flush();
+        }
+
+        flush();
     }
 }
