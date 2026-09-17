@@ -17,10 +17,11 @@ class RebuildSummaryMart extends Command
         $startTime = microtime(true);
 
         try {
-            DB::statement('TRUNCATE TABLE mpnweb.summary_mart_penerimaan;');
+            // Dihapus prefix schema 'mpnweb.' agar dinamis sesuai .env
+            DB::statement('TRUNCATE TABLE summary_mart_penerimaan;');
 
             DB::statement("
-                INSERT INTO mpnweb.summary_mart_penerimaan (
+                INSERT INTO summary_mart_penerimaan (
                     thn_setor, bln_setor, jenis, fungsi, total_setor, total_transaksi, created_at, updated_at
                 )
                 SELECT 
@@ -32,7 +33,7 @@ class RebuildSummaryMart extends Command
                     COUNT(*) AS total_transaksi,
                     NOW(),
                     NOW()
-                FROM mpnweb.detil_transaksi_wp
+                FROM detil_transaksi_wp
                 GROUP BY thn_setor, bln_setor, jenis, fungsi
             ");
 
