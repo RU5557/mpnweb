@@ -1,0 +1,9 @@
+# Context
+- Project: Laravel 11/12 (PHP 8.2+) dengan database MySQL.
+- Bahasa komunikasi: Bahasa Indonesia (santai, teknis, dan jelas).
+
+# Performance & Architecture Rules
+- Untuk query dataset besar (seperti ekspor CSV), SELALU gunakan streaming db `cursor()` / lazy loading. DILARANG menggunakan `Cache::remember()` pada data ekspor yang besar.
+- Untuk query dashboard/summary, manfaatkan Caching (`Cache::remember`) untuk performa tinggi.
+- Selalu perhatikan pencegahan SQL Injection (gunakan binding/casting tipe data).
+- Kode harus rapi, mengikuti standar PSR-12, dan hemat konsumsi memori (RAM).
