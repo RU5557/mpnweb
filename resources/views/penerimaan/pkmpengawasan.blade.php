@@ -39,7 +39,7 @@
 
         <!-- Select Seksi -->
         <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <option value="">Seksi Pengawasan</option>
+            <option value="">-- Semua Seksi --</option>
             @foreach($daftarSeksi as $seksi)
                 <option value="{{ $seksi }}" {{ request('seksi') == $seksi ? 'selected' : '' }}>{{ $seksi }}</option>
             @endforeach

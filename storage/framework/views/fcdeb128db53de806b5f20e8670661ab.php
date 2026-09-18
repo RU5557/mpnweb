@@ -53,6 +53,46 @@
                     <span x-show="sidebarOpen || isPinned" class="truncate">Dashboard</span>
                 </a>
 
+<!-- Nav Link Penjagaan (Dropdown) -->
+<div x-data="{ open: <?php echo e(request()->routeIs('penerimaan.penjagaan.*') ? 'true' : 'false'); ?> }" class="space-y-1">
+    <!-- Tombol Induk / Header Dropdown -->
+    <button @click="open = !open" 
+            :class="request()->routeIs('penerimaan.penjagaan.*') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors">
+        <div class="flex items-center gap-3.5">
+            <i class="fa-solid fa-chart-line text-[15px] w-6 text-center shrink-0"></i>
+            <span x-show="sidebarOpen || isPinned" class="truncate">Penjagaan</span>
+        </div>
+        <i x-show="sidebarOpen || isPinned" class="fa-solid text-xs transition-transform duration-200" :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+    </button>
+
+    <!-- Submenu Dropdown -->
+    <div x-show="open && (sidebarOpen || isPinned)" 
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="transform opacity-0 scale-95"
+         x-transition:enter-end="transform opacity-100 scale-100"
+         class="pl-9 space-y-1">
+        
+        <!-- 1. Penjagaan Bulanan -->
+        <a href="<?php echo e(route('penerimaan.penjagaan.bulanan')); ?>" 
+           class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors <?php echo e(request()->routeIs('penerimaan.penjagaan.bulanan') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'); ?>">
+            Bulanan
+        </a>
+
+        <!-- 2. Penjagaan Harian -->
+        <a href="<?php echo e(route('penerimaan.penjagaan.harian')); ?>" 
+           class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors <?php echo e(request()->routeIs('penerimaan.penjagaan.harian') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'); ?>">
+            Harian
+        </a>
+
+        <!-- 3. Penjagaan vs Bulan Lalu -->
+        <a href="<?php echo e(route('penerimaan.penjagaan.vsbulanlalu')); ?>" 
+           class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors <?php echo e(request()->routeIs('penerimaan.penjagaan.vsbulanlalu') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'); ?>">
+            Vs Bulan Lalu
+        </a>
+    </div>
+</div>
+
                 <!-- 2. PPM -->
                 <a href="<?php echo e(route('penerimaan.ppm')); ?>" 
                    class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors <?php echo e(request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300'); ?>">
@@ -127,19 +167,21 @@
             </div>
         </header>
 
-        <!-- MAIN CONTENT CONTAINER -->
-        <main class="p-6 flex-grow bg-slate-50">
-            <?php if(session('success')): ?>
-                <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3 rounded-xl mb-5 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-2 font-medium">
-                        <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
-                        <span><?php echo e(session('success')); ?></span>
-                    </div>
+<!-- MAIN CONTENT CONTAINER (Sudah diberi pembatas lebar max-w-7xl agar grafik tidak melar) -->
+<main class="p-6 flex-grow bg-slate-50">
+    <div class="max-w-7xl mx-auto w-full">
+        <?php if(session('success')): ?>
+            <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3 rounded-xl mb-5 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2 font-medium">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+                    <span><?php echo e(session('success')); ?></span>
                 </div>
-            <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
-            <?php echo $__env->yieldContent('content'); ?>
-        </main>
+        <?php echo $__env->yieldContent('content'); ?>
+    </div>
+</main>
     </div>
 
 </body>

@@ -80,12 +80,6 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Pesan Tambahan (Opsional)</label>
-                    <input type="text" name="pesan_tambahan" value="{{ old('pesan_tambahan', $rollingText->pesan_tambahan ?? '') }}" placeholder="Contoh: Tetap Semangat Menjaga Penerimaan Negara!"
-                        class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
-                </div>
-
                 <div class="flex justify-end pt-2">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
                         <i class="fa-solid fa-floppy-disk"></i> Simpan Info Harian

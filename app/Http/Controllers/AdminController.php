@@ -47,11 +47,10 @@ class AdminController extends Controller
     public function updateRollingText(Request $request)
     {
         $request->validate([
-            'tanggal' => 'required|date',
-            'nko' => 'required|numeric',
+            'tanggal'          => 'required|date',
+            'nko'              => 'required|numeric',
             'ranking_nasional' => 'required|numeric',
-            'ranking_kanwil' => 'required|numeric',
-            'pesan_tambahan' => 'nullable|string',
+            'ranking_kanwil'   => 'required|numeric',
         ]);
 
         RollingText::updateOrCreate(
