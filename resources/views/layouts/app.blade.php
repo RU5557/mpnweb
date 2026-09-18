@@ -120,6 +120,13 @@
                     <i class="fa-solid fa-gavel text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">PKM Penagihan</span>
                 </a>
+
+<!-- Nav Link Pencarian -->
+<a href="{{ route('wp.search') }}" 
+   class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('wp.search') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+    <i class="fa-solid fa-magnifying-glass text-[15px] w-6 text-center shrink-0"></i>
+    <span x-show="sidebarOpen || isPinned" class="truncate">Pencarian WP</span>
+</a>
             </nav>
         </div>
 
