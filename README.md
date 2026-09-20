@@ -86,8 +86,8 @@ It enables leadership to conduct real-time monitoring and make precise, data-dri
 
 1. **Clone repository:**
    ```bash
-   git clone https://github.com/username/repository-name.git
-   cd repository-name
+   git clone https://github.com/RU5557/mpnweb.git
+   cd mpnweb
    ```
 
 2. **Install Dependencies:**

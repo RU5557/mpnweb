@@ -1,0 +1,37 @@
+```text
+====================================================================
+ SYSTEM REQUIREMENTS / PRASYARAT SISTEM
+====================================================================
+
+[EN] Language & Runtime Dependencies
+[ID] Bahasa & Runtime yang Dibutuhkan
+--------------------------------------------------------------------
+- PHP        : >= 8.1.0
+- Composer   : >= 2.0.0
+
+[EN] Required PHP Extensions
+[ID] Ekstensi PHP yang Wajib Aktif
+--------------------------------------------------------------------
+- ext-bcmath
+- ext-ctype
+- ext-fileinfo
+- ext-json
+- ext-mbstring
+- ext-openssl
+- ext-pdo
+- ext-pdo_mysql
+- ext-tokenizer
+- ext-xml
+
+[EN] Database Engine
+[ID] Mesin Database
+--------------------------------------------------------------------
+- MySQL      : >= 5.7  OR
+- MariaDB    : >= 10.3
+
+[EN] Frontend Assets (Loaded via CDN / Build)
+[ID] Dependensi Frontend (Di-load via CDN / Build)
+--------------------------------------------------------------------
+- Alpine.js   : >= 3.x
+- Tailwind CSS: >= 3.x
+- FontAwesome : >= 6.x
