@@ -150,7 +150,7 @@
                 <div class="truncate text-[13px] md:text-sm">
                     @if(isset($rollingText) && $rollingText)
                         <span class="text-slate-500">
-                            Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->translatedFormat('d M Y') }} |
+                            Update: {{ \Carbon\Carbon::parse($rollingText->tanggal)->format('d-m-Y') }} |
                         </span> 
                         NKO: <strong class="text-slate-900">{{ number_format($rollingText->nko, 2) }}%</strong> | 
                         Rank Nasional: <strong class="text-slate-900">#{{ $rollingText->ranking_nasional }}</strong> | 

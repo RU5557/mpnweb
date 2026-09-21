@@ -24,9 +24,9 @@ class DashboardController extends Controller
                 return Target::where('tahun', $thnIni)->first();
             });
 
-            $rollingText = Cache::remember('dashboard_rolling_text', 600, function () {
-                return RollingText::latest('tanggal')->first();
-            });
+            // $rollingText = Cache::remember('dashboard_rolling_text', 600, function () {
+            //     return RollingText::latest('tanggal')->first();
+            // });
 
             $penerimaanData = Cache::remember($cacheKey, 600, function () use ($thnIni, $thnLalu, $blnIni) {
                 return DB::table('summary_mart_penerimaan')
@@ -102,7 +102,7 @@ class DashboardController extends Controller
             'thnIni',
             'blnIni',
             'target',
-            'rollingText',
+            // 'rollingText',
             'capaianKantor',
             'penerimaanSaatIni',
             'penerimaanBlnLalu',

@@ -13,9 +13,9 @@ class AdminController extends Controller
         $tahunSekarang = date('Y');
         
         $target = Target::where('tahun', $tahunSekarang)->first();
-        $rollingText = RollingText::latest('tanggal')->first();
+        // $rollingText = RollingText::latest('id')->first();
 
-        return view('admin.index', compact('target', 'rollingText', 'tahunSekarang'));
+        return view('admin.index', compact('target', 'tahunSekarang'));
     }
 
     public function updateTarget(Request $request)
@@ -44,20 +44,23 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Target tahunan berhasil diperbarui!');
     }
 
-    public function updateRollingText(Request $request)
-    {
-        $request->validate([
-            'tanggal'          => 'required|date',
-            'nko'              => 'required|numeric',
-            'ranking_nasional' => 'required|numeric',
-            'ranking_kanwil'   => 'required|numeric',
-        ]);
+public function updateRollingText(Request $request)
+{
+    $request->validate([
+        'tanggal' => 'required|date',
+        'nko' => 'required|numeric',
+        'ranking_nasional' => 'required|integer',
+        'ranking_kanwil' => 'required|integer',
+    ]);
 
-        RollingText::updateOrCreate(
-            ['tanggal' => $request->tanggal],
-            $request->except('_token')
-        );
+// Gunakan create agar membuat ID baru setiap disimpan
+    RollingText::create([
+        'tanggal'          => $request->tanggal,
+        'nko'              => $request->nko,
+        'ranking_nasional' => $request->ranking_nasional,
+        'ranking_kanwil'   => $request->ranking_kanwil,
+    ]);
 
-        return redirect()->back()->with('success', 'Rolling text harian berhasil diperbarui!');
-    }
+    return redirect()->back()->with('success', 'Rolling text berhasil diperbarui!');
+}
 }

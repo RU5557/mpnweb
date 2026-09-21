@@ -21,13 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
 public function boot(): void
     {
-        // Bagikan data ke seluruh view TANPA me-trigger event listener berulang kali
-        try {
-            $rollingText = RollingText::latest('tanggal')->first();
-            View::share('rollingText', $rollingText);
-        } catch (\Exception $e) {
-            // Menghindari error saat migrasi database belum berjalan
-            View::share('rollingText', null);
-        }
+        // Bagikan variabel $rollingText ke SELURUH view di aplikasi
+        View::composer('*', function ($view) {
+            $rollingText = RollingText::latest('id')->first();
+            $view->with('rollingText', $rollingText);
+        });
     }
 }
