@@ -33,18 +33,20 @@ Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
     Route::get('/pkm-pemeriksaan', [PkmPemeriksaanController::class, 'index'])->name('pkmpemeriksaan');
     Route::get('/pkm-penagihan', [PkmPenagihanController::class, 'index'])->name('pkmpenagihan');
 
+    // Grouping Route Penjagaan
     Route::prefix('penjagaan')->name('penjagaan.')->group(function () {
         Route::get('/bulanan', [PenjagaanController::class, 'bulanan'])->name('bulanan');
-        Route::get('/bulanan/export-detil', [PenjagaanController::class, 'exportBulananCsv'])->name('bulanan.export-detil'); // Route baru
+        Route::get('/bulanan/export-detil', [PenjagaanController::class, 'exportBulananCsv'])->name('bulanan.export-detil');
+        
         Route::get('/harian', [PenjagaanController::class, 'harian'])->name('harian');
         Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export');
+        
         Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vsbulanlalu');
+        Route::get('/vs-bulan-lalu/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('vsbulanlalu.export');
     });
 });
-Route::get('/penerimaan/penjagaan/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('penerimaan.penjagaan.export-detil');
 
-
-// Route Export Data Detil
+// Route Export Data Detil Modul Lain
 Route::get('/dashboard/export-detil', [DashboardController::class, 'exportDetil'])->name('dashboard.export-detil');
 Route::get('/ppm/export-detil', [PpmController::class, 'exportDetil'])->name('ppm.export-detil');
 Route::get('/pkm-pengawasan/export-detil', [PkmPengawasanController::class, 'exportDetil'])->name('pkm.pengawasan.export-detil');
@@ -56,18 +58,13 @@ Route::get('/search-wp', [WpSearchController::class, 'search'])->name('wp.search
 
 /*
 |--------------------------------------------------------------------------
-| Autentikasi Admin
+| Autentikasi Admin & Panel Admin
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-/*
-|--------------------------------------------------------------------------
-| Panel Admin (Dibatasi oleh AdminAuthMiddleware)
-|--------------------------------------------------------------------------
-*/
 Route::prefix('admin')->name('admin.')->middleware(AdminAuthMiddleware::class)->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
