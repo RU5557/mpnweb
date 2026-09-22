@@ -93,12 +93,12 @@
     </div>
 </div>
 
-                <!-- 2. PPM -->
+                <!-- 2. PPM
                 <a href="{{ route('penerimaan.ppm') }}" 
                    class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-colors {{ request()->routeIs('penerimaan.ppm') ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
                     <i class="fa-solid fa-wallet text-[15px] w-6 text-center shrink-0"></i>
                     <span x-show="sidebarOpen || isPinned" class="truncate">Penerimaan PPM</span>
-                </a>
+                </a> -->
 
                 <!-- 3. PKM Pengawasan -->
                 <a href="{{ route('penerimaan.pkmpengawasan') }}" 
