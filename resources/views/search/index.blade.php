@@ -16,11 +16,11 @@
 
     <!-- ==================== FORM PENCARIAN ==================== -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <form action="{{ route('wp.search') }}" 
-              method="GET" 
-              @submit="loading = true" 
-              class="space-y-4">
+        <form id="searchForm" action="{{ route('wp.search') }}" method="GET" @submit="loading = true" class="space-y-4">
             
+            <!-- Flag Penanda Bahwa Form Telah Disubmit -->
+            <input type="hidden" name="has_search" value="1">
+
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                 
                 <!-- Selector Target Tabel -->
@@ -28,9 +28,10 @@
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Target Tabel</label>
                     <select name="target_table" 
                             x-model="targetTable"
+                            @change="$nextTick(() => $el.form.submit())"
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="masterfile">Masterfile WP</option>
-                        <option value="detil_transaksi">Detil DRM</option>
+                        <option value="masterfile" {{ $targetTable === 'masterfile' ? 'selected' : '' }}>Masterfile WP</option>
+                        <option value="detil_transaksi" {{ $targetTable === 'detil_transaksi' ? 'selected' : '' }}>Detil DRM</option>
                     </select>
                 </div>
 
@@ -68,68 +69,172 @@
                  x-transition:enter-end="opacity-100 translate-y-0"
                  class="pt-3 border-t border-slate-100">
                  
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                     
-                    <!-- Filter Tahun -->
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Tahun Setor</label>
-                        <select name="thn_setor" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">-- Semua Tahun --</option>
-                            @for($y = date('Y'); $y >= 2020; $y--)
-                                <option value="{{ $y }}" {{ ($thnSetor ?? '') == $y ? 'selected' : '' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
-                    </div>
-
-                    <!-- Filter Bulan -->
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Bulan Setor</label>
-                        <select name="bln_setor" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">-- Semua Bulan --</option>
-                            @php
-                                $bulan = [
-                                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                                    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                                    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-                                ];
-                            @endphp
-                            @foreach($bulan as $key => $val)
-                                <option value="{{ $key }}" {{ ($blnSetor ?? '') == $key ? 'selected' : '' }}>{{ $val }}</option>
+                    <!-- 1. TAHUN SETOR (Checkbox Popover Dropdown) -->
+                    @php
+                        $listTahunArr = array_values(collect($listTahunSetor ?? [])->toArray());
+                        $currentThn = array_values((array)($thnSetor ?? []));
+                        $isAllThn = count($currentThn) === count($listTahunArr) && count($listTahunArr) > 0;
+                    @endphp
+                    <div x-data="{ 
+                            open: false, 
+                            selectAll: {{ $isAllThn ? 'true' : 'false' }}, 
+                            selected: {{ json_encode($currentThn) }}, 
+                            options: {{ json_encode($listTahunArr) }} 
+                        }" 
+                        x-init="$watch('selected', value => selectAll = (value.length === options.length && options.length > 0))"
+                        class="relative">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Tahun Setor</label>
+                        <button type="button" @click="open = !open" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-left text-xs text-slate-800 flex justify-between items-center">
+                            <span x-text="selected.length === options.length && options.length > 0 ? 'Semua Tahun Terpilih' : (selected.length ? selected.length + ' Tahun Dipilih' : 'Tidak Ada Dipilih')"></span>
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-60 overflow-y-auto">
+                            <label class="flex items-center gap-2 font-bold text-xs pb-2 border-b border-slate-100 cursor-pointer">
+                                <input type="checkbox" x-model="selectAll" @change="selected = selectAll ? [...options] : []">
+                                Pilih Semua
+                            </label>
+                            @foreach($listTahunSetor ?? [] as $thn)
+                                <label class="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-slate-50 px-1 rounded">
+                                    <input type="checkbox" name="thn_setor[]" value="{{ $thn }}" x-model="selected">
+                                    <span>{{ $thn }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
 
-                    <!-- Filter Fungsi -->
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Fungsi</label>
-                        <select name="fungsi" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">-- Semua Fungsi --</option>
+                    <!-- 2. BULAN SETOR (Checkbox Popover Dropdown) -->
+                    @php
+                        $bulanList = ['01'=>'Januari', '02'=>'Februari', '03'=>'Maret', '04'=>'April', '05'=>'Mei', '06'=>'Juni', '07'=>'Juli', '08'=>'Agustus', '09'=>'September', '10'=>'Oktober', '11'=>'November', '12'=>'Desember'];
+                        $allBulanKeys = array_keys($bulanList);
+                        $currentBln = array_values((array)($blnSetor ?? []));
+                        $isAllBulan = count($currentBln) === count($allBulanKeys);
+                    @endphp
+                    <div x-data="{ 
+                            open: false, 
+                            selectAll: {{ $isAllBulan ? 'true' : 'false' }}, 
+                            selected: {{ json_encode($currentBln) }},
+                            allKeys: {{ json_encode($allBulanKeys) }}
+                        }" 
+                        x-init="$watch('selected', value => selectAll = value.length === allKeys.length)"
+                        class="relative">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Bulan Setor</label>
+                        <button type="button" @click="open = !open" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-left text-xs text-slate-800 flex justify-between items-center">
+                            <span x-text="selected.length === allKeys.length ? 'Semua Bulan Terpilih' : (selected.length ? selected.length + ' Bulan Dipilih' : 'Tidak Ada Dipilih')"></span>
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-60 overflow-y-auto">
+                            <label class="flex items-center gap-2 font-bold text-xs pb-2 border-b border-slate-100 cursor-pointer">
+                                <input type="checkbox" x-model="selectAll" @change="selected = selectAll ? [...allKeys] : []">
+                                Pilih Semua
+                            </label>
+                            @foreach($bulanList as $key => $val)
+                                <label class="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-slate-50 px-1 rounded">
+                                    <input type="checkbox" name="bln_setor[]" value="{{ $key }}" x-model="selected">
+                                    <span>{{ $val }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- 3. FUNGSI (Checkbox Popover Dropdown) -->
+                    @php
+                        $listFungsiArr = array_values(collect($listFungsi ?? [])->toArray());
+                        $currentFungsi = array_values((array)($fungsi ?? []));
+                        $isAllFungsi = count($currentFungsi) === count($listFungsiArr) && count($listFungsiArr) > 0;
+                    @endphp
+                    <div x-data="{ 
+                            open: false, 
+                            selectAll: {{ $isAllFungsi ? 'true' : 'false' }}, 
+                            selected: {{ json_encode($currentFungsi) }}, 
+                            options: {{ json_encode($listFungsiArr) }} 
+                        }" 
+                        x-init="$watch('selected', value => selectAll = (value.length === options.length && options.length > 0))"
+                        class="relative">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Fungsi</label>
+                        <button type="button" @click="open = !open" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-left text-xs text-slate-800 flex justify-between items-center">
+                            <span x-text="selected.length === options.length && options.length > 0 ? 'Semua Fungsi Terpilih' : (selected.length ? selected.length + ' Fungsi Dipilih' : 'Tidak Ada Dipilih')"></span>
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-60 overflow-y-auto">
+                            <label class="flex items-center gap-2 font-bold text-xs pb-2 border-b border-slate-100 cursor-pointer">
+                                <input type="checkbox" x-model="selectAll" @change="selected = selectAll ? [...options] : []">
+                                Pilih Semua
+                            </label>
                             @foreach($listFungsi ?? [] as $f)
-                                <option value="{{ $f }}" {{ ($fungsi ?? '') == $f ? 'selected' : '' }}>{{ $f }}</option>
+                                <label class="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-slate-50 px-1 rounded">
+                                    <input type="checkbox" name="fungsi[]" value="{{ $f }}" x-model="selected">
+                                    <span>{{ $f }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
 
-                    <!-- Filter Nama AR -->
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Nama AR</label>
-                        <select name="nip_ar" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">-- Semua AR --</option>
+                    <!-- 4. NAMA AR (Checkbox Popover Dropdown) -->
+                    @php
+                        $listArArr = collect($listAr ?? [])->pluck('nip')->toArray();
+                        $currentAr = array_values((array)($nipAr ?? []));
+                        $isAllAr = count($currentAr) === count($listArArr) && count($listArArr) > 0;
+                    @endphp
+                    <div x-data="{ 
+                            open: false, 
+                            selectAll: {{ $isAllAr ? 'true' : 'false' }}, 
+                            selected: {{ json_encode($currentAr) }}, 
+                            options: {{ json_encode($listArArr) }} 
+                        }" 
+                        x-init="$watch('selected', value => selectAll = (value.length === options.length && options.length > 0))"
+                        class="relative">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Nama AR</label>
+                        <button type="button" @click="open = !open" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-left text-xs text-slate-800 flex justify-between items-center">
+                            <span x-text="selected.length === options.length && options.length > 0 ? 'Semua AR Terpilih' : (selected.length ? selected.length + ' AR Dipilih' : 'Tidak Ada Dipilih')"></span>
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute z-50 mt-1 w-72 bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-60 overflow-y-auto">
+                            <label class="flex items-center gap-2 font-bold text-xs pb-2 border-b border-slate-100 cursor-pointer">
+                                <input type="checkbox" x-model="selectAll" @change="selected = selectAll ? [...options] : []">
+                                Pilih Semua
+                            </label>
                             @foreach($listAr ?? [] as $ar)
-                                <option value="{{ $ar->nip }}" {{ ($nipAr ?? '') == $ar->nip ? 'selected' : '' }}>{{ $ar->nama }}</option>
+                                <label class="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-slate-50 px-1 rounded">
+                                    <input type="checkbox" name="nip_ar[]" value="{{ $ar->nip }}" x-model="selected">
+                                    <span>{{ $ar->nama }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
 
-                    <!-- Filter Nama JS -->
-                    <div>
-                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Nama JS</label>
-                        <select name="nip_js" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">-- Semua JS --</option>
+                    <!-- 5. NAMA JS (Checkbox Popover Dropdown) -->
+                    @php
+                        $listJsArr = collect($listJs ?? [])->pluck('nip')->toArray();
+                        $currentJs = array_values((array)($nipJs ?? []));
+                        $isAllJs = count($currentJs) === count($listJsArr) && count($listJsArr) > 0;
+                    @endphp
+                    <div x-data="{ 
+                            open: false, 
+                            selectAll: {{ $isAllJs ? 'true' : 'false' }}, 
+                            selected: {{ json_encode($currentJs) }}, 
+                            options: {{ json_encode($listJsArr) }} 
+                        }" 
+                        x-init="$watch('selected', value => selectAll = (value.length === options.length && options.length > 0))"
+                        class="relative">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Nama JS</label>
+                        <button type="button" @click="open = !open" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-left text-xs text-slate-800 flex justify-between items-center">
+                            <span x-text="selected.length === options.length && options.length > 0 ? 'Semua JS Terpilih' : (selected.length ? selected.length + ' JS Dipilih' : 'Tidak Ada Dipilih')"></span>
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute z-50 mt-1 w-72 bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-60 overflow-y-auto">
+                            <label class="flex items-center gap-2 font-bold text-xs pb-2 border-b border-slate-100 cursor-pointer">
+                                <input type="checkbox" x-model="selectAll" @change="selected = selectAll ? [...options] : []">
+                                Pilih Semua
+                            </label>
                             @foreach($listJs ?? [] as $js)
-                                <option value="{{ $js->nip }}" {{ ($nipJs ?? '') == $js->nip ? 'selected' : '' }}>{{ $js->nama }}</option>
+                                <label class="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-slate-50 px-1 rounded">
+                                    <input type="checkbox" name="nip_js[]" value="{{ $js->nip }}" x-model="selected">
+                                    <span>{{ $js->nama }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
 
                 </div>
@@ -138,7 +243,7 @@
     </div>
 
     <!-- ==================== HASIL TABEL ==================== -->
-    @if($results)
+    @if(isset($results) && $results)
         <div x-show="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <span class="text-xs font-semibold text-slate-600">
@@ -158,7 +263,7 @@
                                 <th class="p-3">Alamat</th>
                                 <th class="p-3">Jenis / Status</th>
                                 <th class="p-3">No. Telepon</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">AR / JS</th>
+                                <th class="p-3">AR / JS</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -166,7 +271,7 @@
                                 <tr class="hover:bg-slate-50">
                                     <td class="p-3 font-mono font-semibold text-slate-800">
                                         <div>{{ $item->npwp15 }}</div>
-                                        @if($item->npwp16)
+                                        @if(!empty($item->npwp16))
                                             <div class="text-[10px] text-slate-400 font-normal">NIK/16: {{ $item->npwp16 }}</div>
                                         @endif
                                     </td>
