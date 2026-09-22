@@ -37,6 +37,7 @@ Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
         Route::get('/bulanan', [PenjagaanController::class, 'bulanan'])->name('bulanan');
         Route::get('/bulanan/export-detil', [PenjagaanController::class, 'exportBulananCsv'])->name('bulanan.export-detil'); // Route baru
         Route::get('/harian', [PenjagaanController::class, 'harian'])->name('harian');
+        Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export');
         Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vsbulanlalu');
     });
 });

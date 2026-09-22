@@ -78,10 +78,16 @@ class PenjagaanController extends Controller
     // 2. Penjagaan Harian (2026 vs 2025 pada Bulan yang Sama)
     public function harian(Request $request)
     {
-        $fungsi = (array) $request->input('fungsi', []);
         $bulan = (int) $request->input('bulan', date('m'));
-        
         $fungsiOptions = $this->getFungsiOptions();
+
+        // Default: Jika request tidak membawa parameter 'fungsi' (akses pertama kali),
+        // centang/pilih SEMUA opsi yang tersedia.
+        if (!$request->has('fungsi')) {
+            $fungsi = $fungsiOptions->toArray();
+        } else {
+            $fungsi = (array) $request->input('fungsi', []);
+        }
 
         $fungsiKey = implode(',', $fungsi);
         $cacheKey = 'penjagaan_harian_' . md5("b:{$bulan}_f:{$fungsiKey}");
@@ -218,6 +224,80 @@ class PenjagaanController extends Controller
             // Gunakan cursor() agar efisien dan hemat memori RAM
             $query->orderBy('thn_setor', 'desc')
                 ->orderBy('bln_setor', 'desc')
+                ->cursor()
+                ->each(function ($row) use ($file) {
+                    fputcsv($file, [
+                        $row->thn_setor,
+                        $row->bln_setor,
+                        $row->tgl_setor,
+                        $row->npwp15,
+                        $row->nama_wp,
+                        $row->jenis,
+                        $row->fungsi,
+                        $row->kd_map,
+                        $row->kd_bayar,
+                        $row->masa_pajak,
+                        $row->thn_pajak,
+                        $row->jml_setor,
+                        $row->ntpn,
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // Method Tambahan untuk Export CSV Penjagaan Harian
+    public function exportHarianCsv(Request $request): StreamedResponse
+    {
+        $bulan = (int) $request->input('bulan', date('m'));
+        $fungsiOptions = $this->getFungsiOptions();
+
+        if (!$request->has('fungsi')) {
+            $fungsi = $fungsiOptions->toArray();
+        } else {
+            $fungsi = (array) $request->input('fungsi', []);
+        }
+
+        $fileName = 'penjagaan_harian_detil_bln_' . $bulan . '_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename={$fileName}",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15', 
+            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar', 
+            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
+        ];
+
+        $callback = function () use ($bulan, $fungsi, $columns) {
+            $file = fopen('php://output', 'w');
+            
+            // UTF-8 BOM agar rapi saat dibuka di Microsoft Excel
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+            fputcsv($file, $columns);
+
+            $query = DB::table('detil_transaksi_wp')
+                ->select([
+                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15', 
+                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar', 
+                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
+                ])
+                ->whereIn('thn_setor', [2025, 2026])
+                ->where('bln_setor', $bulan);
+
+            if (!empty($fungsi)) {
+                $query->whereIn('fungsi', $fungsi);
+            }
+
+            $query->orderBy('tgl_setor', 'desc')
                 ->cursor()
                 ->each(function ($row) use ($file) {
                     fputcsv($file, [
