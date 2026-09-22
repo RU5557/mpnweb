@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PenjagaanController extends Controller
 {
@@ -41,14 +42,24 @@ class PenjagaanController extends Controller
     // 1. Penjagaan Bulanan (2026 vs 2025 per Bulan)
     public function bulanan(Request $request)
     {
-        // Ambil input sebagai array dari checkbox
-        $jenis = (array) $request->input('jenis', []);
-        $fungsi = (array) $request->input('fungsi', []);
-        
         $jenisOptions = $this->getJenisOptions();
         $fungsiOptions = $this->getFungsiOptions();
 
-        // Buat string kunci cache dari array filter
+        // Default: Jika request tidak membawa parameter (akses pertama kali), 
+        // centang/pilih SEMUA opsi yang tersedia.
+        if (!$request->has('jenis')) {
+            $jenis = $jenisOptions->toArray();
+        } else {
+            $jenis = (array) $request->input('jenis', []);
+        }
+
+        if (!$request->has('fungsi')) {
+            $fungsi = $fungsiOptions->toArray();
+        } else {
+            $fungsi = (array) $request->input('fungsi', []);
+        }
+
+        // Buat cache key berdasarkan filter
         $jenisKey = implode(',', $jenis);
         $fungsiKey = implode(',', $fungsi);
         $cacheKey = 'penjagaan_bulanan_' . md5("j:{$jenisKey}_f:{$fungsiKey}");
@@ -62,7 +73,6 @@ class PenjagaanController extends Controller
                 ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2026);
 
-            // Menggunakan whereIn untuk menampung multiple checkbox
             if (!empty($jenis)) {
                 $query2025->whereIn('jenis', $jenis);
                 $query2026->whereIn('jenis', $jenis);
@@ -88,7 +98,9 @@ class PenjagaanController extends Controller
             $data2026[] = (float) ($data['2026'][$m] ?? 0);
         }
 
-        return view('penerimaan.penjagaan.bulanan', compact('months', 'data2025', 'data2026', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'));
+        return view('penerimaan.penjagaan.bulanan', compact(
+            'months', 'data2025', 'data2026', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'
+        ));
     }
 
     // 2. Penjagaan Harian (2026 vs 2025 pada Bulan yang Sama)
@@ -198,5 +210,91 @@ class PenjagaanController extends Controller
         }
 
         return view('penerimaan.penjagaan.vs_bulan_lalu', compact('days', 'dataBulanIni', 'dataBulanLalu', 'bulan', 'bulanLalu', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'));
+    }
+
+    public function exportBulananCsv(Request $request): StreamedResponse
+    {
+        $jenisOptions = $this->getJenisOptions();
+        $fungsiOptions = $this->getFungsiOptions();
+
+        // Tangkap filter sesuai pilihan di UI
+        if (!$request->has('jenis')) {
+            $jenis = $jenisOptions->toArray();
+        } else {
+            $jenis = (array) $request->input('jenis', []);
+        }
+
+        if (!$request->has('fungsi')) {
+            $fungsi = $fungsiOptions->toArray();
+        } else {
+            $fungsi = (array) $request->input('fungsi', []);
+        }
+
+        $fileName = 'penjagaan_bulanan_detil_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename={$fileName}",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15', 
+            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar', 
+            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
+        ];
+
+        $callback = function () use ($jenis, $fungsi, $columns) {
+            $file = fopen('php://output', 'w');
+            
+            // UTF-8 BOM untuk Microsoft Excel
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+            fputcsv($file, $columns);
+
+            // Query data detil transaksi (2025 vs 2026)
+            $query = DB::table('detil_transaksi_wp')
+                ->select([
+                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15', 
+                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar', 
+                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
+                ])
+                ->whereIn('thn_setor', [2025, 2026]);
+
+            if (!empty($jenis)) {
+                $query->whereIn('jenis', $jenis);
+            }
+
+            if (!empty($fungsi)) {
+                $query->whereIn('fungsi', $fungsi);
+            }
+
+            // Gunakan cursor() agar efisien dan hemat memori RAM
+            $query->orderBy('thn_setor', 'desc')
+                ->orderBy('bln_setor', 'desc')
+                ->cursor()
+                ->each(function ($row) use ($file) {
+                    fputcsv($file, [
+                        $row->thn_setor,
+                        $row->bln_setor,
+                        $row->tgl_setor,
+                        $row->npwp15,
+                        $row->nama_wp,
+                        $row->jenis,
+                        $row->fungsi,
+                        $row->kd_map,
+                        $row->kd_bayar,
+                        $row->masa_pajak,
+                        $row->thn_pajak,
+                        $row->jml_setor,
+                        $row->ntpn,
+                    ]);
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
