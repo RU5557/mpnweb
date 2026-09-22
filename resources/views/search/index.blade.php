@@ -11,7 +11,7 @@
     
     <div>
         <h1 class="text-xl font-bold text-slate-800">Pencarian Data Wajib Pajak</h1>
-        <p class="text-xs text-slate-500">Cari informasi masterfile WP atau riwayat transaksi penerimaan pajak.</p>
+        <p class="text-xs text-slate-500">Cari informasi masterfile WP atau riwayat transaksi DRM penerimaan pajak.</p>
     </div>
 
     <!-- ==================== FORM PENCARIAN ==================== -->
@@ -34,12 +34,15 @@
                     </select>
                 </div>
 
-                <!-- Input Keyword -->
+                <!-- Input Keyword Dinamis -->
                 <div class="md:col-span-7">
-                    <!-- Penyesuaian Judul Label -->
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kata Kunci (NPWP / Nama / Fungsi)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">
+                        Kata Kunci 
+                        <span x-text="targetTable === 'masterfile' ? '(NPWP15 / NPWP16 / Nama WP)' : '(NPWP15 / Nama WP)'" class="text-slate-400 font-normal"></span>
+                    </label>
                     <div class="relative">
-                        <input type="text" name="q" value="{{ $keyword ?? '' }}" placeholder="Masukkan NPWP, Nama WP, atau Fungsi..." 
+                        <input type="text" name="q" value="{{ $keyword ?? '' }}" 
+                               :placeholder="targetTable === 'masterfile' ? 'Masukkan NPWP15, NPWP16, atau Nama WP...' : 'Masukkan NPWP15 atau Nama WP...'" 
                                class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl pl-9 pr-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
                     </div>
@@ -58,28 +61,29 @@
                 </div>
             </div>
 
-            <!-- Filter Tambahan Khusus Detil Transaksi -->
+            <!-- Filter Transaksi Khusus Detil DRM -->
             <div x-show="targetTable === 'detil_transaksi'" 
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 -translate-y-2"
                  x-transition:enter-end="opacity-100 translate-y-0"
                  class="pt-3 border-t border-slate-100">
                  
-                <div class="flex flex-wrap items-center gap-3">
-                    <span class="text-xs font-semibold text-blue-600 flex items-center gap-1">
-                        <i class="fa-solid fa-filter"></i> Filter Transaksi:
-                    </span>
-
-                    <div class="w-36">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
+                    
+                    <!-- Filter Tahun -->
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Tahun Setor</label>
                         <select name="thn_setor" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Semua Tahun --</option>
-                            @for($y = date('Y'); $y >= 2025; $y--)
+                            @for($y = date('Y'); $y >= 2020; $y--)
                                 <option value="{{ $y }}" {{ ($thnSetor ?? '') == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
                         </select>
                     </div>
 
-                    <div class="w-36">
+                    <!-- Filter Bulan -->
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Bulan Setor</label>
                         <select name="bln_setor" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Semua Bulan --</option>
                             @php
@@ -94,54 +98,47 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <!-- Filter Fungsi -->
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Fungsi</label>
+                        <select name="fungsi" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">-- Semua Fungsi --</option>
+                            @foreach($listFungsi ?? [] as $f)
+                                <option value="{{ $f }}" {{ ($fungsi ?? '') == $f ? 'selected' : '' }}>{{ $f }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Filter Nama AR -->
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Nama AR</label>
+                        <select name="nip_ar" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">-- Semua AR --</option>
+                            @foreach($listAr ?? [] as $ar)
+                                <option value="{{ $ar->nip }}" {{ ($nipAr ?? '') == $ar->nip ? 'selected' : '' }}>{{ $ar->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Filter Nama JS -->
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-500 mb-1">Nama JS</label>
+                        <select name="nip_js" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">-- Semua JS --</option>
+                            @foreach($listJs ?? [] as $js)
+                                <option value="{{ $js->nip }}" {{ ($nipJs ?? '') == $js->nip ? 'selected' : '' }}>{{ $js->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- ==================== AREA TABEL SKELETON ==================== -->
-    <div x-show="loading" x-cloak class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
-        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <div class="h-4 bg-slate-200 rounded w-1/4"></div>
-            <div class="h-4 bg-slate-200 rounded w-1/12"></div>
-        </div>
-        <div class="p-4 space-y-4">
-            <div class="grid grid-cols-6 gap-4 border-b border-slate-100 pb-3">
-                <div class="h-3 bg-slate-200 rounded col-span-1"></div>
-                <div class="h-3 bg-slate-200 rounded col-span-2"></div>
-                <div class="h-3 bg-slate-200 rounded col-span-1"></div>
-                <div class="h-3 bg-slate-200 rounded col-span-1"></div>
-                <div class="h-3 bg-slate-200 rounded col-span-1"></div>
-            </div>
-            @for ($i = 0; $i < 5; $i++)
-                <div class="grid grid-cols-6 gap-4 py-2">
-                    <div class="h-4 bg-slate-200 rounded col-span-1"></div>
-                    <div class="h-4 bg-slate-200 rounded col-span-2"></div>
-                    <div class="h-4 bg-slate-200 rounded col-span-1"></div>
-                    <div class="h-4 bg-slate-200 rounded col-span-1"></div>
-                    <div class="h-4 bg-slate-200 rounded col-span-1"></div>
-                </div>
-            @endfor
-        </div>
-    </div>
-
-    <!-- ==================== HASIL TABEL ASLI ==================== -->
+    <!-- ==================== HASIL TABEL ==================== -->
     @if($results)
-        <!-- Helper Macro/Blade Function untuk Link Sorting -->
-        @php
-            function sortUrl($col, $currentSortBy, $currentSortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) {
-                $nextOrder = ($currentSortBy === $col && $currentSortOrder === 'asc') ? 'desc' : 'asc';
-                return route('wp.search', [
-                    'q' => $keyword,
-                    'target_table' => $targetTable,
-                    'thn_setor' => $thnSetor,
-                    'bln_setor' => $blnSetor,
-                    'sort_by' => $col,
-                    'sort_order' => $nextOrder
-                ]);
-            }
-        @endphp
-
         <div x-show="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <span class="text-xs font-semibold text-slate-600">
@@ -152,30 +149,16 @@
 
             <div class="overflow-x-auto">
                 @if($targetTable === 'masterfile')
+                    <!-- Tabel Masterfile WP -->
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b">
                             <tr>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('npwp15', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        NPWP15 / NPWP16
-                                        <i class="fa-solid {{ $sortBy === 'npwp15' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('nama_wp', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        Nama Wajib Pajak
-                                        <i class="fa-solid {{ $sortBy === 'nama_wp' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
+                                <th class="p-3">NPWP15 / NPWP16</th>
+                                <th class="p-3">Nama Wajib Pajak</th>
                                 <th class="p-3">Alamat</th>
                                 <th class="p-3">Jenis / Status</th>
                                 <th class="p-3">No. Telepon</th>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('nama_ar', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        Account Representative
-                                        <i class="fa-solid {{ $sortBy === 'nama_ar' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
+                                <th class="p-3">Account Representative</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -209,42 +192,17 @@
                         </tbody>
                     </table>
                 @else
+                    <!-- Tabel Detil DRM -->
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b">
                             <tr>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('tgl_setor', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        Tgl Setor
-                                        <i class="fa-solid {{ $sortBy === 'tgl_setor' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('npwp15', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        NPWP15 / Nama WP
-                                        <i class="fa-solid {{ $sortBy === 'npwp15' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
-                                <!-- Kolom NTPN diganti dengan Fungsi -->
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('fungsi', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        Fungsi
-                                        <i class="fa-solid {{ $sortBy === 'fungsi' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
+                                <th class="p-3">Tgl Setor</th>
+                                <th class="p-3">NPWP15 / Nama WP</th>
+                                <th class="p-3">Fungsi</th>
                                 <th class="p-3">MAP / Bayar</th>
                                 <th class="p-3">Masa / Thn Pajak</th>
-                                <th class="p-3 text-right">
-                                    <a href="{{ sortUrl('jml_setor', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center justify-end gap-1 hover:text-blue-600">
-                                        Jumlah Setor (Rp)
-                                        <i class="fa-solid {{ $sortBy === 'jml_setor' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
-                                <th class="p-3">
-                                    <a href="{{ sortUrl('nama_ar', $sortBy, $sortOrder, $keyword, $targetTable, $thnSetor, $blnSetor) }}" class="flex items-center gap-1 hover:text-blue-600">
-                                        Account Representative
-                                        <i class="fa-solid {{ $sortBy === 'nama_ar' ? ($sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-slate-300' }}"></i>
-                                    </a>
-                                </th>
+                                <th class="p-3 text-right">Jumlah Setor (Rp)</th>
+                                <th class="p-3">AR / JS</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -257,7 +215,6 @@
                                         <div class="font-mono font-semibold text-slate-800">{{ $item->npwp15 }}</div>
                                         <div class="text-[11px] text-slate-600">{{ $item->nama_wp ?? $item->nama_master }}</div>
                                     </td>
-                                    <!-- Menampilkan data Fungsi -->
                                     <td class="p-3">
                                         <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded font-mono text-[11px] font-semibold border border-slate-200">
                                             {{ $item->fungsi ?? '-' }}
@@ -274,7 +231,8 @@
                                         Rp {{ number_format($item->jml_setor, 0, ',', '.') }}
                                     </td>
                                     <td class="p-3">
-                                        <div class="text-[11px] font-semibold text-slate-700">{{ $item->nama_ar ?? '-' }}</div>
+                                        <div class="text-[11px] font-semibold text-slate-700">AR: {{ $item->nama_ar ?? '-' }}</div>
+                                        <div class="text-[10px] text-slate-500">JS: {{ $item->nama_js ?? '-' }}</div>
                                     </td>
                                 </tr>
                             @empty

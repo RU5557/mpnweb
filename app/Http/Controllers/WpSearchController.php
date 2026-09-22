@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MasterfileWp;
+use App\Models\DetilTransaksiWp;
+use App\Models\Pegawai;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -9,141 +12,168 @@ class WpSearchController extends Controller
 {
     public function search(Request $request)
     {
-        $keyword = trim($request->get('q'));
+        $keyword     = trim($request->get('q'));
         $targetTable = $request->get('target_table', 'masterfile');
+        
+        // Filter DRM / Transaksi
         $thnSetor = $request->get('thn_setor');
         $blnSetor = $request->get('bln_setor');
-        $sortBy = $request->get('sort_by');
-        $sortOrder = $request->get('sort_order', 'asc') === 'desc' ? 'desc' : 'asc';
-        $tahun = date('Y');
+        $fungsi   = $request->get('fungsi');
+        $nipAr    = $request->get('nip_ar');
+        $nipJs    = $request->get('nip_js');
 
-        if (!$keyword && !$thnSetor && !$blnSetor) {
-            return view('search.index', [
-                'results'     => null, 
-                'keyword'     => '', 
-                'targetTable' => $targetTable,
-                'thnSetor'    => $thnSetor,
-                'blnSetor'    => $blnSetor,
-                'sortBy'      => $sortBy,
-                'sortOrder'   => $sortOrder,
-            ]);
-        }
+        $sortBy    = $request->get('sort_by');
+        $sortOrder = strtolower($request->get('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $tahun     = date('Y');
 
         if ($targetTable === 'masterfile') {
-            // --- PENCARIAN DI TABEL MASTERFILE_WP ---
-            $query = DB::table('masterfile_wp as mf')
-                ->leftJoin('pegawai as p', function($join) use ($tahun) {
-                    $join->on('mf.nip_ar', '=', 'p.nip')
-                         ->where('p.tahun', '=', $tahun);
-                });
+            // ==========================================
+            // 1. PENCARIAN MASTERFILE WP (Menggunakan Eloquent Model)
+            // ==========================================
+            $query = MasterfileWp::query()->with('ar');
 
-            if ($keyword) {
-                $query->where(function($q) use ($keyword) {
-                    $q->where('mf.npwp15', 'LIKE', "%{$keyword}%")
-                      ->orWhere('mf.nama', 'LIKE', "%{$keyword}%")
-                      ->orWhere('mf.nik', 'LIKE', "%{$keyword}%")
-                      ->orWhere('mf.npwp16', 'LIKE', "%{$keyword}%");
-                });
+            if (!empty($keyword)) {
+                // Tentukan apakah pencarian berupa Angka (NPWP) atau Teks (Nama WP)
+                if (is_numeric($keyword)) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('npwp15', 'LIKE', "{$keyword}%")
+                          ->orWhere('npwp16', 'LIKE', "{$keyword}%");
+                    });
+                } else {
+                    // Jika teks, HANYA gunakan FULLTEXT MATCH AGAINST (Jangan di-OR dengan LIKE NPWP)
+                    // Ini cegah Full Table Scan yang bikin timeout!
+                    $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
+                    $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                }
             }
 
-            // Allowed Columns untuk Sorting Masterfile
-            $allowedSorts = ['npwp15', 'nama_wp', 'alamat', 'jenis_wp', 'nama_ar'];
+            // Pengurutan Data
+            $allowedSorts = ['npwp15', 'nama', 'alamat', 'jenis'];
             if (in_array($sortBy, $allowedSorts)) {
-                $column = $sortBy === 'nama_wp' ? 'mf.nama' : ($sortBy === 'nama_ar' ? 'p.nama' : "mf.{$sortBy}");
-                $query->orderBy($column, $sortOrder);
+                $query->orderBy($sortBy, $sortOrder);
             } else {
-                $query->orderBy('mf.nama', 'asc'); // Default Sort
+                $query->orderBy('nama', 'asc');
             }
 
-            $results = $query->select(
-                    'mf.npwp15',
-                    'mf.npwp16',
-                    'mf.nama as nama_wp',
-                    'mf.alamat',
-                    'mf.kelurahan',
-                    'mf.kecamatan',
-                    'mf.kota',
-                    'mf.status as status_wp',
-                    'mf.jenis as jenis_wp',
-                    'mf.telp',
-                    'p.nama as nama_ar'
-                )
-                ->paginate(20)
-                ->appends([
-                    'q' => $keyword, 
-                    'target_table' => $targetTable,
-                    'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
-                ]);
+            $results = $query->paginate(20)->appends($request->all());
+
+            $listFungsi = [];
+            $listAr     = [];
+            $listJs     = [];
 
         } else {
-            // --- PENCARIAN DI TABEL DETIL_TRANSAKSI_WP ---
-            $query = DB::table('detil_transaksi_wp as t')
-                ->leftJoin('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15')
-                ->leftJoin('kdmap as k', function($join) {
-                    $join->on('t.kd_map', '=', 'k.kd_map')
-                         ->on('t.kd_bayar', '=', 'k.kd_bayar');
-                })
-                ->leftJoin('pegawai as p', function($join) use ($tahun) {
-                    $join->on('mf.nip_ar', '=', 'p.nip')
-                         ->where('p.tahun', '=', $tahun);
-                });
+            // ==========================================
+            // 2. PENCARIAN DETIL DRM / TRANSAKSI (Late Join / Subquery)
+            // ==========================================
+            
+            // TAHAP 1: Subquery Sangat Ringan untuk mengambil ID saja
+            $subQuery = DB::table('detil_transaksi_wp as t_sub');
 
-            // Filter Keyword (Mengganti NTPN dengan Fungsi)
-            if ($keyword) {
-                $query->where(function($q) use ($keyword) {
-                    $q->where('t.npwp15', 'LIKE', "%{$keyword}%")
-                      ->orWhere('t.nama_wp', 'LIKE', "%{$keyword}%")
-                      ->orWhere('t.fungsi', 'LIKE', "%{$keyword}%")
-                      ->orWhere('mf.nama', 'LIKE', "%{$keyword}%");
-                });
+            if (!empty($keyword)) {
+                if (is_numeric($keyword)) {
+                    $subQuery->where('t_sub.npwp15', 'LIKE', "{$keyword}%");
+                } else {
+                    $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
+                    $subQuery->whereRaw("MATCH(t_sub.nama_wp) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                }
             }
 
-            // Filter Tambahan Tahun & Bulan Setor
-            if ($thnSetor) {
-                $query->where('t.thn_setor', '=', $thnSetor);
-            }
-            if ($blnSetor) {
-                $query->where('t.bln_setor', '=', $blnSetor);
+            // Filter Kriteria
+            if ($thnSetor) $subQuery->where('t_sub.thn_setor', $thnSetor);
+            if ($blnSetor) $subQuery->where('t_sub.bln_setor', $blnSetor);
+            if ($fungsi)   $subQuery->where('t_sub.fungsi', $fungsi);
+
+            // Filter NIP AR / JS
+            if ($nipAr || $nipJs) {
+                $subQuery->join('masterfile_wp as mf_sub', 't_sub.npwp15', '=', 'mf_sub.npwp15');
+                if ($nipAr) $subQuery->where('mf_sub.nip_ar', $nipAr);
+                if ($nipJs) $subQuery->where('mf_sub.nip_js', $nipJs);
             }
 
-            // Allowed Columns untuk Sorting Transaksi
-            $allowedSorts = ['tgl_setor', 'npwp15', 'fungsi', 'kd_map', 'jml_setor', 'nama_ar'];
+            // Ordering pada Subquery
+            $allowedSorts = ['tgl_setor', 'npwp15', 'fungsi', 'kd_map', 'jml_setor'];
             if (in_array($sortBy, $allowedSorts)) {
-                $column = $sortBy === 'nama_ar' ? 'p.nama' : "t.{$sortBy}";
-                $query->orderBy($column, $sortOrder);
+                $subQuery->orderBy("t_sub.{$sortBy}", $sortOrder);
             } else {
-                $query->orderBy('t.tgl_setor', 'desc'); // Default Sort
+                $subQuery->orderBy('t_sub.tgl_setor', 'desc');
             }
 
-            $results = $query->select(
-                    't.id',
-                    't.npwp15',
-                    't.nama_wp',
-                    't.ntpn',
-                    't.tgl_setor',
-                    't.thn_pajak',
-                    't.masa_pajak',
-                    't.jml_setor',
-                    't.kd_map',
-                    't.kd_bayar',
-                    't.fungsi',
-                    't.jenis as jenis_transaksi',
-                    'k.jenis_pajak',
-                    'mf.nama as nama_master',
-                    'p.nama as nama_ar'
-                )
-                ->paginate(20)
-                ->appends([
-                    'q' => $keyword, 
-                    'target_table' => $targetTable,
-                    'thn_setor' => $thnSetor,
-                    'bln_setor' => $blnSetor,
-                    'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder
-                ]);
+            // Dapatkan Paginated ID
+            $paginatedIds = $subQuery->select('t_sub.id')->paginate(20)->appends($request->all());
+            $ids = collect($paginatedIds->items())->pluck('id')->toArray();
+
+            if (!empty($ids)) {
+                // TAHAP 2: Ambil Detail Lengkap Hanya untuk 20 ID Terpilih
+                $details = DB::table('detil_transaksi_wp as t')
+                    ->whereIn('t.id', $ids)
+                    ->leftJoin('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15')
+                    ->leftJoin('kdmap as k', function($join) {
+                        $join->on('t.kd_map', '=', 'k.kd_map')
+                             ->on('t.kd_bayar', '=', 'k.kd_bayar');
+                    })
+                    ->leftJoin('pegawai as p_ar', function($join) use ($tahun) {
+                        $join->on('mf.nip_ar', '=', 'p_ar.nip')
+                             ->where('p_ar.tahun', '=', $tahun);
+                    })
+                    ->leftJoin('pegawai as p_js', function($join) use ($tahun) {
+                        $join->on('mf.nip_js', '=', 'p_js.nip')
+                             ->where('p_js.tahun', '=', $tahun);
+                    })
+                    ->select(
+                        't.id',
+                        't.npwp15',
+                        't.nama_wp',
+                        't.ntpn',
+                        't.tgl_setor',
+                        't.thn_pajak',
+                        't.masa_pajak',
+                        't.jml_setor',
+                        't.kd_map',
+                        't.kd_bayar',
+                        't.fungsi',
+                        't.jenis as jenis_transaksi',
+                        'k.jenis_pajak',
+                        'mf.nama as nama_master',
+                        'p_ar.nama as nama_ar',
+                        'p_js.nama as nama_js'
+                    );
+
+                if (in_array($sortBy, $allowedSorts)) {
+                    $details->orderBy("t.{$sortBy}", $sortOrder);
+                } else {
+                    $details->orderBy('t.tgl_setor', 'desc');
+                }
+
+                $results = $paginatedIds->setCollection($details->get());
+            } else {
+                $results = $paginatedIds;
+            }
+
+            // Dropdown List (Dibuat Statis / Caching Ringan agar Tidak Bikin Timeout)
+            $listFungsi = collect(['Penyuluhan', 'Pengawasan', 'Pemeriksaan', 'Penagihan', 'Lainnya']);
+
+            $listAr = Pegawai::where('tahun', $tahun)
+                ->select('nip', 'nama')
+                ->orderBy('nama', 'asc')
+                ->get();
+
+            $listJs = $listAr; // Reuse koleksi pegawai
         }
 
-        return view('search.index', compact('results', 'keyword', 'targetTable', 'thnSetor', 'blnSetor', 'sortBy', 'sortOrder'));
+        return view('search.index', compact(
+            'results', 
+            'keyword', 
+            'targetTable', 
+            'thnSetor', 
+            'blnSetor', 
+            'fungsi', 
+            'nipAr', 
+            'nipJs', 
+            'listFungsi', 
+            'listAr', 
+            'listJs', 
+            'sortBy', 
+            'sortOrder'
+        ));
     }
 }
