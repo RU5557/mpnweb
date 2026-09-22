@@ -148,10 +148,9 @@
             </button>
 
             <!-- Tombol Export CSV -->
-            <a href="{{ route('penerimaan.penjagaan.bulanan.export-csv', request()->all()) }}" 
-            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium shadow-sm transition flex items-center gap-1.5">
+            <a href="{{ route('penerimaan.penjagaan.bulanan.export-detil', request()->all()) }}"            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium shadow-sm transition flex items-center gap-1.5">
                 <i class="fa-solid fa-file-csv text-sm"></i>
-                <span>Export CSV</span>
+                <span>Export</span>
             </a>
 
             @if(request('fungsi') || request('jenis'))
