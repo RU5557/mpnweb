@@ -30,7 +30,7 @@ class WpSearchController extends Controller
             // ==========================================
             // 1. PENCARIAN MASTERFILE WP (Menggunakan Eloquent Model)
             // ==========================================
-            $query = MasterfileWp::query()->with('ar');
+            $query = MasterfileWp::query()->with(['ar', 'js']);
 
             if (!empty($keyword)) {
                 // Tentukan apakah pencarian berupa Angka (NPWP) atau Teks (Nama WP)

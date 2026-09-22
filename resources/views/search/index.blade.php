@@ -158,7 +158,7 @@
                                 <th class="p-3">Alamat</th>
                                 <th class="p-3">Jenis / Status</th>
                                 <th class="p-3">No. Telepon</th>
-                                <th class="p-3">Account Representative</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">AR / JS</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -182,7 +182,10 @@
                                         <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">{{ $item->status_wp ?? '-' }}</span>
                                     </td>
                                     <td class="p-3">{{ $item->telp ?? '-' }}</td>
-                                    <td class="p-3 font-medium text-slate-700">{{ $item->nama_ar ?? '-' }}</td>
+                                    <td class="p-3">
+                                        <div class="text-[11px] font-semibold text-slate-700">AR: {{ $item->nama_ar ?? '-' }}</div>
+                                        <div class="text-[10px] text-slate-500">JS: {{ $item->nama_js ?? '-' }}</div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

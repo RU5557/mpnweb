@@ -43,6 +43,11 @@ class MasterfileWp extends Model
                     ->where('tahun', date('Y'));
     }
 
+    public function getNamaJsAttribute()
+    {
+        return $this->js->nama ?? '-';
+    }
+
     // Relasi Jurusita (JS)
     public function js()
     {
