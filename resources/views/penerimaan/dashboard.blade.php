@@ -10,47 +10,64 @@
         <p class="text-sm text-slate-500 mt-1">Overview penerimaan, capaian target, dan performa PPM</p>
     </div>
 
-<!-- Form Filter Compact & Sejajar -->
-<form action="{{ route('penerimaan.ppm') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
+<!-- Form Filter Compact & Sejajar (Rentang Bulan) -->
+<form action="{{ route('penerimaan.dashboard') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2">
     
-    <!-- Select Bulan -->
-    <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+    <span class="text-xs font-medium text-slate-500">Periode:</span>
+
+    <!-- Select Bulan Awal -->
+    <select name="bulan_awal" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
         @foreach(range(1, 12) as $m)
             @php
                 $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
             @endphp
-            <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
+            <option value="{{ $m }}" {{ $blnAwal == $m ? 'selected' : '' }}>
+                {{ $monthName }}
+            </option>
+        @endforeach
+    </select>
+
+    <span class="text-xs font-semibold text-slate-400">s.d.</span>
+
+    <!-- Select Bulan Akhir -->
+    <select name="bulan_akhir" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+        @foreach(range(1, 12) as $m)
+            @php
+                $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
+            @endphp
+            <option value="{{ $m }}" {{ $blnAkhir == $m ? 'selected' : '' }}>
                 {{ $monthName }}
             </option>
         @endforeach
     </select>
 
     <!-- Select Tahun -->
-    <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
+    <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer ml-1">
         @foreach(range(date('Y') - 3, date('Y')) as $year)
-            <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+            <option value="{{ $year }}" {{ $thnIni == $year ? 'selected' : '' }}>
                 {{ $year }}
             </option>
         @endforeach
     </select>
 
     <!-- Tombol Terapkan -->
-    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5 ml-1">
         Terapkan
     </button>
 
     <!-- Tombol Reset -->
-    @if(request()->has('bulan') || request()->has('tahun'))
-        <a href="{{ route('penerimaan.ppm') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
+    @if(request()->has('bulan_awal') || request()->has('bulan_akhir') || request()->has('tahun') || request()->has('bulan'))
+        <a href="{{ route('penerimaan.dashboard') }}" class="text-slate-400 hover:text-slate-600 text-sm px-1.5 py-1.5 transition" title="Reset Filter">
             <i class="fa-solid fa-rotate-left"></i>
         </a>
     @endif
-    <!-- Tombol Export Detil Transaksi (Tailwind Style) -->
-<a href="{{ route('dashboard.export-detil', request()->all()) }}" 
-   class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
-    <i class="fa-solid fa-file-excel text-xs"></i>
-    <span>Export CSV</span>
-</a>
+
+    <!-- Tombol Export Detil Transaksi -->
+    <a href="{{ route('dashboard.export-detil', request()->all()) }}" 
+       class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600 ml-1">
+        <i class="fa-solid fa-file-excel text-xs"></i>
+        <span>Export CSV</span>
+    </a>
 </form>
 </div>
 

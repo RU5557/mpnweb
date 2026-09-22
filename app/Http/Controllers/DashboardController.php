@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RollingText;
 use App\Models\Target;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -14,62 +13,43 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        [$thnIni, $blnIni] = $this->resolvePeriod($request);
+        [$thnIni, $blnAwal, $blnAkhir] = $this->resolvePeriod($request);
         $thnLalu = $thnIni - 1;
 
-        $cacheKey = "dashboard_summary_{$thnIni}_{$blnIni}";
+        $cacheKey = "dashboard_summary_{$thnIni}_{$blnAwal}_{$blnAkhir}";
 
         try {
             $target = Cache::remember("dashboard_target_{$thnIni}", 600, function () use ($thnIni) {
                 return Target::where('tahun', $thnIni)->first();
             });
 
-            // $rollingText = Cache::remember('dashboard_rolling_text', 600, function () {
-            //     return RollingText::latest('tanggal')->first();
-            // });
-
-            $penerimaanData = Cache::remember($cacheKey, 600, function () use ($thnIni, $thnLalu, $blnIni) {
+            $penerimaanData = Cache::remember($cacheKey, 600, function () use ($thnIni, $thnLalu, $blnAwal, $blnAkhir) {
                 return DB::table('summary_mart_penerimaan')
                     ->whereIn('thn_setor', [$thnIni, $thnLalu])
-                    ->where('bln_setor', '<=', $blnIni)
-                    ->selectRaw('
-                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanSaatIni,
-                        SUM(CASE WHEN thn_setor = ? AND bln_setor < ? THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
-                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanThnLalu,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = \'PPM\' THEN total_setor ELSE 0 END) as realisasiPPM,
-                        SUM(CASE WHEN thn_setor = ? AND jenis IN (\'PKM\', \'PKM AKTIVITAS\', \'PKM LAINNYA\', \'PKM WRA\') THEN total_setor ELSE 0 END) as realisasiPKM,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = \'PBP\' THEN total_setor ELSE 0 END) as realisasiPBP,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi IN (\'akt pengawasan\', \'lainnya\', \'wra pengawasan\') THEN total_setor ELSE 0 END) as realisasiPengawasan,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = \'akt pemeriksaan\' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = \'akt penagihan\' THEN total_setor ELSE 0 END) as realisasiPenagihan,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = \'PPM\' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
-                        SUM(CASE WHEN thn_setor = ? AND jenis IN (\'PKM\', \'PKM AKTIVITAS\', \'PKM LAINNYA\', \'PKM WRA\') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi IN (\'akt pengawasan\', \'lainnya\', \'wra pengawasan\') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = \'akt pemeriksaan\' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = \'akt penagihan\' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
-                    ', [
-                        $thnIni,
-                        $thnIni,
-                        $blnIni,
-                        $thnLalu,
-                        $thnIni,
-                        $thnIni,
-                        $thnIni,
-                        $thnIni,
-                        $thnIni,
-                        $thnIni,
-                        $thnLalu,
-                        $thnLalu,
-                        $thnLalu,
-                        $thnLalu,
-                        $thnLalu,
-                    ])
+                    ->whereBetween('bln_setor', [$blnAwal, $blnAkhir])
+                    ->selectRaw("
+                        SUM(CASE WHEN thn_setor = {$thnIni} THEN total_setor ELSE 0 END) as penerimaanSaatIni,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND bln_setor < {$blnAkhir} THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} THEN total_setor ELSE 0 END) as penerimaanThnLalu,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPM,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKM,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PBP' THEN total_setor ELSE 0 END) as realisasiPBP,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasan,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
+                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihan,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
+                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
+                    ")
                     ->first();
             });
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary dashboard.', [
                 'tahun' => $thnIni,
-                'bulan' => $blnIni,
+                'bulan_awal' => $blnAwal,
+                'bulan_akhir' => $blnAkhir,
                 'message' => $e->getMessage(),
             ]);
 
@@ -100,9 +80,9 @@ class DashboardController extends Controller
 
         return view('penerimaan.dashboard', compact(
             'thnIni',
-            'blnIni',
+            'blnAwal',
+            'blnAkhir',
             'target',
-            // 'rollingText',
             'capaianKantor',
             'penerimaanSaatIni',
             'penerimaanBlnLalu',
@@ -121,14 +101,11 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * Handle Export CSV Detil Transaksi Dashboard (Streaming & Hemat Memory)
-     */
     public function exportDetil(Request $request)
     {
-        [$tahun, $bulan] = $this->resolvePeriod($request);
+        [$tahun, $bulanAwal, $bulanAkhir] = $this->resolvePeriod($request);
 
-        $filename = "Export_Detil_Transaksi_Dashboard_{$tahun}_{$bulan}.csv";
+        $filename = "Export_Detil_Transaksi_Dashboard_{$tahun}_{$bulanAwal}_sd_{$bulanAkhir}.csv";
 
         $headers = [
             'Content-type' => 'text/csv; charset=UTF-8',
@@ -138,7 +115,7 @@ class DashboardController extends Controller
             'Expires' => '0',
         ];
 
-        return response()->stream(function () use ($tahun, $bulan) {
+        return response()->stream(function () use ($tahun, $bulanAwal, $bulanAkhir) {
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
@@ -147,7 +124,7 @@ class DashboardController extends Controller
             try {
                 $query = DB::table('detil_transaksi_wp as dt')
                     ->where('dt.thn_setor', $tahun)
-                    ->where('dt.bln_setor', '<=', $bulan)
+                    ->whereBetween('dt.bln_setor', [$bulanAwal, $bulanAkhir])
                     ->orderBy('dt.bln_setor', 'asc');
 
                 $isHeaderWritten = false;
@@ -176,7 +153,8 @@ class DashboardController extends Controller
             } catch (QueryException $e) {
                 Log::error('Gagal mengekspor detil transaksi dashboard.', [
                     'tahun' => $tahun,
-                    'bulan' => $bulan,
+                    'bulan_awal' => $bulanAwal,
+                    'bulan_akhir' => $bulanAkhir,
                     'message' => $e->getMessage(),
                 ]);
 
@@ -189,22 +167,34 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return array{0: int, 1: int}
+     * @return array{0: int, 1: int, 2: int}
      */
     private function resolvePeriod(Request $request): array
     {
         $tahun = (int) $request->input('tahun', date('Y'));
-        $bulan = (int) $request->input('bulan', date('n'));
+        
+        // Membaca bulan awal dan bulan akhir (support backward compatibility untuk param 'bulan')
+        $bulanAwal = (int) $request->input('bulan_awal', 1);
+        $bulanAkhir = (int) $request->input('bulan_akhir', $request->input('bulan', date('n')));
 
         if ($tahun < 2000 || $tahun > 2100) {
             $tahun = (int) date('Y');
         }
 
-        if ($bulan < 1 || $bulan > 12) {
-            $bulan = (int) date('n');
+        if ($bulanAwal < 1 || $bulanAwal > 12) {
+            $bulanAwal = 1;
         }
 
-        return [$tahun, $bulan];
+        if ($bulanAkhir < 1 || $bulanAkhir > 12) {
+            $bulanAkhir = (int) date('n');
+        }
+
+        // Jika bulan awal diset lebih besar dari bulan akhir, samakan nilai bulan awal dengan bulan akhir
+        if ($bulanAwal > $bulanAkhir) {
+            $bulanAwal = $bulanAkhir;
+        }
+
+        return [$tahun, $bulanAwal, $bulanAkhir];
     }
 
     private function flushOutputBuffer(): void
