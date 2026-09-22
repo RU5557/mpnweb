@@ -41,6 +41,8 @@ Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
         Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vsbulanlalu');
     });
 });
+Route::get('/penerimaan/penjagaan/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('penerimaan.penjagaan.export-detil');
+
 
 // Route Export Data Detil
 Route::get('/dashboard/export-detil', [DashboardController::class, 'exportDetil'])->name('dashboard.export-detil');
