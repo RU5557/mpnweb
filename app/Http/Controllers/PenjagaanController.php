@@ -10,21 +10,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PenjagaanController extends Controller
 {
     /**
-     * Cache opsi filter 'jenis' selama 24 jam
-     */
-    private function getJenisOptions()
-    {
-        return Cache::remember('penjagaan_jenis_options', 86400, function () {
-            return DB::table('detil_transaksi_wp')
-                ->select('jenis')
-                ->whereNotNull('jenis')
-                ->distinct()
-                ->orderBy('jenis')
-                ->pluck('jenis');
-        });
-    }
-
-    /**
      * Cache opsi filter 'fungsi' selama 24 jam
      */
     private function getFungsiOptions()
@@ -42,17 +27,10 @@ class PenjagaanController extends Controller
     // 1. Penjagaan Bulanan (2026 vs 2025 per Bulan)
     public function bulanan(Request $request)
     {
-        $jenisOptions = $this->getJenisOptions();
         $fungsiOptions = $this->getFungsiOptions();
 
         // Default: Jika request tidak membawa parameter (akses pertama kali), 
         // centang/pilih SEMUA opsi yang tersedia.
-        if (!$request->has('jenis')) {
-            $jenis = $jenisOptions->toArray();
-        } else {
-            $jenis = (array) $request->input('jenis', []);
-        }
-
         if (!$request->has('fungsi')) {
             $fungsi = $fungsiOptions->toArray();
         } else {
@@ -60,11 +38,10 @@ class PenjagaanController extends Controller
         }
 
         // Buat cache key berdasarkan filter
-        $jenisKey = implode(',', $jenis);
         $fungsiKey = implode(',', $fungsi);
-        $cacheKey = 'penjagaan_bulanan_' . md5("j:{$jenisKey}_f:{$fungsiKey}");
+        $cacheKey = 'penjagaan_bulanan_' . md5("f:{$fungsiKey}");
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($jenis, $fungsi) {
+        $data = Cache::remember($cacheKey, 3600, function () use ($fungsi) {
             $query2025 = DB::table('detil_transaksi_wp')
                 ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2025);
@@ -72,11 +49,6 @@ class PenjagaanController extends Controller
             $query2026 = DB::table('detil_transaksi_wp')
                 ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2026);
-
-            if (!empty($jenis)) {
-                $query2025->whereIn('jenis', $jenis);
-                $query2026->whereIn('jenis', $jenis);
-            }
 
             if (!empty($fungsi)) {
                 $query2025->whereIn('fungsi', $fungsi);
@@ -99,25 +71,22 @@ class PenjagaanController extends Controller
         }
 
         return view('penerimaan.penjagaan.bulanan', compact(
-            'months', 'data2025', 'data2026', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'
+            'months', 'data2025', 'data2026', 'fungsiOptions', 'fungsi'
         ));
     }
 
     // 2. Penjagaan Harian (2026 vs 2025 pada Bulan yang Sama)
     public function harian(Request $request)
     {
-        $jenis = (array) $request->input('jenis', []);
         $fungsi = (array) $request->input('fungsi', []);
         $bulan = (int) $request->input('bulan', date('m'));
         
-        $jenisOptions = $this->getJenisOptions();
         $fungsiOptions = $this->getFungsiOptions();
 
-        $jenisKey = implode(',', $jenis);
         $fungsiKey = implode(',', $fungsi);
-        $cacheKey = 'penjagaan_harian_' . md5("b:{$bulan}_j:{$jenisKey}_f:{$fungsiKey}");
+        $cacheKey = 'penjagaan_harian_' . md5("b:{$bulan}_f:{$fungsiKey}");
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $jenis, $fungsi) {
+        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $fungsi) {
             $query2025 = DB::table('detil_transaksi_wp')
                 ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2025)
@@ -127,11 +96,6 @@ class PenjagaanController extends Controller
                 ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2026)
                 ->where('bln_setor', $bulan);
-
-            if (!empty($jenis)) {
-                $query2025->whereIn('jenis', $jenis);
-                $query2026->whereIn('jenis', $jenis);
-            }
 
             if (!empty($fungsi)) {
                 $query2025->whereIn('fungsi', $fungsi);
@@ -153,27 +117,24 @@ class PenjagaanController extends Controller
             $data2026[] = (float) ($data['2026'][$day] ?? 0);
         }
 
-        return view('penerimaan.penjagaan.harian', compact('days', 'data2025', 'data2026', 'bulan', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'));
+        return view('penerimaan.penjagaan.harian', compact('days', 'data2025', 'data2026', 'bulan', 'fungsiOptions', 'fungsi'));
     }
 
     // 3. Penjagaan vs Bulan Lalu (2026 Bulan Ini vs Bulan Sebelumnya)
     public function vsBulanLalu(Request $request)
     {
-        $jenis = (array) $request->input('jenis', []);
         $fungsi = (array) $request->input('fungsi', []);
         $bulan = (int) $request->input('bulan', date('m'));
         
-        $jenisOptions = $this->getJenisOptions();
         $fungsiOptions = $this->getFungsiOptions();
 
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;
         $tahunBulanLalu = $bulan == 1 ? 2025 : 2026;
 
-        $jenisKey = implode(',', $jenis);
         $fungsiKey = implode(',', $fungsi);
-        $cacheKey = 'penjagaan_vs_bulan_lalu_' . md5("b:{$bulan}_j:{$jenisKey}_f:{$fungsiKey}");
+        $cacheKey = 'penjagaan_vs_bulan_lalu_' . md5("b:{$bulan}_f:{$fungsiKey}");
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $bulanLalu, $tahunBulanLalu, $jenis, $fungsi) {
+        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $bulanLalu, $tahunBulanLalu, $fungsi) {
             $queryBulanIni = DB::table('detil_transaksi_wp')
                 ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
                 ->where('thn_setor', 2026)
@@ -183,11 +144,6 @@ class PenjagaanController extends Controller
                 ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
                 ->where('thn_setor', $tahunBulanLalu)
                 ->where('bln_setor', $bulanLalu);
-
-            if (!empty($jenis)) {
-                $queryBulanIni->whereIn('jenis', $jenis);
-                $queryBulanLalu->whereIn('jenis', $jenis);
-            }
 
             if (!empty($fungsi)) {
                 $queryBulanIni->whereIn('fungsi', $fungsi);
@@ -209,22 +165,15 @@ class PenjagaanController extends Controller
             $dataBulanLalu[] = (float) ($data['lalu'][$day] ?? 0);
         }
 
-        return view('penerimaan.penjagaan.vs_bulan_lalu', compact('days', 'dataBulanIni', 'dataBulanLalu', 'bulan', 'bulanLalu', 'jenisOptions', 'fungsiOptions', 'jenis', 'fungsi'));
+        return view('penerimaan.penjagaan.vs_bulan_lalu', compact('days', 'dataBulanIni', 'dataBulanLalu', 'bulan', 'bulanLalu', 'fungsiOptions', 'fungsi'));
     }
 
     public function exportBulananCsv(Request $request): StreamedResponse
     {
-        $jenisOptions = $this->getJenisOptions();
         $fungsiOptions = $this->getFungsiOptions();
 
         // Tangkap filter sesuai pilihan di UI
-        if (!$request->has('jenis')) {
-            $jenis = $jenisOptions->toArray();
-        } else {
-            $jenis = (array) $request->input('jenis', []);
-        }
-
-        if (!$request->has('fungsi')) {
+            if (!$request->has('fungsi')) {
             $fungsi = $fungsiOptions->toArray();
         } else {
             $fungsi = (array) $request->input('fungsi', []);
@@ -246,7 +195,7 @@ class PenjagaanController extends Controller
             'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
         ];
 
-        $callback = function () use ($jenis, $fungsi, $columns) {
+        $callback = function () use ($fungsi, $columns) {
             $file = fopen('php://output', 'w');
             
             // UTF-8 BOM untuk Microsoft Excel
@@ -261,10 +210,6 @@ class PenjagaanController extends Controller
                     'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
                 ])
                 ->whereIn('thn_setor', [2025, 2026]);
-
-            if (!empty($jenis)) {
-                $query->whereIn('jenis', $jenis);
-            }
 
             if (!empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
