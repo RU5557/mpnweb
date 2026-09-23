@@ -15,26 +15,29 @@ class PkmPemeriksaanController extends Controller
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $search = trim((string) $request->input('search', ''));
         $sortColumn = (string) $request->input('sort', 'total_akt_pemeriksaan');
-        $sortDirection = (string) $request->input('direction', 'desc');
+        $sortDirection = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
         $page = max(1, (int) $request->input('page', 1));
 
+        // Mapping opsi sorting ke sintaks/alias SQL
         $allowedSorts = [
-            'npwp' => 'dt.npwp15',
-            'nama_wp' => DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar')"),
-            'kd_klu' => DB::raw("COALESCE(mw.klu, '-')"),
-            'nm_klu' => DB::raw("COALESCE(k.nm_klu, '-')"),
-            'total_akt_pemeriksaan' => DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pemeriksaan' THEN dt.jml_setor ELSE 0 END)"),
+            'npwp'                  => 'dt.npwp15',
+            'nama_wp'               => DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar')"),
+            'kd_klu'                => DB::raw("COALESCE(mw.klu, '-')"),
+            'nm_klu'                => DB::raw("COALESCE(k.nm_klu, '-')"),
+            'total_akt_pemeriksaan' => 'total_akt_pemeriksaan',
         ];
 
-        $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pemeriksaan' THEN dt.jml_setor ELSE 0 END)");
-        $sortDir = strtolower($sortDirection) === 'asc' ? 'asc' : 'desc';
-        $sortColumn = array_key_exists($sortColumn, $allowedSorts) ? $sortColumn : 'total_akt_pemeriksaan';
-        $sortDirection = $sortDir;
+        // Validasi kolom sorting
+        if (!array_key_exists($sortColumn, $allowedSorts)) {
+            $sortColumn = 'total_akt_pemeriksaan';
+        }
+        $sortBy = $allowedSorts[$sortColumn];
 
-        $cacheKey = "pkm_pemeriksaan_{$tahun}_{$bulan}_s" . md5($search) . "_{$sortColumn}_{$sortDir}_p{$page}";
+        // Unique Cache Key
+        $cacheKey = "pkm_pemeriksaan_{$tahun}_{$bulan}_s" . md5($search) . "_{$sortColumn}_{$sortDirection}_p{$page}";
 
         try {
-            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $search, $sortBy, $sortDir) {
+            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $search, $sortBy, $sortDirection) {
                 $like = '%' . addcslashes($search, '%_\\') . '%';
 
                 return DB::table('detil_transaksi_wp as dt')
@@ -45,7 +48,7 @@ class PkmPemeriksaanController extends Controller
                         DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar') as nama_wp"),
                         DB::raw("COALESCE(mw.klu, '-') as kd_klu"),
                         DB::raw("COALESCE(k.nm_klu, '-') as nm_klu"),
-                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt pemeriksaan' THEN dt.jml_setor ELSE 0 END) as total_akt_pemeriksaan")
+                        DB::raw("SUM(dt.jml_setor) as total_akt_pemeriksaan")
                     )
                     ->whereRaw('LOWER(dt.fungsi) = ?', ['akt pemeriksaan'])
                     ->where('dt.thn_setor', $tahun)
@@ -59,7 +62,7 @@ class PkmPemeriksaanController extends Controller
                         });
                     })
                     ->groupBy('dt.npwp15', 'mw.nama', 'mw.klu', 'k.nm_klu')
-                    ->orderBy($sortBy, $sortDir)
+                    ->orderBy($sortBy, $sortDirection)
                     ->paginate(10)
                     ->withQueryString();
             });
@@ -73,7 +76,13 @@ class PkmPemeriksaanController extends Controller
             abort(503, 'Data PKM Pemeriksaan sedang tidak tersedia. Silakan coba lagi.');
         }
 
-        return view('penerimaan.pkmpemeriksaan', compact('pkmData', 'sortColumn', 'sortDirection'));
+        return view('penerimaan.pkmpemeriksaan', [
+            'pkmData'       => $pkmData,
+            'sortColumn'    => $sortColumn,
+            'sortDirection' => $sortDirection,
+            'tahun'         => $tahun,
+            'bulan'         => $bulan,
+        ]);
     }
 
     /**
