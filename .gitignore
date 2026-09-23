@@ -30,3 +30,4 @@ Thumbs.db
 !/storage/framework/sessions/.gitignore
 !/storage/framework/views/.gitignore
 !/storage/logs/.gitignore
+/storage/app/error_logs/*
