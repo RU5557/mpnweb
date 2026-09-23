@@ -39,10 +39,10 @@ Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
         Route::get('/bulanan/export-detil', [PenjagaanController::class, 'exportBulananCsv'])->name('bulanan.export-detil');
         
         Route::get('/harian', [PenjagaanController::class, 'harian'])->name('harian');
-        Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export');
+        Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export-detil');
         
-        Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vsbulanlalu');
-        Route::get('/vs-bulan-lalu/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('vsbulanlalu.export');
+        Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vs-bulan-lalu');
+        Route::get('/vs-bulan-lalu/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('vs-bulan-lalu.export-detil');
     });
 });
 
@@ -53,8 +53,9 @@ Route::get('/pkm-pengawasan/export-detil', [PkmPengawasanController::class, 'exp
 Route::get('/pkm-pemeriksaan/export-detil', [PkmPemeriksaanController::class, 'exportDetil'])->name('pkm.pemeriksaan.export-detil');
 Route::get('/pkm-penagihan/export-detil', [PkmPenagihanController::class, 'exportDetil'])->name('pkm.penagihan.export-detil');
 
-// Fitur Search WP
+// Fitur Search WP (URL dan Route Name diselaraskan menjadi /search-wp dan wp.search)
 Route::get('/search-wp', [WpSearchController::class, 'search'])->name('wp.search');
+Route::get('/search-wp/export-detil', [WpSearchController::class, 'exportCsv'])->name('wp.export-detil');
 
 /*
 |--------------------------------------------------------------------------

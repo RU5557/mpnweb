@@ -66,7 +66,7 @@
                 <span>Filter</span>
             </button>
 
-            <a href="{{ route('penerimaan.penjagaan.harian.export', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium flex items-center gap-1.5 transition shadow-sm">
+            <a href="{{ route('penerimaan.penjagaan.harian.export-detil', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium flex items-center gap-1.5 transition shadow-sm">
                 <i class="fa-solid fa-file-csv"></i>
                 <span>Export CSV</span>
             </a>

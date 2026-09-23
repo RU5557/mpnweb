@@ -1,6 +1,5 @@
 <?php
 
-// app/Models/MasterfileWp.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -36,23 +35,22 @@ class MasterfileWp extends Model
         return $this->ar->nama ?? '-';
     }
 
-    // Relasi ke AR
-    public function ar()
-    {
-        return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip')
-                    ->where('tahun', date('Y'));
-    }
-
+    // Alias untuk Nama JS
     public function getNamaJsAttribute()
     {
         return $this->js->nama ?? '-';
     }
 
+    // Relasi ke AR (Mengambil data Pegawai berdasarkan NIP)
+    public function ar()
+    {
+        return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip');
+    }
+
     // Relasi Jurusita (JS)
     public function js()
     {
-        return $this->belongsTo(Pegawai::class, 'nip_js', 'nip')
-                    ->where('tahun', date('Y'));
+        return $this->belongsTo(Pegawai::class, 'nip_js', 'nip');
     }
 
     // Relasi Detil Transaksi

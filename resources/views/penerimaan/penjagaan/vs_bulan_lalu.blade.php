@@ -20,7 +20,7 @@
         </div>
         
         <div class="flex flex-wrap items-center gap-3">
-            <form method="GET" action="{{ route('penerimaan.penjagaan.vsbulanlalu') }}" class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ route('penerimaan.penjagaan.vs-bulan-lalu') }}" class="flex flex-wrap items-center gap-3">
                 <select name="bulan" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 font-medium">
                     @for($m=1; $m<=12; $m++)
                         <option value="{{ $m }}" {{ $bulan == $m ? 'selected' : '' }}>
@@ -68,11 +68,11 @@
                 </button>
 
                 @if(request()->has('fungsi'))
-                    <a href="{{ route('penerimaan.penjagaan.vsbulanlalu', ['bulan' => $bulan]) }}" class="text-xs text-rose-500 hover:underline font-medium">Reset Filter</a>
+                    <a href="{{ route('penerimaan.penjagaan.vs-bulan-lalu', ['bulan' => $bulan]) }}" class="text-xs text-rose-500 hover:underline font-medium">Reset Filter</a>
                 @endif
             </form>
 
-            <a href="{{ route('penerimaan.penjagaan.vsbulanlalu.export', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition-colors shadow-sm">
+            <a href="{{ route('penerimaan.penjagaan.vs-bulan-lalu.export-detil', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition-colors shadow-sm">
                 <i class="fa-solid fa-file-csv text-sm"></i>
                 <span>Export CSV</span>
             </a>

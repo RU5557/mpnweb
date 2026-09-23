@@ -58,8 +58,8 @@
                        class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('penerimaan.penjagaan.harian') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                         Harian
                     </a>
-                    <a href="{{ route('penerimaan.penjagaan.vsbulanlalu') }}" 
-                       class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('penerimaan.penjagaan.vsbulanlalu') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <a href="{{ route('penerimaan.penjagaan.vs-bulan-lalu') }}" 
+                       class="block px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('penerimaan.penjagaan.vs-bulan-lalu') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                         Vs Bulan Lalu
                     </a>
                 </div>
