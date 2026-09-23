@@ -4,25 +4,7 @@
 
 @section('content')
 
-@php
-    // Helper function untuk generate URL sort
-    function sortUrl($column, $currentSort, $currentDir) {
-        $direction = ($currentSort === $column && $currentDir === 'asc') ? 'desc' : 'asc';
-        return request()->fullUrlWithQuery(['sort' => $column, 'direction' => $direction]);
-    }
-
-    // Helper icon sort
-    function sortIcon($column, $currentSort, $currentDir) {
-        if ($currentSort !== $column) {
-            return '<i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>';
-        }
-        return $currentDir === 'asc' 
-            ? '<i class="fa-solid fa-sort-up text-amber-600 ml-1 text-xs"></i>' 
-            : '<i class="fa-solid fa-sort-down text-amber-600 ml-1 text-xs"></i>';
-    }
-@endphp
-
-<!-- HEADER & FILTER CONTAINER (COMPACT & SEJAJAR) -->
+<!-- HEADER & FILTER CONTAINER -->
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
     
     <!-- Judul & Subjudul -->
@@ -34,24 +16,21 @@
     <!-- Form Filter Compact -->
     <form action="{{ route('penerimaan.pkmpenagihan') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex flex-wrap items-center gap-2.5">
         <!-- State Preserve Sort -->
-        <input type="hidden" name="sort" value="{{ request('sort', 'nip_jspn') }}">
-        <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+        <input type="hidden" name="sort" value="{{ $sortColumn }}">
+        <input type="hidden" name="direction" value="{{ $sortDirection }}">
 
         <!-- Filter Dropdown DSPC / NON-DSPC -->
         <select name="dspc_filter" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             <option value="">DSPC/NON-DSPC</option>
-            <option value="DSPC" {{ request('dspc_filter') == 'DSPC' ? 'selected' : '' }}>DSPC</option>
-            <option value="NON-DSPC" {{ request('dspc_filter') == 'NON-DSPC' ? 'selected' : '' }}>NON-DSPC</option>
+            <option value="DSPC" {{ $dspcFilter === 'DSPC' ? 'selected' : '' }}>DSPC</option>
+            <option value="NON-DSPC" {{ $dspcFilter === 'NON-DSPC' ? 'selected' : '' }}>NON-DSPC</option>
         </select>
 
         <!-- Filter Bulan -->
         <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             @foreach(range(1, 12) as $m)
-                @php
-                    $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
-                @endphp
-                <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
-                    {{ $monthName }}
+                <option value="{{ $m }}" {{ $bulan == $m ? 'selected' : '' }}>
+                    {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
                 </option>
             @endforeach
         </select>
@@ -59,7 +38,7 @@
         <!-- Filter Tahun -->
         <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 outline-none transition cursor-pointer">
             @foreach(range(date('Y') - 3, date('Y')) as $year)
-                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
                     {{ $year }}
                 </option>
             @endforeach
@@ -76,12 +55,13 @@
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
         @endif
-        <!-- Tombol Export Detil Transaksi (Tailwind Style) -->
-<a href="{{ route('pkm.penagihan.export-detil', request()->all()) }}" 
-   class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
-    <i class="fa-solid fa-file-excel text-xs"></i>
-    <span>Export CSV</span>
-</a>
+
+        <!-- Tombol Export Detil Transaksi -->
+        <a href="{{ route('pkm.penagihan.export-detil', request()->all()) }}" 
+           class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
+            <i class="fa-solid fa-file-excel text-xs"></i>
+            <span>Export CSV</span>
+        </a>
     </form>
 </div>
 
@@ -105,29 +85,49 @@
                     
                     <!-- Header Sort NIP JSPN -->
                     <th class="py-3 px-3.5 whitespace-nowrap">
-                        <a href="{{ sortUrl('nip_jspn', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
-                            NIP JSPN {!! sortIcon('nip_jspn', $sortColumn, $sortDirection) !!}
+                        <a href="{{ request()->fullUrlWithQuery(['sort' => 'nip_jspn', 'direction' => ($sortColumn === 'nip_jspn' && $sortDirection === 'asc') ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
+                            NIP JSPN 
+                            @if($sortColumn === 'nip_jspn')
+                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-amber-600 ml-1 text-xs"></i>
+                            @else
+                                <i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>
+                            @endif
                         </a>
                     </th>
 
                     <!-- Header Sort NAMA JSPN -->
                     <th class="py-3 px-3.5 whitespace-nowrap">
-                        <a href="{{ sortUrl('nama_jspn', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
-                            NAMA JSPN {!! sortIcon('nama_jspn', $sortColumn, $sortDirection) !!}
+                        <a href="{{ request()->fullUrlWithQuery(['sort' => 'nama_jspn', 'direction' => ($sortColumn === 'nama_jspn' && $sortDirection === 'asc') ? 'desc' : 'asc']) }}" class="flex items-center gap-1 hover:text-amber-600 transition select-none">
+                            NAMA JSPN 
+                            @if($sortColumn === 'nama_jspn')
+                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-amber-600 ml-1 text-xs"></i>
+                            @else
+                                <i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>
+                            @endif
                         </a>
                     </th>
 
                     <!-- Header Sort DSPC / NON-DSPC -->
                     <th class="py-3 px-3.5 text-center whitespace-nowrap">
-                        <a href="{{ sortUrl('flag_skp', $sortColumn, $sortDirection) }}" class="flex items-center justify-center gap-1 hover:text-amber-600 transition select-none">
-                            DSPC / NON-DSPC {!! sortIcon('flag_skp', $sortColumn, $sortDirection) !!}
+                        <a href="{{ request()->fullUrlWithQuery(['sort' => 'flag_skp', 'direction' => ($sortColumn === 'flag_skp' && $sortDirection === 'asc') ? 'desc' : 'asc']) }}" class="flex items-center justify-center gap-1 hover:text-amber-600 transition select-none">
+                            DSPC / NON-DSPC 
+                            @if($sortColumn === 'flag_skp')
+                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-amber-600 ml-1 text-xs"></i>
+                            @else
+                                <i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>
+                            @endif
                         </a>
                     </th>
 
                     <!-- Header Sort AKT PENAGIHAN -->
                     <th class="py-3 px-3.5 text-right whitespace-nowrap">
-                        <a href="{{ sortUrl('akt_penagihan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-amber-600 transition select-none">
-                            TOTAL PKM PENAGIHAN {!! sortIcon('akt_penagihan', $sortColumn, $sortDirection) !!}
+                        <a href="{{ request()->fullUrlWithQuery(['sort' => 'akt_penagihan', 'direction' => ($sortColumn === 'akt_penagihan' && $sortDirection === 'asc') ? 'desc' : 'asc']) }}" class="flex items-center justify-end gap-1 hover:text-amber-600 transition select-none">
+                            TOTAL PKM PENAGIHAN 
+                            @if($sortColumn === 'akt_penagihan')
+                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-amber-600 ml-1 text-xs"></i>
+                            @else
+                                <i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>
+                            @endif
                         </a>
                     </th>
                 </tr>
@@ -149,7 +149,7 @@
                             @endif
                         </td>
 
-                        <!-- NAMA JSPN: Font dikecilkan sedikit ke 13px -->
+                        <!-- NAMA JSPN -->
                         <td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
                             @if($row->nama_jspn === 'Unassign')
                                 <span class="text-rose-600 italic font-medium">Unassign</span>

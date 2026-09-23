@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PkmPenagihanController extends Controller
 {
@@ -14,25 +15,24 @@ class PkmPenagihanController extends Controller
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $dspcFilter = $this->resolveDspcFilter($request);
-        $sortColumn = (string) $request->input('sort', 'nip_jspn');
-        $sortDirection = (string) $request->input('direction', 'asc');
+        
+        $sortInput = (string) $request->input('sort', 'nip_jspn');
+        $sortDirectionInput = (string) $request->input('direction', 'asc');
 
         $allowedSorts = [
-            'nip_jspn' => DB::raw("COALESCE(mw.nip_js, 'Unassign')"),
-            'nama_jspn' => DB::raw("COALESCE(p.nama, 'Unassign')"),
-            'flag_skp' => DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')"),
+            'nip_jspn' => 'nip_jspn',
+            'nama_jspn' => 'nama_jspn',
+            'flag_skp' => 'flag_skp',
             'akt_penagihan' => 'akt_penagihan',
         ];
 
-        $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(mw.nip_js, 'Unassign')");
-        $sortDir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
-        $sortColumn = array_key_exists($sortColumn, $allowedSorts) ? $sortColumn : 'nip_jspn';
-        $sortDirection = $sortDir;
+        $sortColumn = array_key_exists($sortInput, $allowedSorts) ? $sortInput : 'nip_jspn';
+        $sortDirection = strtolower($sortDirectionInput) === 'desc' ? 'desc' : 'asc';
 
-        $cacheKey = "pkm_penagihan_{$tahun}_{$bulan}_{$dspcFilter}_{$sortColumn}_{$sortDir}";
+        $cacheKey = "pkm_penagihan_{$tahun}_{$bulan}_{$dspcFilter}_{$sortColumn}_{$sortDirection}";
 
         try {
-            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $dspcFilter, $sortBy, $sortDir) {
+            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $dspcFilter, $sortColumn, $sortDirection) {
                 $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
 
                 return DB::table('detil_transaksi_wp as dt')
@@ -40,12 +40,12 @@ class PkmPenagihanController extends Controller
                     ->leftJoinSub($subPegawai, 'p', function ($join) {
                         $join->on('mw.nip_js', '=', 'p.nip');
                     })
-                    ->select(
+                    ->select([
                         DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
                         DB::raw("COALESCE(p.nama, 'Unassign') as nama_jspn"),
                         DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC') as flag_skp"),
-                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt penagihan' THEN dt.jml_setor ELSE 0 END) as akt_penagihan")
-                    )
+                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) = 'akt penagihan' THEN dt.jml_setor ELSE 0 END) as akt_penagihan"),
+                    ])
                     ->whereRaw('LOWER(dt.fungsi) = ?', ['akt penagihan'])
                     ->where('dt.thn_setor', $tahun)
                     ->whereBetween('dt.bln_setor', [1, $bulan])
@@ -56,7 +56,7 @@ class PkmPenagihanController extends Controller
 
                         return $query->where(function ($q) {
                             $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
-                                ->orWhereNull('dt.flag_skp');
+                              ->orWhereNull('dt.flag_skp');
                         });
                     })
                     ->groupBy(
@@ -64,7 +64,7 @@ class PkmPenagihanController extends Controller
                         DB::raw("COALESCE(p.nama, 'Unassign')"),
                         DB::raw("COALESCE(dt.flag_skp, 'NON-DSPC')")
                     )
-                    ->orderBy($sortBy, $sortDir)
+                    ->orderBy($sortColumn, $sortDirection)
                     ->get();
             });
         } catch (QueryException $e) {
@@ -77,13 +77,20 @@ class PkmPenagihanController extends Controller
             abort(503, 'Data PKM Penagihan sedang tidak tersedia. Silakan coba lagi.');
         }
 
-        return view('penerimaan.pkmpenagihan', compact('pkmData', 'sortColumn', 'sortDirection'));
+        return view('penerimaan.pkmpenagihan', compact(
+            'pkmData', 
+            'sortColumn', 
+            'sortDirection', 
+            'tahun', 
+            'bulan', 
+            'dspcFilter'
+        ));
     }
 
     /**
      * Handle Export CSV Detil Transaksi Penagihan (Streaming & Hemat Memory)
      */
-    public function exportDetil(Request $request)
+    public function exportDetil(Request $request): StreamedResponse
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $dspcFilter = $this->resolveDspcFilter($request);
@@ -94,7 +101,7 @@ class PkmPenagihanController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
 
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'NIP JSPN', 'NAMA JSPN', 'FLAG SKP',
@@ -109,7 +116,7 @@ class PkmPenagihanController extends Controller
                     ->leftJoinSub($subPegawai, 'p', function ($join) {
                         $join->on('mw.nip_js', '=', 'p.nip');
                     })
-                    ->select(
+                    ->select([
                         'dt.npwp15',
                         DB::raw("COALESCE(mw.nama, '-') as nama_wp"),
                         DB::raw("COALESCE(mw.nip_js, 'Unassign') as nip_jspn"),
@@ -120,8 +127,8 @@ class PkmPenagihanController extends Controller
                         'dt.jml_setor',
                         'dt.bln_setor',
                         'dt.thn_setor',
-                        'dt.fungsi'
-                    )
+                        'dt.fungsi',
+                    ])
                     ->whereRaw('LOWER(dt.fungsi) = ?', ['akt penagihan'])
                     ->where('dt.thn_setor', $tahun)
                     ->whereBetween('dt.bln_setor', [1, $bulan])
@@ -132,7 +139,7 @@ class PkmPenagihanController extends Controller
 
                         return $query->where(function ($q) {
                             $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
-                                ->orWhereNull('dt.flag_skp');
+                              ->orWhereNull('dt.flag_skp');
                         });
                     })
                     ->orderBy('p.nama', 'asc')
@@ -155,7 +162,7 @@ class PkmPenagihanController extends Controller
                         $row->jml_setor,
                     ]);
 
-                    if ($index % 1000 === 0) {
+                    if ($index % 5000 === 0) {
                         $this->flushOutputBuffer();
                     }
                 }
@@ -205,7 +212,7 @@ class PkmPenagihanController extends Controller
     private function csvDownloadHeaders(string $filename): array
     {
         return [
-            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
