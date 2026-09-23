@@ -4,25 +4,7 @@
 
 @section('content')
 
-@php
-    // Helper function untuk URL Sort
-    function sortUrl($column, $currentSort, $currentDir) {
-        $direction = ($currentSort === $column && $currentDir === 'asc') ? 'desc' : 'asc';
-        return request()->fullUrlWithQuery(['sort' => $column, 'direction' => $direction]);
-    }
-
-    // Helper icon Sort
-    function sortIcon($column, $currentSort, $currentDir) {
-        if ($currentSort !== $column) {
-            return '<i class="fa-solid fa-sort text-slate-300 ml-1 text-xs"></i>';
-        }
-        return $currentDir === 'asc' 
-            ? '<i class="fa-solid fa-sort-up text-emerald-600 ml-1 text-xs"></i>' 
-            : '<i class="fa-solid fa-sort-down text-emerald-600 ml-1 text-xs"></i>';
-    }
-@endphp
-
-<!-- HEADER & FILTER CONTAINER (COMPACT & SEJAJAR) -->
+<!-- HEADER & FILTER CONTAINER -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
     
     <!-- Judul & Subjudul -->
@@ -34,14 +16,14 @@
     <!-- Form Filter Compact -->
     <form action="{{ route('penerimaan.pkmpengawasan') }}" method="GET" class="bg-white border border-slate-200 rounded-xl p-2 px-3.5 shadow-sm flex items-center gap-2.5">
         <!-- Preserve Current Sort State -->
-        <input type="hidden" name="sort" value="{{ request('sort', 'nama_seksi') }}">
-        <input type="hidden" name="direction" value="{{ request('direction', 'asc') }}">
+        <input type="hidden" name="sort" value="{{ $sortColumn }}">
+        <input type="hidden" name="direction" value="{{ $sortDirection }}">
 
         <!-- Select Seksi -->
         <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
             <option value="">-- Semua Seksi --</option>
             @foreach($daftarSeksi as $seksi)
-                <option value="{{ $seksi }}" {{ request('seksi') == $seksi ? 'selected' : '' }}>{{ $seksi }}</option>
+                <option value="{{ $seksi }}" {{ $seksiFilter === $seksi ? 'selected' : '' }}>{{ $seksi }}</option>
             @endforeach
         </select>
 
@@ -51,7 +33,7 @@
                 @php
                     $monthName = \Carbon\Carbon::create()->month($m)->translatedFormat('F');
                 @endphp
-                <option value="{{ $m }}" {{ request('bulan', date('m')) == $m ? 'selected' : '' }}>
+                <option value="{{ $m }}" {{ $bulan == $m ? 'selected' : '' }}>
                     {{ $monthName }}
                 </option>
             @endforeach
@@ -60,7 +42,7 @@
         <!-- Select Tahun -->
         <select name="tahun" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
             @foreach(range(date('Y') - 3, date('Y')) as $year)
-                <option value="{{ $year }}" {{ request('tahun', date('Y')) == $year ? 'selected' : '' }}>
+                <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
                     {{ $year }}
                 </option>
             @endforeach
@@ -77,12 +59,13 @@
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
         @endif
-        <!-- Tombol Export Detil Transaksi (Tailwind Style) -->
-<a href="{{ route('pkm.pengawasan.export-detil', request()->all()) }}" 
-   class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
-    <i class="fa-solid fa-file-excel text-xs"></i>
-    <span>Export CSV</span>
-</a>
+
+        <!-- Tombol Export Detil Transaksi -->
+        <a href="{{ route('pkm.pengawasan.export-detil', request()->all()) }}" 
+           class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-2 border border-emerald-600">
+            <i class="fa-solid fa-file-excel text-xs"></i>
+            <span>Export CSV</span>
+        </a>
     </form>
 </div>
 
@@ -100,48 +83,36 @@
             <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 text-xs">
                 <tr>
                     <th class="py-3 px-3.5 w-12 text-center whitespace-nowrap">No</th>
-                    
-                    <!-- Header Sort Nama Seksi -->
-                    <th class="py-3 px-3.5 whitespace-nowrap">
-                        <a href="{{ sortUrl('nama_seksi', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
-                            Nama Seksi {!! sortIcon('nama_seksi', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
 
-                    <!-- Header Sort Nama AR -->
-                    <th class="py-3 px-3.5 whitespace-nowrap">
-                        <a href="{{ sortUrl('nama_ar', $sortColumn, $sortDirection) }}" class="flex items-center gap-1 hover:text-emerald-600 transition select-none">
-                            Nama AR {!! sortIcon('nama_ar', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
+                    @php
+                        $cols = [
+                            'nama_seksi'           => ['label' => 'Nama Seksi', 'align' => 'left'],
+                            'nama_ar'              => ['label' => 'Nama AR', 'align' => 'left'],
+                            'total_akt_pengawasan' => ['label' => 'Akt Pengawasan', 'align' => 'right'],
+                            'total_lainnya'        => ['label' => 'Lainnya', 'align' => 'right'],
+                            'total_wra_pengawasan' => ['label' => 'WRA Pengawasan', 'align' => 'right'],
+                            'total_pkm_pengawasan' => ['label' => 'Total PKM Pengawasan', 'align' => 'right'],
+                        ];
+                    @endphp
 
-                    <!-- Header Sort Akt Pengawasan -->
-                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
-                        <a href="{{ sortUrl('total_akt_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
-                            Akt Pengawasan {!! sortIcon('total_akt_pengawasan', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
-
-                    <!-- Header Sort Lainnya -->
-                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
-                        <a href="{{ sortUrl('total_lainnya', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
-                            Lainnya {!! sortIcon('total_lainnya', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
-
-                    <!-- Header Sort WRA Pengawasan -->
-                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
-                        <a href="{{ sortUrl('total_wra_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
-                            WRA Pengawasan {!! sortIcon('total_wra_pengawasan', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
-
-                    <!-- Header Sort Total PKM Pengawasan -->
-                    <th class="py-3 px-3.5 text-right whitespace-nowrap">
-                        <a href="{{ sortUrl('total_pkm_pengawasan', $sortColumn, $sortDirection) }}" class="flex items-center justify-end gap-1 hover:text-emerald-600 transition select-none">
-                            Total PKM Pengawasan {!! sortIcon('total_pkm_pengawasan', $sortColumn, $sortDirection) !!}
-                        </a>
-                    </th>
+                    @foreach($cols as $colKey => $colMeta)
+                        @php
+                            $nextDir = ($sortColumn === $colKey && $sortDirection === 'asc') ? 'desc' : 'asc';
+                            $sortUrl = request()->fullUrlWithQuery(['sort' => $colKey, 'direction' => $nextDir]);
+                        @endphp
+                        <th class="py-3 px-3.5 whitespace-nowrap {{ $colMeta['align'] === 'right' ? 'text-right' : '' }}">
+                            <a href="{{ $sortUrl }}" class="flex items-center {{ $colMeta['align'] === 'right' ? 'justify-end' : '' }} gap-1 hover:text-emerald-600 transition select-none">
+                                <span>{{ $colMeta['label'] }}</span>
+                                @if($sortColumn !== $colKey)
+                                    <i class="fa-solid fa-sort text-slate-300 text-xs"></i>
+                                @elseif($sortDirection === 'asc')
+                                    <i class="fa-solid fa-sort-up text-emerald-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort-down text-emerald-600 text-xs"></i>
+                                @endif
+                            </a>
+                        </th>
+                    @endforeach
                 </tr>
             </thead>
 
@@ -160,13 +131,13 @@
                                 </span>
                             @endif
                         </td>
-<td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
-    @if($row->nama_ar === 'Unassign')
-        <span class="text-rose-600 italic">Unassign</span>
-    @else
-        {{ $row->nama_ar }}
-    @endif
-</td>
+                        <td class="py-2.5 px-3.5 text-slate-900 font-semibold text-[13px]">
+                            @if($row->nama_ar === 'Unassign')
+                                <span class="text-rose-600 italic">Unassign</span>
+                            @else
+                                {{ $row->nama_ar }}
+                            @endif
+                        </td>
                         <td class="py-2.5 px-3.5 text-right font-mono text-slate-600">
                             Rp {{ number_format($row->total_akt_pengawasan ?? 0, 0, ',', '.') }}
                         </td>
