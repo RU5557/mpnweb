@@ -41,16 +41,18 @@ class MasterfileWp extends Model
         return $this->js->nama ?? '-';
     }
 
-    // Relasi ke AR (Mengambil data Pegawai berdasarkan NIP)
+    // Relasi ke AR (Mengambil data Pegawai berdasarkan NIP & Tahun Saat Ini)
     public function ar()
     {
-        return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip');
+        return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip')
+                    ->where('tahun', date('Y'));
     }
 
     // Relasi Jurusita (JS)
     public function js()
     {
-        return $this->belongsTo(Pegawai::class, 'nip_js', 'nip');
+        return $this->belongsTo(Pegawai::class, 'nip_js', 'nip')
+                    ->where('tahun', date('Y'));
     }
 
     // Relasi Detil Transaksi

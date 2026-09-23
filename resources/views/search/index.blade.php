@@ -210,10 +210,10 @@
 
     <!-- ==================== HASIL TABEL ==================== -->
     @if(isset($results) && $results)
-        <div x-show="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div x-show="!loading" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-visible">
             
             <!-- HEADER TABEL & BUTTON EXPORT -->
-            <div class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center bg-slate-50/70 gap-3">
+            <div class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center bg-slate-50/70 gap-3 rounded-t-2xl">
                 <span class="text-xs font-medium text-slate-600">
                     Hasil Pencarian di <strong class="text-slate-900 font-bold">{{ $targetTable === 'masterfile' ? 'Masterfile WP' : 'Detil DRM' }}</strong> 
                     (Total: <span class="text-blue-600 font-bold">{{ number_format($results->total(), 0, ',', '.') }}</span> data)
@@ -387,7 +387,7 @@
                 @endif
             </div>
 
-            <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
                 {{ $results->links() }}
             </div>
         </div>

@@ -144,17 +144,18 @@ class WpSearchController extends Controller
             $isArFiltered = count($nipAr) > 0 && count($nipAr) < count($allAr);
             $isJsFiltered = count($nipJs) > 0 && count($nipJs) < count($allJs);
 
+            // FIX: Menggunakan $subQuery (bukan $query) & merujuk t_sub.npwp15
             if ($isArFiltered || $isJsFiltered || count($nipAr) === 0 || count($nipJs) === 0) {
-                $subQuery->join('masterfile_wp as mf_sub', 't_sub.npwp15', '=', 'mf_sub.npwp15');
+                $subQuery->join('masterfile_wp as mf', 't_sub.npwp15', '=', 'mf.npwp15');
                 
                 if (count($nipAr) === 0 || count($nipJs) === 0) {
                     $subQuery->whereRaw('1 = 0');
                 } else {
                     if ($isArFiltered) {
-                        $subQuery->whereIn('mf_sub.nip_ar', $nipAr);
+                        $subQuery->whereIn('mf.nip_ar', $nipAr);
                     }
                     if ($isJsFiltered) {
-                        $subQuery->whereIn('mf_sub.nip_js', $nipJs);
+                        $subQuery->whereIn('mf.nip_js', $nipJs);
                     }
                 }
             }
@@ -171,8 +172,9 @@ class WpSearchController extends Controller
             $ids = collect($paginatedIds->items())->pluck('id')->toArray();
 
             if (!empty($ids)) {
+                $validIds = array_map('intval', $ids);
                 $details = DB::table('detil_transaksi_wp as t')
-                    ->whereIn('t.id', $ids)
+                    ->whereIn('t.id', $validIds)
                     ->leftJoin('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15')
                     ->leftJoin('kdmap as k', function($join) {
                         $join->on('t.kd_map', '=', 'k.kd_map')
@@ -193,7 +195,7 @@ class WpSearchController extends Controller
                         'k.jenis_pajak', 'mf.nama as nama_master',
                         'p_ar.nama as nama_ar', 'p_js.nama as nama_js'
                     )
-                    ->orderByRaw("FIELD(t.id, " . implode(',', array_map('intval', $ids)) . ")");
+                    ->orderByRaw("FIELD(t.id, " . implode(',', $validIds) . ")");
 
                 $results = $paginatedIds->setCollection($details->get());
             } else {
@@ -209,14 +211,10 @@ class WpSearchController extends Controller
         ));
     }
 
-    /**
-     * Fitur Export CSV Streamed untuk data hasil filter
-     */
     public function exportCsv(Request $request): StreamedResponse
     {
         $keyword     = trim((string) $request->get('q'));
         $targetTable = $request->get('target_table', 'masterfile');
-        $tahun       = date('Y');
 
         $fileName = 'export_' . $targetTable . '_' . date('Ymd_His') . '.csv';
 
@@ -228,7 +226,7 @@ class WpSearchController extends Controller
             "Expires"             => "0"
         ];
 
-        return response()->stream(function () use ($keyword, $targetTable, $request, $tahun) {
+        return response()->stream(function () use ($keyword, $targetTable, $request) {
             $file = fopen('php://output', 'w');
             fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
 
@@ -281,10 +279,18 @@ class WpSearchController extends Controller
                 $thnSetor = (array) $request->get('thn_setor', []);
                 $blnSetor = (array) $request->get('bln_setor', []);
                 $fungsi   = (array) $request->get('fungsi', []);
+                $nipAr    = (array) $request->get('nip_ar', []);
+                $nipJs    = (array) $request->get('nip_js', []);
 
                 if (!empty($thnSetor)) $query->whereIn('t.thn_setor', $thnSetor);
                 if (!empty($blnSetor)) $query->whereIn('t.bln_setor', $blnSetor);
                 if (!empty($fungsi))   $query->whereIn('t.fungsi', $fungsi);
+
+                if (!empty($nipAr) || !empty($nipJs)) {
+                    $query->join('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15');
+                    if (!empty($nipAr)) $query->whereIn('mf.nip_ar', $nipAr);
+                    if (!empty($nipJs)) $query->whereIn('mf.nip_js', $nipJs);
+                }
 
                 $query->orderBy('t.tgl_setor', 'desc')->cursor()->each(function ($row) use ($file) {
                     fputcsv($file, [

@@ -20,6 +20,11 @@
     <!-- Alpine.js (Defer) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Pre-style x-cloak untuk mencegah FOUC (Flash of Unstyled Content) -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     @stack('styles')
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 text-sm min-h-screen flex antialiased">
@@ -29,7 +34,7 @@
 
     <!-- ==================== CONTENT WRAPPER ==================== -->
     <div :class="sidebarOpen || isPinned ? 'ml-60' : 'ml-20'" 
-         class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
+         class="flex-grow transition-all duration-300 flex flex-col min-h-screen ml-20">
         
         <!-- TOPBAR -->
         @include('layouts.partials.topbar')
