@@ -135,7 +135,7 @@ class PkmPengawasanController extends Controller
                 foreach ($query->cursor() as $row) {
                     fputcsv($file, [
                         $index++,
-                        !empty($row->npwp15) ? "'{$row->npwp15}" : '',
+                        !empty($row->npwp15) ? "{$row->npwp15}" : '',
                         $row->nama_wp,
                         $row->nama_seksi,
                         $row->nama_ar,
