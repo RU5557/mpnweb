@@ -149,7 +149,7 @@ class PkmPenagihanController extends Controller
                 foreach ($query->cursor() as $row) {
                     fputcsv($file, [
                         $index++,
-                        isset($row->npwp15) ? "'{$row->npwp15}" : '',
+                        isset($row->npwp15) ? "{$row->npwp15}" : '',
                         $row->nama_wp,
                         $row->nip_jspn,
                         $row->nama_jspn,
