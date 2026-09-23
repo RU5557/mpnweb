@@ -248,8 +248,8 @@ class WpSearchController extends Controller
 
                 $query->cursor()->each(function ($item) use ($file) {
                     fputcsv($file, [
-                        "'" . $item->npwp15,
-                        "'" . $item->npwp16,
+                        $item->npwp15,
+                        $item->npwp16,
                         $item->nama,
                         $item->alamat,
                         $item->kecamatan,
@@ -257,8 +257,8 @@ class WpSearchController extends Controller
                         $item->jenis,
                         $item->status,
                         $item->telp,
-                        "'" . $item->nip_ar,
-                        "'" . $item->nip_js,
+                        $item->nip_ar,
+                        $item->nip_js,
                     ]);
                 });
 
@@ -295,7 +295,7 @@ class WpSearchController extends Controller
                 $query->orderBy('t.tgl_setor', 'desc')->cursor()->each(function ($row) use ($file) {
                     fputcsv($file, [
                         $row->tgl_setor,
-                        "'" . $row->npwp15,
+                        $row->npwp15,
                         $row->nama_wp,
                         $row->fungsi,
                         $row->kd_map,
