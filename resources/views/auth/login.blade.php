@@ -7,52 +7,52 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 antialiased">
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 text-xs antialiased">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-200">
-        <div class="text-center mb-8">
-            <div class="w-12 h-12 bg-blue-600 rounded-xl text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-500/30">
-                <i class="fa-solid fa-user-shield text-xl"></i>
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8 border border-slate-200">
+        <div class="text-center mb-6">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-blue-500/20">
+                <i class="fa-solid fa-user-shield text-lg"></i>
             </div>
-            <h1 class="text-xl font-bold text-slate-800">Login Panel Admin</h1>
-            <p class="text-xs text-slate-500 mt-1">Seksi Pengolahan Data dan Informasi (PDI)</p>
+            <h1 class="text-lg font-bold text-slate-900">Login Panel Admin</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Seksi Pengolahan Data dan Informasi (PDI)</p>
         </div>
 
         @if(session('error'))
-            <div class="bg-red-100 border border-red-300 text-red-700 text-xs p-3 rounded-lg mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-circle-exclamation text-base shrink-0"></i>
+            <div class="bg-red-100 border border-red-300 text-red-700 text-xs p-3 rounded-xl mb-5 flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
                 <span>{{ session('error') }}</span>
             </div>
         @endif
 
-        <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+        <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
             @csrf
             <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Username Admin</label>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Username Admin</label>
                 <input type="text" name="username" value="{{ old('username') }}" required autofocus autocomplete="username"
-                    class="w-full bg-slate-50 border @error('username') border-red-500 @else border-slate-300 @enderror text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    class="w-full bg-slate-50 border @error('username') border-red-500 @else border-slate-300 @enderror text-slate-800 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium">
                 @error('username')
-                    <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                    <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span>
                 @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Password</label>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Password</label>
                 <input type="password" name="password" required autocomplete="current-password"
-                    class="w-full bg-slate-50 border @error('password') border-red-500 @else border-slate-300 @enderror text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    class="w-full bg-slate-50 border @error('password') border-red-500 @else border-slate-300 @enderror text-slate-800 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium">
                 @error('password')
-                    <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                    <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span>
                 @enderror
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs shadow-sm transition">
                 Masuk ke Panel Admin
             </button>
         </form>
 
         <div class="mt-6 text-center">
-            <a href="{{ route('penerimaan.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium transition">
-                <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Dashboard Utama
+            <a href="{{ route('penerimaan.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium transition inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard Utama
             </a>
         </div>
     </div>

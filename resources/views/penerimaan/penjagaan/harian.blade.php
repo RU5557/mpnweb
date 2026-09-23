@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Penjagaan Harian')
+@section('title', 'Penjagaan Harian - MPNWEB')
 
 @section('content')
 <div class="space-y-6"
@@ -12,26 +12,26 @@
         }
      }">
     
-    <!-- Filter & Header Card -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+    <!-- HEADER & FILTER CONTAINER -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-            <h1 class="text-xl font-bold text-slate-800">Penjagaan Harian</h1>
-            <p class="text-xs text-slate-500">Perbandingan harian {{ $tahunIni }} vs {{ $tahunLalu }} pada bulan yang sama (s.d 31 hari)</p>
+            <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Penjagaan Harian</h1>
+            <p class="text-xs text-slate-500 mt-1">Perbandingan harian {{ $tahunIni }} vs {{ $tahunLalu }} pada bulan yang sama (s.d 31 hari)</p>
         </div>
         
-        <form method="GET" action="{{ route('penerimaan.penjagaan.harian') }}" class="flex flex-wrap items-center gap-3">
-            <select name="bulan" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl focus:ring-blue-500 focus:border-blue-500 p-2.5 font-medium">
+        <form method="GET" action="{{ route('penerimaan.penjagaan.harian') }}" class="bg-white border border-slate-200 rounded-xl p-2 px-3 shadow-sm flex flex-wrap items-center gap-2">
+            <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
                 @for($m=1; $m<=12; $m++)
                     <option value="{{ $m }}" {{ $bulan == $m ? 'selected' : '' }}>
-                        Bulan {{ DateTime::createFromFormat('!m', $m)->format('F') }}
+                        s.d. {{ DateTime::createFromFormat('!m', $m)->format('F') }}
                     </option>
                 @endfor
             </select>
 
             <!-- Alpine Multi-select Dropdown -->
             <div x-data="{ open: false }" class="relative">
-                <button type="button" @click="open = !open" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-xl p-2.5 flex items-center gap-2 hover:bg-slate-100 focus:ring-2 focus:ring-blue-500">
-                    <span class="font-medium">Fungsi</span>
+                <button type="button" @click="open = !open" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 flex items-center gap-2 hover:bg-slate-100 focus:ring-2 focus:ring-blue-500 font-medium">
+                    <span>Fungsi</span>
                     <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full" x-text="selectedFungsi.length"></span>
                     <i class="fa-solid fa-chevron-down text-[10px]"></i>
                 </button>
@@ -61,24 +61,28 @@
                 </div>
             </div>
 
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium shadow-sm transition flex items-center gap-1.5">
-                <i class="fa-solid fa-filter text-xs"></i>
-                <span>Filter</span>
+            <!-- Tombol Terapkan -->
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                <span>Terapkan</span>
             </button>
 
-            <a href="{{ route('penerimaan.penjagaan.harian.export-detil', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2.5 rounded-xl font-medium flex items-center gap-1.5 transition shadow-sm">
-                <i class="fa-solid fa-file-csv"></i>
+            <!-- Tombol Reset -->
+            @if(request()->has('fungsi'))
+                <a href="{{ route('penerimaan.penjagaan.harian', ['bulan' => $bulan]) }}" class="text-slate-400 hover:text-slate-600 text-xs px-1.5 py-1.5 transition" title="Reset Filter">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            @endif
+
+            <!-- Tombol Export -->
+            <a href="{{ route('penerimaan.penjagaan.harian.export-detil', request()->all()) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5 border border-emerald-600">
+                <i class="fa-solid fa-file-excel text-xs"></i>
                 <span>Export CSV</span>
             </a>
-
-            @if(request()->has('fungsi'))
-                <a href="{{ route('penerimaan.penjagaan.harian', ['bulan' => $bulan]) }}" class="text-xs text-rose-500 hover:underline font-medium">Reset Filter</a>
-            @endif
         </form>
     </div>
 
-    <!-- Container Chart dengan Tinggi Tetap -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <!-- Container Chart -->
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div class="relative w-full h-[400px]">
             <canvas id="chartHarian"></canvas>
         </div>
@@ -137,7 +141,7 @@
                     },
                     tooltip: {
                         padding: 12,
-                        cornerRadius: 10,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
                                 return context.dataset.label + ': Rp ' + new Intl.NumberFormat('id-ID').format(context.raw);
