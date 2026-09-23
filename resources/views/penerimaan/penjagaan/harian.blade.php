@@ -6,7 +6,7 @@
 <div class="space-y-6"
      x-data="{
         allFungsiOptions: {{ json_encode($fungsiOptions->toArray()) }},
-        selectedFungsi: {{ json_encode($fungsi) }},
+        selectedFungsi: {{ json_encode(array_values($fungsi)) }},
         toggleAllFungsi(checked) {
             this.selectedFungsi = checked ? [...this.allFungsiOptions] : [];
         }
@@ -94,9 +94,9 @@
 
         const ctx = el.getContext('2d');
 
-        const bg2026 = ctx.createLinearGradient(0, 0, 0, 300);
-        bg2026.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
-        bg2026.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
+        const bgTahunIni = ctx.createLinearGradient(0, 0, 0, 300);
+        bgTahunIni.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
+        bgTahunIni.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
 
         new Chart(ctx, {
             type: 'line',
@@ -105,9 +105,9 @@
                 datasets: [
                     {
                         label: 'Tahun {{ $tahunIni }}',
-                        data: {!! json_encode($data2026) !!},
+                        data: {!! json_encode($dataTahunIni) !!},
                         borderColor: 'rgb(37, 99, 235)',
-                        backgroundColor: bg2026,
+                        backgroundColor: bgTahunIni,
                         borderWidth: 2.5,
                         pointRadius: 2,
                         pointHoverRadius: 6,
@@ -116,7 +116,7 @@
                     },
                     {
                         label: 'Tahun {{ $tahunLalu }}',
-                        data: {!! json_encode($data2025) !!},
+                        data: {!! json_encode($dataTahunLalu) !!},
                         borderColor: 'rgb(148, 163, 184)',
                         backgroundColor: 'rgba(148, 163, 184, 0.05)',
                         borderWidth: 2,

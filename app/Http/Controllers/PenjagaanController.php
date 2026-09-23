@@ -9,6 +9,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PenjagaanController extends Controller
 {
+    /**
+     * Ambil opsi fungsi dengan caching 24 jam.
+     */
     private function getFungsiOptions()
     {
         return Cache::remember('penjagaan_fungsi_options', 86400, function () {
@@ -21,16 +24,29 @@ class PenjagaanController extends Controller
         });
     }
 
+    /**
+     * Resolusi filter fungsi dari Request
+     */
+    private function resolveFungsi(Request $request, $fungsiOptions)
+    {
+        if ($request->has('fungsi')) {
+            $fungsi = (array) $request->input('fungsi', []);
+            return array_filter($fungsi); // Buang elemen kosong
+        }
+        return $fungsiOptions->toArray();
+    }
+
     // 1. Penjagaan Bulanan
     public function bulanan(Request $request)
     {
         $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
 
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fungsiKey = implode(',', $fungsi);
+        sort($fungsi);
+        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
         $cacheKey = 'penjagaan_bulanan_' . md5("y:{$tahunIni}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($fungsi, $tahunIni, $tahunLalu) {
@@ -54,16 +70,16 @@ class PenjagaanController extends Controller
         });
 
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-        $data2025 = [];
-        $data2026 = [];
+        $dataTahunLalu = [];
+        $dataTahunIni = [];
 
         for ($m = 1; $m <= 12; $m++) {
-            $data2025[] = (float) ($data['lalu'][$m] ?? 0);
-            $data2026[] = (float) ($data['ini'][$m] ?? 0);
+            $dataTahunLalu[] = (float) ($data['lalu'][$m] ?? 0);
+            $dataTahunIni[]  = (float) ($data['ini'][$m] ?? 0);
         }
 
         return view('penerimaan.penjagaan.bulanan', compact(
-            'months', 'data2025', 'data2026', 'fungsiOptions', 'fungsi', 'tahunIni', 'tahunLalu'
+            'months', 'dataTahunLalu', 'dataTahunIni', 'fungsiOptions', 'fungsi', 'tahunIni', 'tahunLalu'
         ));
     }
 
@@ -72,12 +88,13 @@ class PenjagaanController extends Controller
     {
         $bulan = (int) $request->input('bulan', date('m'));
         $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
 
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fungsiKey = implode(',', $fungsi);
+        sort($fungsi);
+        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
         $cacheKey = 'penjagaan_harian_' . md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $fungsi, $tahunIni, $tahunLalu) {
@@ -103,16 +120,16 @@ class PenjagaanController extends Controller
         });
 
         $days = range(1, 31);
-        $data2025 = [];
-        $data2026 = [];
+        $dataTahunLalu = [];
+        $dataTahunIni = [];
 
         foreach ($days as $day) {
-            $data2025[] = (float) ($data['lalu'][$day] ?? 0);
-            $data2026[] = (float) ($data['ini'][$day] ?? 0);
+            $dataTahunLalu[] = (float) ($data['lalu'][$day] ?? 0);
+            $dataTahunIni[]  = (float) ($data['ini'][$day] ?? 0);
         }
 
         return view('penerimaan.penjagaan.harian', compact(
-            'days', 'data2025', 'data2026', 'bulan', 'fungsiOptions', 'fungsi', 'tahunIni', 'tahunLalu'
+            'days', 'dataTahunLalu', 'dataTahunIni', 'bulan', 'fungsiOptions', 'fungsi', 'tahunIni', 'tahunLalu'
         ));
     }
 
@@ -121,13 +138,14 @@ class PenjagaanController extends Controller
     {
         $fungsiOptions = $this->getFungsiOptions();
         $bulan = (int) $request->input('bulan', date('m'));
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
 
         $tahunIni = (int) date('Y');
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;
         $tahunBulanLalu = $bulan == 1 ? $tahunIni - 1 : $tahunIni;
 
-        $fungsiKey = implode(',', $fungsi);
+        sort($fungsi);
+        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
         $cacheKey = 'penjagaan_vs_bulan_lalu_' . md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi) {
@@ -157,7 +175,7 @@ class PenjagaanController extends Controller
         $dataBulanLalu = [];
 
         foreach ($days as $day) {
-            $dataBulanIni[] = (float) ($data['ini'][$day] ?? 0);
+            $dataBulanIni[]  = (float) ($data['ini'][$day] ?? 0);
             $dataBulanLalu[] = (float) ($data['lalu'][$day] ?? 0);
         }
 
@@ -169,7 +187,7 @@ class PenjagaanController extends Controller
     public function exportBulananCsv(Request $request): StreamedResponse
     {
         $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
@@ -223,7 +241,7 @@ class PenjagaanController extends Controller
     {
         $bulan = (int) $request->input('bulan', date('m'));
         $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
@@ -277,7 +295,7 @@ class PenjagaanController extends Controller
     {
         $bulan = (int) $request->input('bulan', date('m'));
         $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $request->has('fungsi') ? (array) $request->input('fungsi', []) : $fungsiOptions->toArray();
+        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
 
         $tahunIni = (int) date('Y');
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;

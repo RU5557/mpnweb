@@ -6,7 +6,7 @@
 <div class="space-y-6" 
      x-data="{
         allFungsiOptions: {{ json_encode($fungsiOptions->toArray()) }},
-        selectedFungsi: {{ json_encode($fungsi) }},
+        selectedFungsi: {{ json_encode(array_values($fungsi)) }},
         toggleAllFungsi(checked) {
             this.selectedFungsi = checked ? [...this.allFungsiOptions] : [];
         }
@@ -63,7 +63,7 @@
                 <span>Export CSV</span>
             </a>
 
-            @if(request('fungsi'))
+            @if(request()->has('fungsi'))
                 <a href="{{ route('penerimaan.penjagaan.bulanan') }}" class="text-xs text-rose-500 hover:underline font-medium">Reset Filter</a>
             @endif
         </form>
@@ -86,13 +86,13 @@
 
         const ctx = el.getContext('2d');
 
-        const grad2026 = ctx.createLinearGradient(0, 0, 0, 400);
-        grad2026.addColorStop(0, 'rgba(37, 99, 235, 1)');
-        grad2026.addColorStop(1, 'rgba(96, 165, 250, 0.8)');
+        const gradTahunIni = ctx.createLinearGradient(0, 0, 0, 400);
+        gradTahunIni.addColorStop(0, 'rgba(37, 99, 235, 1)');
+        gradTahunIni.addColorStop(1, 'rgba(96, 165, 250, 0.8)');
 
-        const grad2025 = ctx.createLinearGradient(0, 0, 0, 400);
-        grad2025.addColorStop(0, 'rgba(148, 163, 184, 0.9)');
-        grad2025.addColorStop(1, 'rgba(203, 213, 225, 0.6)');
+        const gradTahunLalu = ctx.createLinearGradient(0, 0, 0, 400);
+        gradTahunLalu.addColorStop(0, 'rgba(148, 163, 184, 0.9)');
+        gradTahunLalu.addColorStop(1, 'rgba(203, 213, 225, 0.6)');
 
         new Chart(ctx, {
             type: 'bar',
@@ -101,8 +101,8 @@
                 datasets: [
                     {
                         label: 'Tahun {{ $tahunIni }}',
-                        data: {!! json_encode($data2026) !!},
-                        backgroundColor: grad2026,
+                        data: {!! json_encode($dataTahunIni) !!},
+                        backgroundColor: gradTahunIni,
                         borderRadius: 8,
                         borderSkipped: false,
                         categoryPercentage: 0.6,
@@ -110,8 +110,8 @@
                     },
                     {
                         label: 'Tahun {{ $tahunLalu }}',
-                        data: {!! json_encode($data2025) !!},
-                        backgroundColor: grad2025,
+                        data: {!! json_encode($dataTahunLalu) !!},
+                        backgroundColor: gradTahunLalu,
                         borderRadius: 8,
                         borderSkipped: false,
                         categoryPercentage: 0.6,

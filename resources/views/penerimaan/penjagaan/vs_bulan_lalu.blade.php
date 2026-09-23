@@ -6,7 +6,7 @@
 <div class="space-y-6"
      x-data="{
         allFungsiOptions: {{ json_encode($fungsiOptions->toArray()) }},
-        selectedFungsi: {{ json_encode($fungsi) }},
+        selectedFungsi: {{ json_encode(array_values($fungsi)) }},
         toggleAllFungsi(checked) {
             this.selectedFungsi = checked ? [...this.allFungsiOptions] : [];
         }
