@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 antialiased">
 
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 border border-slate-200">
         <div class="text-center mb-8">
@@ -20,7 +20,7 @@
 
         @if(session('error'))
             <div class="bg-red-100 border border-red-300 text-red-700 text-xs p-3 rounded-lg mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-circle-exclamation"></i>
+                <i class="fa-solid fa-circle-exclamation text-base shrink-0"></i>
                 <span>{{ session('error') }}</span>
             </div>
         @endif
@@ -29,8 +29,8 @@
             @csrf
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Username Admin</label>
-                <input type="text" name="username" value="{{ old('username') }}" required autofocus
-                    class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                <input type="text" name="username" value="{{ old('username') }}" required autofocus autocomplete="username"
+                    class="w-full bg-slate-50 border @error('username') border-red-500 @else border-slate-300 @enderror text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
                 @error('username')
                     <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                 @enderror
@@ -38,8 +38,11 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Password</label>
-                <input type="password" name="password" required
-                    class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                <input type="password" name="password" required autocomplete="current-password"
+                    class="w-full bg-slate-50 border @error('password') border-red-500 @else border-slate-300 @enderror text-slate-800 text-sm rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                @error('password')
+                    <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                @enderror
             </div>
 
             <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm shadow-md transition">
@@ -48,8 +51,8 @@
         </form>
 
         <div class="mt-6 text-center">
-            <a href="{{ route('penerimaan.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium">
-                <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard Utama
+            <a href="{{ route('penerimaan.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-800 font-medium transition">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Dashboard Utama
             </a>
         </div>
     </div>

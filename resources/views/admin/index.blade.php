@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-100 font-sans min-h-screen text-slate-800">
+<body class="bg-slate-100 font-sans min-h-screen text-slate-800 antialiased">
 
-<header class="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
+    <header class="bg-slate-900 text-white px-8 py-4 flex items-center justify-between shadow-md">
         <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2 rounded-lg text-white flex items-center justify-center w-8 h-8">
+            <div class="bg-blue-600 p-2 rounded-lg text-white flex items-center justify-center w-8 h-8 shadow-sm">
                 <i class="fa-solid fa-gears text-sm"></i>
             </div>
             <span class="font-bold text-lg tracking-wide">Panel Pengelola Data MPNWEB</span>
@@ -19,7 +19,7 @@
 
         <!-- Tombol Aksi Kanan Topbar -->
         <div class="flex items-center gap-3">
-            <a href="{{ url('/penerimaan') }}" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-2 rounded-lg transition border border-slate-700 font-medium">
+            <a href="{{ route('penerimaan.dashboard') }}" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-2 rounded-lg transition border border-slate-700 font-medium">
                 <i class="fa-solid fa-arrow-left text-xs"></i> Kembali ke Dashboard
             </a>
 
@@ -35,6 +35,7 @@
 
     <main class="max-w-6xl mx-auto p-8 space-y-8">
 
+        {{-- Flash Success Message --}}
         @if(session('success'))
             <div class="bg-emerald-100 border-l-4 border-emerald-500 text-emerald-800 p-4 rounded-lg shadow-sm flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -42,6 +43,21 @@
                     <span class="font-medium text-sm">{{ session('success') }}</span>
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        @endif
+
+        {{-- Validation Error Alert --}}
+        @if ($errors->any())
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 rounded-lg shadow-sm space-y-1">
+                <div class="flex items-center gap-2 font-bold text-sm">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Terdapat kesalahan pada inputan Anda:</span>
+                </div>
+                <ul class="list-disc list-inside text-xs pl-2">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
@@ -60,22 +76,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Tanggal Info</label>
-                        <input type="date" name="tanggal" value="{{ old('tanggal', $rollingText->tanggal ?? date('Y-m-d')) }}" required
+                        <input type="date" name="tanggal" value="{{ old('tanggal', isset($rollingText) ? $rollingText->tanggal : date('Y-m-d')) }}" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Nilai NKO (%)</label>
-                        <input type="number" step="0.01" name="nko" value="{{ old('nko', $rollingText->nko ?? 0) }}" placeholder="Contoh: 95.40" required
+                        <input type="number" step="0.01" min="0" max="100" name="nko" value="{{ old('nko', isset($rollingText) ? $rollingText->nko : 0) }}" placeholder="Contoh: 95.40" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Ranking Nasional</label>
-                        <input type="number" name="ranking_nasional" value="{{ old('ranking_nasional', $rollingText->ranking_nasional ?? 0) }}" placeholder="Contoh: 12" required
+                        <input type="number" min="1" name="ranking_nasional" value="{{ old('ranking_nasional', isset($rollingText) ? $rollingText->ranking_nasional : 0) }}" placeholder="Contoh: 12" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Ranking Kanwil</label>
-                        <input type="number" name="ranking_kanwil" value="{{ old('ranking_kanwil', $rollingText->ranking_kanwil ?? 0) }}" placeholder="Contoh: 2" required
+                        <input type="number" min="1" name="ranking_kanwil" value="{{ old('ranking_kanwil', isset($rollingText) ? $rollingText->ranking_kanwil : 0) }}" placeholder="Contoh: 2" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                 </div>
