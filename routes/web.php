@@ -86,9 +86,3 @@ Route::prefix('admin')->name('admin.')->middleware(AdminAuthMiddleware::class)->
     Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
     Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
 });
-
-// Route Uji Coba untuk Simulasi Error 500 Global Exception Handler
-Route::get('/test-error-500', function () {
-    // Memicu Exception buatan secara sengaja
-    throw new \Exception('Ini adalah pesan uji coba error 500 untuk simulasi penanganan log error.');
-});

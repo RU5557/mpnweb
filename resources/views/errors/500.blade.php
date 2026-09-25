@@ -22,7 +22,11 @@
         <div class="space-y-2">
             <h1 class="text-2xl font-bold text-white">Terjadi Kendala Sistem / Timeout</h1>
             <p class="text-sm text-slate-400">
-                Aplikasi MPNWEB mengalami gangguan teknis sementara pada <span class="text-slate-200 font-semibold">{{ $timestamp ?? now()->format('Y-m-d H:i:s') }}</span>. Tim sistem administrator kami siap membantu memulihkannya.
+                Aplikasi MPNWEB mengalami gangguan teknis sementara pada 
+                <span id="error-time" class="text-slate-200 font-semibold" data-utc="{{ \Carbon\Carbon::parse($timestamp ?? now())->toISOString() }}">
+                    <!-- Fallback jika JS tidak aktif -->
+                    {{ \Carbon\Carbon::parse($timestamp ?? now())->setTimezone('Asia/Jakarta')->translatedFormat('d M Y, H.i.s') }} WIB
+                </span>. Tim sistem administrator kami siap membantu memulihkannya.
             </p>
         </div>
 
@@ -76,5 +80,35 @@
 
     </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const timeElement = document.getElementById('error-time');
+        
+        if (timeElement && timeElement.dataset.utc) {
+            const utcString = timeElement.dataset.utc;
+            const date = new Date(utcString);
+
+            if (!isNaN(date.getTime())) {
+                // Mengambil nama zona waktu pengguna secara otomatis (contoh: WIB, WITA, WIT)
+                const timeZoneName = new Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' })
+                    .formatToParts(date)
+                    .find(part => part.type === 'timeZoneName')?.value || '';
+
+                // Format tanggal dan jam sesuai standar lokal pengguna
+                const formattedDate = date.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).replace(/\./g, ':'); // Ganti separator jika diperlukan
+
+                timeElement.innerText = `${formattedDate} ${timeZoneName}`;
+            }
+        }
+    });
+</script>
 </body>
 </html>
