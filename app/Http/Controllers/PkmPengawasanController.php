@@ -170,7 +170,9 @@ class PkmPengawasanController extends Controller
      */
     private function buildBaseQuery(int $tahun, int $bulan, string $seksiFilter)
     {
-        $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
+        // Gunakan tahun saat ini (date('Y')) untuk master pegawai
+        $tahunSaatIni = (int) date('Y');
+        $subPegawai = DB::table('pegawai')->where('tahun', $tahunSaatIni);
 
         return DB::table('detil_transaksi_wp as dt')
             ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
