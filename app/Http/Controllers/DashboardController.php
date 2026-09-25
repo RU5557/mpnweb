@@ -28,21 +28,27 @@ class DashboardController extends Controller
                     ->whereIn('thn_setor', [$thnIni, $thnLalu])
                     ->whereBetween('bln_setor', [$blnAwal, $blnAkhir])
                     ->selectRaw("
-                        SUM(CASE WHEN thn_setor = {$thnIni} THEN total_setor ELSE 0 END) as penerimaanSaatIni,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND bln_setor < {$blnAkhir} THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} THEN total_setor ELSE 0 END) as penerimaanThnLalu,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPM,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKM,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND jenis = 'PBP' THEN total_setor ELSE 0 END) as realisasiPBP,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasan,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
-                        SUM(CASE WHEN thn_setor = {$thnIni} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihan,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
-                        SUM(CASE WHEN thn_setor = {$thnLalu} AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
-                    ")
+                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanSaatIni,
+                        SUM(CASE WHEN thn_setor = ? AND bln_setor < ? THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
+                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanThnLalu,
+                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPM,
+                        SUM(CASE WHEN thn_setor = ? AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKM,
+                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PBP' THEN total_setor ELSE 0 END) as realisasiPBP,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasan,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihan,
+                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
+                        SUM(CASE WHEN thn_setor = ? AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
+                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
+                    ", [
+                        $thnIni, $thnIni, $blnAkhir, $thnLalu,
+                        $thnIni, $thnIni, $thnIni,
+                        $thnIni, $thnIni, $thnIni,
+                        $thnLalu, $thnLalu, $thnLalu,
+                        $thnLalu, $thnLalu
+                    ])
                     ->first();
             });
         } catch (QueryException $e) {
@@ -56,6 +62,7 @@ class DashboardController extends Controller
             abort(503, 'Data dashboard sedang tidak tersedia. Silakan coba lagi.');
         }
 
+        // --- Extrak Nilai Nominal ---
         $penerimaanSaatIni = $penerimaanData?->penerimaanSaatIni ?? 0;
         $penerimaanBlnLalu = $penerimaanData?->penerimaanBlnLalu ?? 0;
         $penerimaanThnLalu = $penerimaanData?->penerimaanThnLalu ?? 0;
@@ -70,34 +77,76 @@ class DashboardController extends Controller
 
         $realisasiPPMLalu = $penerimaanData?->realisasiPPMLalu ?? 0;
         $realisasiPKMLalu = $penerimaanData?->realisasiPKMLalu ?? 0;
-
         $realisasiPengawasanLalu = $penerimaanData?->realisasiPengawasanLalu ?? 0;
         $realisasiPemeriksaanLalu = $penerimaanData?->realisasiPemeriksaanLalu ?? 0;
         $realisasiPenagihanLalu = $penerimaanData?->realisasiPenagihanLalu ?? 0;
 
+        // --- Kalkulasi Indikator & Growth ---
         $targetKantor = $target?->target_kantor ?? 0;
         $capaianKantor = $targetKantor > 0 ? ($penerimaanSaatIni / $targetKantor) * 100 : 0;
+
+        $growthMoM = $penerimaanBlnLalu > 0 ? (($penerimaanSaatIni - $penerimaanBlnLalu) / $penerimaanBlnLalu) * 100 : 0;
+        $growthYoY = $penerimaanThnLalu > 0 ? (($penerimaanSaatIni - $penerimaanThnLalu) / $penerimaanThnLalu) * 100 : 0;
+
+        // Metrics Card Configs
+        $metrics = [
+            'ppm' => [
+                'target' => $target?->target_ppm ?? 0,
+                'realisasi' => $realisasiPPM,
+                'persen' => ($target?->target_ppm ?? 0) > 0 ? ($realisasiPPM / $target->target_ppm) * 100 : 0,
+                'growthYoY' => $realisasiPPMLalu > 0 ? (($realisasiPPM - $realisasiPPMLalu) / $realisasiPPMLalu) * 100 : 0,
+            ],
+            'pkm' => [
+                'target' => $target?->target_pkm ?? 0,
+                'realisasi' => $realisasiPKM,
+                'persen' => ($target?->target_pkm ?? 0) > 0 ? ($realisasiPKM / $target->target_pkm) * 100 : 0,
+                'growthYoY' => $realisasiPKMLalu > 0 ? (($realisasiPKM - $realisasiPKMLalu) / $realisasiPKMLalu) * 100 : 0,
+            ],
+            'pbp' => [
+                'target' => $target?->target_pbp ?? 0,
+                'realisasi' => $realisasiPBP,
+                'persen' => ($target?->target_pbp ?? 0) > 0 ? ($realisasiPBP / $target->target_pbp) * 100 : 0,
+                'sisa' => max(0, ($target?->target_pbp ?? 0) - $realisasiPBP),
+            ],
+            'pengawasan' => [
+                'target' => $target?->target_pkm_pengawasan ?? 0,
+                'realisasi' => $realisasiPengawasan,
+                'persen' => ($target?->target_pkm_pengawasan ?? 0) > 0 ? ($realisasiPengawasan / $target->target_pkm_pengawasan) * 100 : 0,
+                'growthYoY' => $realisasiPengawasanLalu > 0 ? (($realisasiPengawasan - $realisasiPengawasanLalu) / $realisasiPengawasanLalu) * 100 : 0,
+            ],
+            'pemeriksaan' => [
+                'target' => $target?->target_pkm_pemeriksaan ?? 0,
+                'realisasi' => $realisasiPemeriksaan,
+                'persen' => ($target?->target_pkm_pemeriksaan ?? 0) > 0 ? ($realisasiPemeriksaan / $target->target_pkm_pemeriksaan) * 100 : 0,
+                'growthYoY' => $realisasiPemeriksaanLalu > 0 ? (($realisasiPemeriksaan - $realisasiPemeriksaanLalu) / $realisasiPemeriksaanLalu) * 100 : 0,
+            ],
+            'penagihan' => [
+                'target' => $target?->target_pkm_penagihan ?? 0,
+                'realisasi' => $realisasiPenagihan,
+                'persen' => ($target?->target_pkm_penagihan ?? 0) > 0 ? ($realisasiPenagihan / $target->target_pkm_penagihan) * 100 : 0,
+                'growthYoY' => $realisasiPenagihanLalu > 0 ? (($realisasiPenagihan - $realisasiPenagihanLalu) / $realisasiPenagihanLalu) * 100 : 0,
+            ],
+        ];
+
+        // List Nama Bulan untuk Filter Dropdown
+        $listBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
 
         return view('penerimaan.dashboard', compact(
             'thnIni',
             'blnAwal',
             'blnAkhir',
-            'target',
+            'listBulan',
             'capaianKantor',
             'penerimaanSaatIni',
             'penerimaanBlnLalu',
             'penerimaanThnLalu',
-            'realisasiPPM',
-            'realisasiPKM',
-            'realisasiPBP',
-            'realisasiPengawasan',
-            'realisasiPemeriksaan',
-            'realisasiPenagihan',
-            'realisasiPPMLalu',
-            'realisasiPKMLalu',
-            'realisasiPengawasanLalu',
-            'realisasiPemeriksaanLalu',
-            'realisasiPenagihanLalu'
+            'growthMoM',
+            'growthYoY',
+            'metrics'
         ));
     }
 
@@ -171,14 +220,14 @@ class DashboardController extends Controller
      */
     private function resolvePeriod(Request $request): array
     {
-        $tahun = (int) $request->input('tahun', date('Y'));
+        $currentYear = (int) date('Y');
+        $tahun = (int) $request->input('tahun', $currentYear);
         
-        // Membaca bulan awal dan bulan akhir (support backward compatibility untuk param 'bulan')
         $bulanAwal = (int) $request->input('bulan_awal', 1);
         $bulanAkhir = (int) $request->input('bulan_akhir', $request->input('bulan', date('n')));
 
-        if ($tahun < 2000 || $tahun > 2100) {
-            $tahun = (int) date('Y');
+        if ($tahun < 2000 || $tahun > $currentYear + 1) {
+            $tahun = $currentYear;
         }
 
         if ($bulanAwal < 1 || $bulanAwal > 12) {
@@ -189,7 +238,6 @@ class DashboardController extends Controller
             $bulanAkhir = (int) date('n');
         }
 
-        // Jika bulan awal diset lebih besar dari bulan akhir, samakan nilai bulan awal dengan bulan akhir
         if ($bulanAwal > $bulanAkhir) {
             $bulanAwal = $bulanAkhir;
         }

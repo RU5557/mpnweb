@@ -11,6 +11,21 @@ use App\Http\Controllers\PkmPemeriksaanController;
 use App\Http\Controllers\PkmPenagihanController;
 use App\Http\Controllers\PenjagaanController;
 use App\Http\Middleware\AdminAuthMiddleware;
+use Illuminate\Support\Facades\Storage;
+
+
+
+// Route untuk download langsung log error dari session tanpa perlu simpan file di server
+Route::get('/download-current-error-log', function () {
+    $logContent = session('error_log_content', "Log error tidak ditemukan atau session telah kadaluarsa.");
+    $filename   = "Error_Log_MPNWEB_" . date('Ymd_His') . ".txt";
+
+    return response($logContent, 200, [
+        'Content-Type'        => 'text/plain; charset=UTF-8',
+        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        'Cache-Control'       => 'no-cache, must-revalidate',
+    ]);
+})->name('error.log.download');
 
 /*
 |--------------------------------------------------------------------------
@@ -39,10 +54,10 @@ Route::prefix('penerimaan')->name('penerimaan.')->group(function () {
         Route::get('/bulanan/export-detil', [PenjagaanController::class, 'exportBulananCsv'])->name('bulanan.export-detil');
         
         Route::get('/harian', [PenjagaanController::class, 'harian'])->name('harian');
-        Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export');
+        Route::get('/harian/export-detil', [PenjagaanController::class, 'exportHarianCsv'])->name('harian.export-detil');
         
-        Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vsbulanlalu');
-        Route::get('/vs-bulan-lalu/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('vsbulanlalu.export');
+        Route::get('/vs-bulan-lalu', [PenjagaanController::class, 'vsBulanLalu'])->name('vs-bulan-lalu');
+        Route::get('/vs-bulan-lalu/export-detil', [PenjagaanController::class, 'exportVsBulanLaluCsv'])->name('vs-bulan-lalu.export-detil');
     });
 });
 
@@ -53,8 +68,9 @@ Route::get('/pkm-pengawasan/export-detil', [PkmPengawasanController::class, 'exp
 Route::get('/pkm-pemeriksaan/export-detil', [PkmPemeriksaanController::class, 'exportDetil'])->name('pkm.pemeriksaan.export-detil');
 Route::get('/pkm-penagihan/export-detil', [PkmPenagihanController::class, 'exportDetil'])->name('pkm.penagihan.export-detil');
 
-// Fitur Search WP
+// Fitur Search WP (URL dan Route Name diselaraskan menjadi /search-wp dan wp.search)
 Route::get('/search-wp', [WpSearchController::class, 'search'])->name('wp.search');
+Route::get('/search-wp/export-detil', [WpSearchController::class, 'exportCsv'])->name('wp.export-detil');
 
 /*
 |--------------------------------------------------------------------------
@@ -69,4 +85,10 @@ Route::prefix('admin')->name('admin.')->middleware(AdminAuthMiddleware::class)->
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
     Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
+});
+
+// Route Uji Coba untuk Simulasi Error 500 Global Exception Handler
+Route::get('/test-error-500', function () {
+    // Memicu Exception buatan secara sengaja
+    throw new \Exception('Ini adalah pesan uji coba error 500 untuk simulasi penanganan log error.');
 });

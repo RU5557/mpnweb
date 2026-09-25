@@ -7,68 +7,47 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PkmPengawasanController extends Controller
 {
+    /**
+     * Tampilkan Ringkasan PKM Pengawasan per Seksi & AR
+     */
     public function index(Request $request)
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
-        $seksiFilter = trim((string) $request->input('seksi', ''));
-        $sortColumn = (string) $request->input('sort', 'nama_seksi');
+        $seksiFilter  = trim((string) $request->input('seksi', ''));
+        $sortColumn   = (string) $request->input('sort', 'nama_seksi');
         $sortDirection = (string) $request->input('direction', 'asc');
 
         $allowedSorts = [
-            'nama_seksi' => DB::raw("COALESCE(s.nama, 'Unassign')"),
-            'nama_ar' => DB::raw("COALESCE(p.nama, 'Unassign')"),
+            'nama_seksi'           => DB::raw("COALESCE(s.nama, 'Unassign')"),
+            'nama_ar'              => DB::raw("COALESCE(p.nama, 'Unassign')"),
             'total_akt_pengawasan' => 'total_akt_pengawasan',
-            'total_lainnya' => 'total_lainnya',
+            'total_lainnya'        => 'total_lainnya',
             'total_wra_pengawasan' => 'total_wra_pengawasan',
             'total_pkm_pengawasan' => 'total_pkm_pengawasan',
         ];
 
-        $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(s.nama, 'Unassign')");
-        $sortDir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+        $sortBy   = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(s.nama, 'Unassign')");
+        $sortDir  = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
         $sortColumn = array_key_exists($sortColumn, $allowedSorts) ? $sortColumn : 'nama_seksi';
-        $sortDirection = $sortDir;
 
         $cacheKey = "pkm_pengawasan_{$tahun}_{$bulan}_" . md5($seksiFilter) . "_{$sortColumn}_{$sortDir}";
 
         try {
             $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $seksiFilter, $sortColumn, $sortBy, $sortDir) {
-                $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
-
-                return DB::table('detil_transaksi_wp as dt')
-                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-                    ->leftJoinSub($subPegawai, 'p', function ($join) {
-                        $join->on('mw.nip_ar', '=', 'p.nip');
-                    })
-                    ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
+                return $this->buildBaseQuery($tahun, $bulan, $seksiFilter)
                     ->select(
                         DB::raw("COALESCE(mw.nip_ar, 'Unassign') as nip_ar"),
                         DB::raw("COALESCE(p.nama, 'Unassign') as nama_ar"),
                         DB::raw("COALESCE(s.nama, 'Unassign') as nama_seksi"),
-                        DB::raw("SUM(CASE WHEN dt.fungsi LIKE 'akt%' THEN dt.jml_setor ELSE 0 END) as total_akt_pengawasan"),
-                        DB::raw("SUM(CASE WHEN dt.fungsi LIKE 'lain%' THEN dt.jml_setor ELSE 0 END) as total_lainnya"),
-                        DB::raw("SUM(CASE WHEN dt.fungsi LIKE 'wra%' THEN dt.jml_setor ELSE 0 END) as total_wra_pengawasan"),
-                        DB::raw('SUM(dt.jml_setor) as total_pkm_pengawasan')
+                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'akt%' THEN dt.jml_setor ELSE 0 END) as total_akt_pengawasan"),
+                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'lain%' THEN dt.jml_setor ELSE 0 END) as total_lainnya"),
+                        DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'wra%' THEN dt.jml_setor ELSE 0 END) as total_wra_pengawasan"),
+                        DB::raw("SUM(dt.jml_setor) as total_pkm_pengawasan")
                     )
-                    ->whereIn('dt.fungsi', [
-                        'Akt Pengawasan',
-                        'Lainnya',
-                        'WRA Pengawasan',
-                        'akt pengawasan',
-                        'lainnya',
-                        'wra pengawasan',
-                    ])
-                    ->where('dt.thn_setor', $tahun)
-                    ->whereBetween('dt.bln_setor', [1, $bulan])
-                    ->when($seksiFilter !== '', function ($q) use ($seksiFilter) {
-                        if ($seksiFilter === 'Unassign') {
-                            return $q->whereNull('s.nama');
-                        }
-
-                        return $q->where('s.nama', $seksiFilter);
-                    })
                     ->groupBy(
                         DB::raw("COALESCE(mw.nip_ar, 'Unassign')"),
                         DB::raw("COALESCE(p.nama, 'Unassign')"),
@@ -93,24 +72,32 @@ class PkmPengawasanController extends Controller
             });
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary PKM Pengawasan.', [
-                'tahun' => $tahun,
-                'bulan' => $bulan,
+                'tahun'   => $tahun,
+                'bulan'   => $bulan,
                 'message' => $e->getMessage(),
             ]);
 
             abort(503, 'Data PKM Pengawasan sedang tidak tersedia. Silakan coba lagi.');
         }
 
-        return view('penerimaan.pkmpengawasan', compact('pkmData', 'daftarSeksi', 'sortColumn', 'sortDirection'));
+        return view('penerimaan.pkmpengawasan', compact(
+            'pkmData',
+            'daftarSeksi',
+            'sortColumn',
+            'sortDirection',
+            'tahun',
+            'bulan',
+            'seksiFilter'
+        ));
     }
 
     /**
-     * Handle Export CSV Detil Transaksi Pengawasan (Streaming & Hemat Memory)
+     * Handle Export CSV Detil Transaksi Pengawasan (Streaming & Memory Efficient)
      */
-    public function exportDetil(Request $request)
+    public function exportDetil(Request $request): StreamedResponse
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
-        $seksiFilter = trim((string) $request->input('seksi', ''));
+        $seksiFilter     = trim((string) $request->input('seksi', ''));
 
         $filename = "Export_Detil_PKM_Pengawasan_{$tahun}_{$bulan}.csv";
 
@@ -118,6 +105,7 @@ class PkmPengawasanController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel compatibility
             fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($file, [
@@ -126,14 +114,7 @@ class PkmPengawasanController extends Controller
             ]);
 
             try {
-                $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
-
-                $query = DB::table('detil_transaksi_wp as dt')
-                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-                    ->leftJoinSub($subPegawai, 'p', function ($join) {
-                        $join->on('mw.nip_ar', '=', 'p.nip');
-                    })
-                    ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
+                $query = $this->buildBaseQuery($tahun, $bulan, $seksiFilter)
                     ->select(
                         'dt.npwp15',
                         DB::raw("COALESCE(mw.nama, '-') as nama_wp"),
@@ -147,23 +128,6 @@ class PkmPengawasanController extends Controller
                         DB::raw("COALESCE(p.nama, 'Unassign') as nama_ar"),
                         DB::raw("COALESCE(s.nama, 'Unassign') as nama_seksi")
                     )
-                    ->whereIn('dt.fungsi', [
-                        'Akt Pengawasan',
-                        'Lainnya',
-                        'WRA Pengawasan',
-                        'akt pengawasan',
-                        'lainnya',
-                        'wra pengawasan',
-                    ])
-                    ->where('dt.thn_setor', $tahun)
-                    ->whereBetween('dt.bln_setor', [1, $bulan])
-                    ->when($seksiFilter !== '', function ($q) use ($seksiFilter) {
-                        if ($seksiFilter === 'Unassign') {
-                            return $q->whereNull('s.nama');
-                        }
-
-                        return $q->where('s.nama', $seksiFilter);
-                    })
                     ->orderBy('s.nama', 'asc')
                     ->orderBy('p.nama', 'asc');
 
@@ -171,7 +135,7 @@ class PkmPengawasanController extends Controller
                 foreach ($query->cursor() as $row) {
                     fputcsv($file, [
                         $index++,
-                        isset($row->npwp15) ? "'{$row->npwp15}" : '',
+                        !empty($row->npwp15) ? "{$row->npwp15}" : '',
                         $row->nama_wp,
                         $row->nama_seksi,
                         $row->nama_ar,
@@ -189,8 +153,8 @@ class PkmPengawasanController extends Controller
                 }
             } catch (QueryException $e) {
                 Log::error('Gagal mengekspor detil PKM Pengawasan.', [
-                    'tahun' => $tahun,
-                    'bulan' => $bulan,
+                    'tahun'   => $tahun,
+                    'bulan'   => $bulan,
                     'message' => $e->getMessage(),
                 ]);
 
@@ -199,6 +163,35 @@ class PkmPengawasanController extends Controller
 
             fclose($file);
         }, 200, $this->csvDownloadHeaders($filename));
+    }
+
+    /**
+     * Helper Query dasar untuk reusable join & filter PKM Pengawasan
+     */
+    private function buildBaseQuery(int $tahun, int $bulan, string $seksiFilter)
+    {
+        $subPegawai = DB::table('pegawai')->where('tahun', $tahun);
+
+        return DB::table('detil_transaksi_wp as dt')
+            ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
+            ->leftJoinSub($subPegawai, 'p', function ($join) {
+                $join->on('mw.nip_ar', '=', 'p.nip');
+            })
+            ->leftJoin('seksi as s', 'p.seksi', '=', 's.id')
+            ->whereIn(DB::raw('LOWER(dt.fungsi)'), [
+                'akt pengawasan',
+                'lainnya',
+                'wra pengawasan',
+            ])
+            ->where('dt.thn_setor', $tahun)
+            ->whereBetween('dt.bln_setor', [1, $bulan])
+            ->when($seksiFilter !== '', function ($q) use ($seksiFilter) {
+                if ($seksiFilter === 'Unassign') {
+                    return $q->whereNull('s.nama');
+                }
+
+                return $q->where('s.nama', $seksiFilter);
+            });
     }
 
     /**
@@ -226,11 +219,11 @@ class PkmPengawasanController extends Controller
     private function csvDownloadHeaders(string $filename): array
     {
         return [
-            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
         ];
     }
 

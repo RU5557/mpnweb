@@ -20,9 +20,14 @@
     <!-- Alpine.js (Defer) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Pre-style x-cloak untuk mencegah FOUC -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     @stack('styles')
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 text-sm min-h-screen flex antialiased">
+<body class="bg-slate-100 font-sans text-slate-800 text-xs min-h-screen flex antialiased">
 
     <!-- ==================== SIDEBAR ==================== -->
     @include('layouts.partials.sidebar')
@@ -42,9 +47,10 @@
                 @if(session('success'))
                     <div class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs p-3 rounded-xl mb-5 flex items-center justify-between shadow-sm">
                         <div class="flex items-center gap-2 font-medium">
-                            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
                             <span>{{ session('success') }}</span>
                         </div>
+                        <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800"><i class="fa-solid fa-xmark text-xs"></i></button>
                     </div>
                 @endif
 
