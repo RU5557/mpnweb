@@ -21,7 +21,7 @@
 
         <!-- Filter Dropdown DSPC / NON-DSPC -->
         <select name="dspc_filter" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <option value="">-- Semua Flag --</option>
+            <option value="">Semua Flag SKP</option>
             <option value="DSPC" {{ $dspcFilter === 'DSPC' ? 'selected' : '' }}>DSPC</option>
             <option value="NON-DSPC" {{ $dspcFilter === 'NON-DSPC' ? 'selected' : '' }}>NON-DSPC</option>
         </select>

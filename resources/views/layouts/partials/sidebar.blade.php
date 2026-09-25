@@ -88,7 +88,7 @@
             <a href="{{ route('wp.search') }}" 
                class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors {{ request()->routeIs('wp.search') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
                 <i class="fa-solid fa-magnifying-glass text-sm w-5 text-center shrink-0"></i>
-                <span x-show="sidebarOpen || isPinned" x-cloak class="truncate">Pencarian WP</span>
+                <span x-show="sidebarOpen || isPinned" x-cloak class="truncate">Pencarian</span>
             </a>
         </nav>
     </div>

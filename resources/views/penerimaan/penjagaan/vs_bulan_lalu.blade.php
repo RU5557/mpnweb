@@ -23,7 +23,7 @@
             <select name="bulan" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
                 @for($m=1; $m<=12; $m++)
                     <option value="{{ $m }}" {{ $bulan == $m ? 'selected' : '' }}>
-                        s.d. {{ DateTime::createFromFormat('!m', $m)->format('F') }}
+                        {{ DateTime::createFromFormat('!m', $m)->format('F') }}
                     </option>
                 @endfor
             </select>

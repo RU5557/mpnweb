@@ -10,8 +10,8 @@
      }">
     
     <div>
-        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Pencarian Data Wajib Pajak</h1>
-        <p class="text-sm text-slate-500 mt-1">Cari informasi masterfile WP atau riwayat transaksi DRM penerimaan pajak.</p>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Pencarian Data</h1>
+        <p class="text-sm text-slate-500 mt-1">Cari informasi masterfile WP atau detil DRM</p>
     </div>
 
     <!-- ==================== FORM PENCARIAN ==================== -->
@@ -26,7 +26,7 @@
                 
                 <!-- Target Tabel -->
                 <div class="md:col-span-3">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Target Tabel</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Jenis Data</label>
                     <select name="target_table" 
                             x-model="targetTable"
                             @change="$nextTick(() => $el.form.submit())"
