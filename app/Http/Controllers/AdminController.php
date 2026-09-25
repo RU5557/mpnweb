@@ -69,7 +69,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'tanggal'          => 'required|date',
-            'nko'              => 'required|numeric|min:0|max:100',
+            'nko'              => 'required|numeric|min:0|max:120',
             'ranking_nasional' => 'required|integer|min:1',
             'ranking_kanwil'   => 'required|integer|min:1',
         ]);

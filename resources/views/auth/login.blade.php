@@ -15,7 +15,7 @@
                 <i class="fa-solid fa-user-shield text-lg"></i>
             </div>
             <h1 class="text-lg font-bold text-slate-900">Login Panel Admin</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Seksi Pengolahan Data dan Informasi (PDI)</p>
+            <p class="text-xs text-slate-500 mt-0.5">Seksi Penjaminan Kualitas Data</p>
         </div>
 
         @if(session('error'))
@@ -28,7 +28,7 @@
         <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
             @csrf
             <div>
-                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Username Admin</label>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Username</label>
                 <input type="text" name="username" value="{{ old('username') }}" required autofocus autocomplete="username"
                     class="w-full bg-slate-50 border @error('username') border-red-500 @else border-slate-300 @enderror text-slate-800 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-medium">
                 @error('username')

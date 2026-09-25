@@ -14,7 +14,7 @@
             <div class="bg-blue-600 p-1.5 rounded-lg text-white flex items-center justify-center w-7 h-7 shadow-sm">
                 <i class="fa-solid fa-gears text-xs"></i>
             </div>
-            <span class="font-bold text-sm tracking-wide">Panel Pengelola Data MPNWEB</span>
+            <span class="font-bold text-sm tracking-wide">Panel Admin - MPNWEB</span>
         </div>
 
         <!-- Tombol Aksi Kanan Topbar -->
@@ -75,13 +75,13 @@
                 @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Tanggal Info</label>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Tanggal Update</label>
                         <input type="date" name="tanggal" value="{{ old('tanggal', isset($rollingText) ? $rollingText->tanggal : date('Y-m-d')) }}" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1.5">Nilai NKO (%)</label>
-                        <input type="number" step="0.01" min="0" max="100" name="nko" value="{{ old('nko', isset($rollingText) ? $rollingText->nko : 0) }}" placeholder="Contoh: 95.40" required
+                        <input type="number" step="0.01" min="0" max="120" name="nko" value="{{ old('nko', isset($rollingText) ? $rollingText->nko : 0) }}" placeholder="Contoh: 95.40" required
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium">
                     </div>
                     <div>

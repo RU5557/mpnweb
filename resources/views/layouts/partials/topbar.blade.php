@@ -22,7 +22,7 @@
         <a href="{{ route('admin.index') }}" class="flex items-center gap-2 hover:bg-slate-100 py-1 px-2.5 rounded-lg transition border border-slate-200/80">
             <div class="text-right hidden sm:block">
                 <div class="text-xs font-bold text-slate-800 leading-tight">Admin KPP</div>
-                <div class="text-[10px] text-slate-500 leading-none">Seksi PDI</div>
+                <div class="text-[10px] text-slate-500 leading-none">Seksi PKD</div>
             </div>
             <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
                 <i class="fa-solid fa-user-gear text-[11px]"></i>

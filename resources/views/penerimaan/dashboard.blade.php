@@ -7,7 +7,7 @@
     <!-- Judul & Subjudul -->
     <div>
         <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard Ringkasan</h1>
-        <p class="text-xs text-slate-500 mt-1">Overview penerimaan, capaian target, dan performa PPM</p>
+        <p class="text-xs text-slate-500 mt-1">Overview penerimaan dan capaian target</p>
     </div>
 
     <!-- Form Filter Compact & Sejajar -->
