@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Target;
 use App\Models\RollingText;
+use App\Models\Target;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
     public function index()
     {
         $tahunSekarang = date('Y');
-        
+
         $target = Target::where('tahun', $tahunSekarang)->first();
         // Ambil data rolling text terbaru agar form terisi data eksisting
         $rollingText = RollingText::latest('id')->first();
@@ -22,14 +22,14 @@ class AdminController extends Controller
     public function updateTarget(Request $request)
     {
         $request->validate([
-            'tahun'                  => 'required|numeric',
-            'target_kantor'          => 'nullable|string',
-            'target_ppm'             => 'nullable|string',
-            'target_pkm'             => 'nullable|string',
-            'target_pbp'             => 'nullable|string',
-            'target_pkm_pengawasan'  => 'nullable|string',
+            'tahun' => 'required|numeric',
+            'target_kantor' => 'nullable|string',
+            'target_ppm' => 'nullable|string',
+            'target_pkm' => 'nullable|string',
+            'target_pbp' => 'nullable|string',
+            'target_pkm_pengawasan' => 'nullable|string',
             'target_pkm_pemeriksaan' => 'nullable|string',
-            'target_pkm_penagihan'   => 'nullable|string',
+            'target_pkm_penagihan' => 'nullable|string',
         ]);
 
         // Daftar field terizinkan untuk mencegah mass assignment
@@ -47,7 +47,7 @@ class AdminController extends Controller
 
         foreach ($allowedFields as $field) {
             $value = $request->input($field);
-            if (!is_null($value)) {
+            if (! is_null($value)) {
                 // Hapus titik ribuan, ubah koma desimal jadi titik desimal jika ada
                 $cleaned = str_replace('.', '', $value);
                 $cleaned = str_replace(',', '.', $cleaned);
@@ -68,18 +68,18 @@ class AdminController extends Controller
     public function updateRollingText(Request $request)
     {
         $request->validate([
-            'tanggal'          => 'required|date',
-            'nko'              => 'required|numeric|min:0|max:120',
+            'tanggal' => 'required|date',
+            'nko' => 'required|numeric|min:0|max:120',
             'ranking_nasional' => 'required|integer|min:1',
-            'ranking_kanwil'   => 'required|integer|min:1',
+            'ranking_kanwil' => 'required|integer|min:1',
         ]);
 
         // Buat record baru untuk riwayat info harian
         RollingText::create([
-            'tanggal'          => $request->tanggal,
-            'nko'              => $request->nko,
+            'tanggal' => $request->tanggal,
+            'nko' => $request->nko,
             'ranking_nasional' => $request->ranking_nasional,
-            'ranking_kanwil'   => $request->ranking_kanwil,
+            'ranking_kanwil' => $request->ranking_kanwil,
         ]);
 
         return redirect()->back()->with('success', 'Rolling text harian berhasil diperbarui!');

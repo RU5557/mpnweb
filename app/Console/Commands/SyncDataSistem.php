@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Exception;
+use Illuminate\Support\Facades\DB;
 
 class SyncDataSistem extends Command
 {
@@ -26,15 +26,19 @@ class SyncDataSistem extends Command
         $blnSetor = $this->option('blnsetor');
         $useMaintenance = $this->option('maintenance');
 
-        $this->info("====================================================");
+        $this->info('====================================================');
         $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
         if ($thnSetor || $blnSetor) {
             $infoPeriode = [];
-            if ($thnSetor) $infoPeriode[] = "Tahun: {$thnSetor}";
-            if ($blnSetor) $infoPeriode[] = "Bulan: {$blnSetor}";
-            $this->info("  FILTER PERIODE -> " . implode(', ', $infoPeriode));
+            if ($thnSetor) {
+                $infoPeriode[] = "Tahun: {$thnSetor}";
+            }
+            if ($blnSetor) {
+                $infoPeriode[] = "Bulan: {$blnSetor}";
+            }
+            $this->info('  FILTER PERIODE -> '.implode(', ', $infoPeriode));
         }
-        $this->info("====================================================");
+        $this->info('====================================================');
         $startTime = microtime(true);
 
         DB::disableQueryLog();
@@ -96,9 +100,9 @@ class SyncDataSistem extends Command
             }
 
             $this->newLine();
-            $this->info("====================================================");
+            $this->info('====================================================');
             $this->info("  ETL SINKRONISASI SELESAI DALAM {$executionTime} DETIK!");
-            $this->info("====================================================");
+            $this->info('====================================================');
 
             return Command::SUCCESS;
 
@@ -113,7 +117,8 @@ class SyncDataSistem extends Command
             }
 
             $this->newLine();
-            $this->error("ETL ERROR DETECTED: " . $e->getMessage());
+            $this->error('ETL ERROR DETECTED: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -122,11 +127,11 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: seksi...');
         DB::statement('TRUNCATE TABLE seksi;');
-        DB::statement("
+        DB::statement('
             INSERT IGNORE INTO seksi (id, kantor, tipe, nama, kode, telp) 
             SELECT id, kantor, tipe, nama, kode, telp 
             FROM mpninfo.seksi
-        ");
+        ');
         $this->info('   [OK] Tabel seksi synchronized.');
     }
 
@@ -134,11 +139,11 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: klu...');
         DB::statement('TRUNCATE TABLE klu;');
-        DB::statement("
+        DB::statement('
             INSERT IGNORE INTO klu (kd_klu, nm_klu, kd_kategori, nm_kategori) 
             SELECT kd_klu, nm_klu, kd_kategori, nm_kategori 
             FROM mpninfo.klu_baru
-        ");
+        ');
         $this->info('   [OK] Tabel klu synchronized.');
     }
 
@@ -159,11 +164,11 @@ class SyncDataSistem extends Command
         $this->comment('-> Synchronizing: pegawai...');
         DB::statement('TRUNCATE TABLE pegawai;');
         // Menggunakan INSERT IGNORE karena tabel pegawai sudah memiliki UNIQUE KEY uq_pegawai_nip_tahun (nip, tahun)
-        DB::statement("
+        DB::statement('
             INSERT IGNORE INTO pegawai (kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh) 
             SELECT kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh 
             FROM mpninfo.pegawai
-        ");
+        ');
         $this->info('   [OK] Tabel pegawai synchronized.');
     }
 
@@ -171,7 +176,7 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: masterfile_wp...');
         DB::statement('TRUNCATE TABLE masterfile_wp;');
-        
+
         // Menggunakan INSERT IGNORE untuk memanfaatkan PRIMARY KEY (npwp15)
         DB::statement("
             INSERT IGNORE INTO masterfile_wp (
@@ -187,7 +192,7 @@ class SyncDataSistem extends Command
                 nipar, nipeks, nipjs, npwp16
             FROM mpninfo.masterfile
         ");
-        
+
         $this->info('   [OK] Tabel masterfile_wp synchronized.');
     }
 
@@ -196,19 +201,27 @@ class SyncDataSistem extends Command
         $this->comment('-> Synchronizing: detil_transaksi_wp...');
 
         $whereConditions = [];
-        if (!empty($thnSetor)) $whereConditions[] = "thnsetor = " . (int)$thnSetor;
-        if (!empty($blnSetor)) $whereConditions[] = "blnsetor = " . (int)$blnSetor;
+        if (! empty($thnSetor)) {
+            $whereConditions[] = 'thnsetor = '.(int) $thnSetor;
+        }
+        if (! empty($blnSetor)) {
+            $whereConditions[] = 'blnsetor = '.(int) $blnSetor;
+        }
 
         if (count($whereConditions) > 0) {
-            $whereSql = " WHERE " . implode(' AND ', $whereConditions);
+            $whereSql = ' WHERE '.implode(' AND ', $whereConditions);
 
             $deleteWhereConditions = [];
-            if (!empty($thnSetor)) $deleteWhereConditions[] = "thn_setor = " . (int)$thnSetor;
-            if (!empty($blnSetor)) $deleteWhereConditions[] = "bln_setor = " . (int)$blnSetor;
-            $deleteWhereSql = " WHERE " . implode(' AND ', $deleteWhereConditions);
+            if (! empty($thnSetor)) {
+                $deleteWhereConditions[] = 'thn_setor = '.(int) $thnSetor;
+            }
+            if (! empty($blnSetor)) {
+                $deleteWhereConditions[] = 'bln_setor = '.(int) $blnSetor;
+            }
+            $deleteWhereSql = ' WHERE '.implode(' AND ', $deleteWhereConditions);
 
             DB::statement("DELETE FROM detil_transaksi_wp{$deleteWhereSql};");
-            $this->comment("   [i] Menghapus data periode terpilih sebelum re-sync.");
+            $this->comment('   [i] Menghapus data periode terpilih sebelum re-sync.');
 
             DB::statement("
                 INSERT INTO detil_transaksi_wp (

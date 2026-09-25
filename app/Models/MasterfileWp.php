@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class MasterfileWp extends Model
 {
     protected $table = 'masterfile_wp';
+
     protected $primaryKey = 'npwp15';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     // Alias untuk Nama WP
@@ -45,14 +48,14 @@ class MasterfileWp extends Model
     public function ar()
     {
         return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip')
-                    ->where('tahun', date('Y'));
+            ->where('tahun', date('Y'));
     }
 
     // Relasi Jurusita (JS)
     public function js()
     {
         return $this->belongsTo(Pegawai::class, 'nip_js', 'nip')
-                    ->where('tahun', date('Y'));
+            ->where('tahun', date('Y'));
     }
 
     // Relasi Detil Transaksi

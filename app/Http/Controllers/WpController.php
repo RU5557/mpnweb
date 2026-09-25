@@ -1,11 +1,12 @@
 <?php
 
 // app/Http/Controllers/WpController.php
+
 namespace App\Http\Controllers;
 
 use App\Repositories\WpRepository;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class WpController extends Controller
 {
@@ -23,8 +24,8 @@ class WpController extends Controller
     {
         $request->validate([
             'keyword' => 'required|string|min:3',
-            'limit'   => 'integer|max:100',
-            'offset'  => 'integer',
+            'limit' => 'integer|max:100',
+            'offset' => 'integer',
         ]);
 
         $data = $this->wpRepository->searchMasterfile(
@@ -42,8 +43,8 @@ class WpController extends Controller
     public function searchTransactions(Request $request): JsonResponse
     {
         $filters = $request->only(['keyword', 'thn_setor', 'bln_setor', 'fungsi', 'nip_ar', 'nip_js']);
-        $limit   = (int) $request->input('limit', 20);
-        $offset  = (int) $request->input('offset', 0);
+        $limit = (int) $request->input('limit', 20);
+        $offset = (int) $request->input('offset', 0);
 
         $data = $this->wpRepository->searchTransactions($filters, $limit, $offset);
 

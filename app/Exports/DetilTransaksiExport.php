@@ -4,12 +4,12 @@ namespace App\Exports;
 
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class DetilTransaksiExport implements FromQuery, WithHeadings, WithMapping, WithChunkReading, ShouldAutoSize
+class DetilTransaksiExport implements FromQuery, ShouldAutoSize, WithChunkReading, WithHeadings, WithMapping
 {
     protected $filters;
 
@@ -44,27 +44,27 @@ class DetilTransaksiExport implements FromQuery, WithHeadings, WithMapping, With
             );
 
         // Filter 1: Tahun Setor
-        if (!empty($this->filters['thn_setor'])) {
+        if (! empty($this->filters['thn_setor'])) {
             $query->where('dt.thn_setor', $this->filters['thn_setor']);
         }
 
         // Filter 2: Bulan Setor
-        if (!empty($this->filters['bln_setor'])) {
+        if (! empty($this->filters['bln_setor'])) {
             $query->where('dt.bln_setor', $this->filters['bln_setor']);
         }
 
         // Filter 3: Fungsi PKM (PENGAWASAN / PEMERIKSAAN / PENAGIHAN)
-        if (!empty($this->filters['fungsi'])) {
+        if (! empty($this->filters['fungsi'])) {
             $query->where('dt.fungsi', $this->filters['fungsi']);
         }
 
         // Filter 4: Jenis Transaksi (PPM / PKM)
-        if (!empty($this->filters['jenis'])) {
+        if (! empty($this->filters['jenis'])) {
             $query->where('dt.jenis', $this->filters['jenis']);
         }
 
         // Filter 5: NIP AR (jika ada filter spesifik dari UI)
-        if (!empty($this->filters['nip_ar'])) {
+        if (! empty($this->filters['nip_ar'])) {
             $query->where('mw.nip_ar', $this->filters['nip_ar']);
         }
 
@@ -91,7 +91,7 @@ class DetilTransaksiExport implements FromQuery, WithHeadings, WithMapping, With
             'NTPN',
             'No PBK',
             'Jenis',
-            'Fungsi'
+            'Fungsi',
         ];
     }
 
@@ -104,9 +104,9 @@ class DetilTransaksiExport implements FromQuery, WithHeadings, WithMapping, With
             $row->thn_setor,
             $row->bln_setor,
             $row->tgl_setor,
-            "'" . $row->npwp15, // Kutip tunggal agar NPWP dibaca sebagai teks & angka 0 di depan tidak hilang
+            "'".$row->npwp15, // Kutip tunggal agar NPWP dibaca sebagai teks & angka 0 di depan tidak hilang
             $row->nama_wp,
-            "'" . $row->nip_ar,
+            "'".$row->nip_ar,
             $row->kd_map,
             $row->kd_bayar,
             $row->masa_pajak,
@@ -115,7 +115,7 @@ class DetilTransaksiExport implements FromQuery, WithHeadings, WithMapping, With
             $row->ntpn,
             $row->no_pbk,
             $row->jenis,
-            $row->fungsi
+            $row->fungsi,
         ];
     }
 

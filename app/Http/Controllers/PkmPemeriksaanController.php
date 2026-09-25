@@ -20,25 +20,25 @@ class PkmPemeriksaanController extends Controller
 
         // Mapping opsi sorting ke sintaks/alias SQL
         $allowedSorts = [
-            'npwp'                  => 'dt.npwp15',
-            'nama_wp'               => DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar')"),
-            'kd_klu'                => DB::raw("COALESCE(mw.klu, '-')"),
-            'nm_klu'                => DB::raw("COALESCE(k.nm_klu, '-')"),
+            'npwp' => 'dt.npwp15',
+            'nama_wp' => DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar')"),
+            'kd_klu' => DB::raw("COALESCE(mw.klu, '-')"),
+            'nm_klu' => DB::raw("COALESCE(k.nm_klu, '-')"),
             'total_akt_pemeriksaan' => 'total_akt_pemeriksaan',
         ];
 
         // Validasi kolom sorting
-        if (!array_key_exists($sortColumn, $allowedSorts)) {
+        if (! array_key_exists($sortColumn, $allowedSorts)) {
             $sortColumn = 'total_akt_pemeriksaan';
         }
         $sortBy = $allowedSorts[$sortColumn];
 
         // Unique Cache Key
-        $cacheKey = "pkm_pemeriksaan_{$tahun}_{$bulan}_s" . md5($search) . "_{$sortColumn}_{$sortDirection}_p{$page}";
+        $cacheKey = "pkm_pemeriksaan_{$tahun}_{$bulan}_s".md5($search)."_{$sortColumn}_{$sortDirection}_p{$page}";
 
         try {
             $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $search, $sortBy, $sortDirection) {
-                $like = '%' . addcslashes($search, '%_\\') . '%';
+                $like = '%'.addcslashes($search, '%_\\').'%';
 
                 return DB::table('detil_transaksi_wp as dt')
                     ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
@@ -48,7 +48,7 @@ class PkmPemeriksaanController extends Controller
                         DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar') as nama_wp"),
                         DB::raw("COALESCE(mw.klu, '-') as kd_klu"),
                         DB::raw("COALESCE(k.nm_klu, '-') as nm_klu"),
-                        DB::raw("SUM(dt.jml_setor) as total_akt_pemeriksaan")
+                        DB::raw('SUM(dt.jml_setor) as total_akt_pemeriksaan')
                     )
                     ->whereRaw('LOWER(dt.fungsi) = ?', ['akt pemeriksaan'])
                     ->where('dt.thn_setor', $tahun)
@@ -77,11 +77,11 @@ class PkmPemeriksaanController extends Controller
         }
 
         return view('penerimaan.pkmpemeriksaan', [
-            'pkmData'       => $pkmData,
-            'sortColumn'    => $sortColumn,
+            'pkmData' => $pkmData,
+            'sortColumn' => $sortColumn,
             'sortDirection' => $sortDirection,
-            'tahun'         => $tahun,
-            'bulan'         => $bulan,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
         ]);
     }
 
@@ -92,7 +92,7 @@ class PkmPemeriksaanController extends Controller
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $search = trim((string) $request->input('search', ''));
-        $like = '%' . addcslashes($search, '%_\\') . '%';
+        $like = '%'.addcslashes($search, '%_\\').'%';
 
         $filename = "Export_Detil_PKM_Pemeriksaan_{$tahun}_{$bulan}.csv";
 
@@ -100,7 +100,7 @@ class PkmPemeriksaanController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'KD KLU', 'NAMA KLU',

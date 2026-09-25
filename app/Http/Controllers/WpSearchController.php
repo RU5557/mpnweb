@@ -5,20 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\MasterfileWp;
 use App\Models\Pegawai;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WpSearchController extends Controller
 {
     public function search(Request $request)
     {
-        $keyword     = trim((string) $request->get('q'));
+        $keyword = trim((string) $request->get('q'));
         $targetTable = $request->get('target_table', 'masterfile');
 
-        $sortBy    = $request->get('sort_by');
+        $sortBy = $request->get('sort_by');
         $sortOrder = strtolower($request->get('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
-        $tahun     = date('Y');
+        $tahun = date('Y');
 
         // ==========================================
         // AMBIL DATA LIST UNTUK FILTER (CACHED)
@@ -43,7 +43,7 @@ class WpSearchController extends Controller
                 ->toArray();
         });
 
-        $listAr = Cache::remember('filter_ar_jabatan_5_' . $tahun, 3600, function () use ($tahun) {
+        $listAr = Cache::remember('filter_ar_jabatan_5_'.$tahun, 3600, function () use ($tahun) {
             return Pegawai::where('jabatan', 5)
                 ->where('tahun', $tahun)
                 ->select('nip', 'nama')
@@ -51,7 +51,7 @@ class WpSearchController extends Controller
                 ->get();
         });
 
-        $listJs = Cache::remember('filter_js_jabatan_11_' . $tahun, 3600, function () use ($tahun) {
+        $listJs = Cache::remember('filter_js_jabatan_11_'.$tahun, 3600, function () use ($tahun) {
             return Pegawai::where('jabatan', 11)
                 ->where('tahun', $tahun)
                 ->select('nip', 'nama')
@@ -62,42 +62,42 @@ class WpSearchController extends Controller
         // ==========================================
         // DEFAULT TERPILIH SEMUA KETIKA AWAL DIBUKA
         // ==========================================
-        $allBulan  = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-        $allTahun  = array_values((array) $listTahunSetor);
+        $allBulan = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+        $allTahun = array_values((array) $listTahunSetor);
         $allFungsi = array_values((array) $listFungsi);
-        $allAr     = collect($listAr)->pluck('nip')->toArray();
-        $allJs     = collect($listJs)->pluck('nip')->toArray();
+        $allAr = collect($listAr)->pluck('nip')->toArray();
+        $allJs = collect($listJs)->pluck('nip')->toArray();
 
         if ($request->has('has_search')) {
             $thnSetor = (array) $request->get('thn_setor', []);
             $blnSetor = (array) $request->get('bln_setor', []);
-            $fungsi   = (array) $request->get('fungsi', []);
-            $nipAr    = (array) $request->get('nip_ar', []);
-            $nipJs    = (array) $request->get('nip_js', []);
+            $fungsi = (array) $request->get('fungsi', []);
+            $nipAr = (array) $request->get('nip_ar', []);
+            $nipJs = (array) $request->get('nip_js', []);
         } else {
             $thnSetor = $allTahun;
             $blnSetor = $allBulan;
-            $fungsi   = $allFungsi;
-            $nipAr    = $allAr;
-            $nipJs    = $allJs;
+            $fungsi = $allFungsi;
+            $nipAr = $allAr;
+            $nipJs = $allJs;
         }
 
         // ==========================================
         // EXECUTE QUERY
         // ==========================================
         if ($targetTable === 'masterfile') {
-            
+
             $query = MasterfileWp::query()->with(['ar', 'js']);
 
-            if (!empty($keyword)) {
+            if (! empty($keyword)) {
                 if (is_numeric($keyword)) {
-                    $query->where(function($q) use ($keyword) {
+                    $query->where(function ($q) use ($keyword) {
                         $q->where('npwp15', 'LIKE', "{$keyword}%")
-                          ->orWhere('npwp16', 'LIKE', "{$keyword}%");
+                            ->orWhere('npwp16', 'LIKE', "{$keyword}%");
                     });
                 } else {
-                    $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
-                    $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                    $searchPhrase = '+'.implode(' +', explode(' ', $keyword)).'*';
+                    $query->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$searchPhrase]);
                 }
             }
 
@@ -111,15 +111,15 @@ class WpSearchController extends Controller
             $results = $query->paginate(20)->appends($request->all());
 
         } else {
-            
+
             $subQuery = DB::table('detil_transaksi_wp as t_sub');
 
-            if (!empty($keyword)) {
+            if (! empty($keyword)) {
                 if (is_numeric($keyword)) {
                     $subQuery->where('t_sub.npwp15', 'LIKE', "{$keyword}%");
                 } else {
-                    $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
-                    $subQuery->whereRaw("MATCH(t_sub.nama_wp) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                    $searchPhrase = '+'.implode(' +', explode(' ', $keyword)).'*';
+                    $subQuery->whereRaw('MATCH(t_sub.nama_wp) AGAINST(? IN BOOLEAN MODE)', [$searchPhrase]);
                 }
             }
 
@@ -128,7 +128,7 @@ class WpSearchController extends Controller
             } elseif (count($thnSetor) === 0) {
                 $subQuery->whereRaw('1 = 0');
             }
-            
+
             if (count($blnSetor) > 0 && count($blnSetor) < count($allBulan)) {
                 $subQuery->whereIn('t_sub.bln_setor', $blnSetor);
             } elseif (count($blnSetor) === 0) {
@@ -147,7 +147,7 @@ class WpSearchController extends Controller
             // FIX: Menggunakan $subQuery (bukan $query) & merujuk t_sub.npwp15
             if ($isArFiltered || $isJsFiltered || count($nipAr) === 0 || count($nipJs) === 0) {
                 $subQuery->join('masterfile_wp as mf', 't_sub.npwp15', '=', 'mf.npwp15');
-                
+
                 if (count($nipAr) === 0 || count($nipJs) === 0) {
                     $subQuery->whereRaw('1 = 0');
                 } else {
@@ -171,22 +171,22 @@ class WpSearchController extends Controller
             $paginatedIds = $subQuery->select('t_sub.id')->paginate(20)->appends($request->all());
             $ids = collect($paginatedIds->items())->pluck('id')->toArray();
 
-            if (!empty($ids)) {
+            if (! empty($ids)) {
                 $validIds = array_map('intval', $ids);
                 $details = DB::table('detil_transaksi_wp as t')
                     ->whereIn('t.id', $validIds)
                     ->leftJoin('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15')
-                    ->leftJoin('kdmap as k', function($join) {
+                    ->leftJoin('kdmap as k', function ($join) {
                         $join->on('t.kd_map', '=', 'k.kd_map')
-                             ->on('t.kd_bayar', '=', 'k.kd_bayar');
+                            ->on('t.kd_bayar', '=', 'k.kd_bayar');
                     })
-                    ->leftJoin('pegawai as p_ar', function($join) use ($tahun) {
+                    ->leftJoin('pegawai as p_ar', function ($join) use ($tahun) {
                         $join->on('mf.nip_ar', '=', 'p_ar.nip')
-                             ->where('p_ar.tahun', '=', $tahun);
+                            ->where('p_ar.tahun', '=', $tahun);
                     })
-                    ->leftJoin('pegawai as p_js', function($join) use ($tahun) {
+                    ->leftJoin('pegawai as p_js', function ($join) use ($tahun) {
                         $join->on('mf.nip_js', '=', 'p_js.nip')
-                             ->where('p_js.tahun', '=', $tahun);
+                            ->where('p_js.tahun', '=', $tahun);
                     })
                     ->select(
                         't.id', 't.npwp15', 't.nama_wp', 't.ntpn', 't.tgl_setor',
@@ -195,7 +195,7 @@ class WpSearchController extends Controller
                         'k.jenis_pajak', 'mf.nama as nama_master',
                         'p_ar.nama as nama_ar', 'p_js.nama as nama_js'
                     )
-                    ->orderByRaw("FIELD(t.id, " . implode(',', $validIds) . ")");
+                    ->orderByRaw('FIELD(t.id, '.implode(',', $validIds).')');
 
                 $results = $paginatedIds->setCollection($details->get());
             } else {
@@ -204,45 +204,45 @@ class WpSearchController extends Controller
         }
 
         return view('search.index', compact(
-            'results', 'keyword', 'targetTable', 'thnSetor', 
-            'blnSetor', 'fungsi', 'nipAr', 'nipJs', 
-            'listTahunSetor', 'listFungsi', 'listAr', 'listJs', 
+            'results', 'keyword', 'targetTable', 'thnSetor',
+            'blnSetor', 'fungsi', 'nipAr', 'nipJs',
+            'listTahunSetor', 'listFungsi', 'listAr', 'listJs',
             'sortBy', 'sortOrder'
         ));
     }
 
     public function exportCsv(Request $request): StreamedResponse
     {
-        $keyword     = trim((string) $request->get('q'));
+        $keyword = trim((string) $request->get('q'));
         $targetTable = $request->get('target_table', 'masterfile');
 
-        $fileName = 'export_' . $targetTable . '_' . date('Ymd_His') . '.csv';
+        $fileName = 'export_'.$targetTable.'_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename={$fileName}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         return response()->stream(function () use ($keyword, $targetTable, $request) {
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
 
             if ($targetTable === 'masterfile') {
                 fputcsv($file, ['NPWP15', 'NPWP16', 'Nama WP', 'Alamat', 'Kecamatan', 'Kota', 'Jenis WP', 'Status WP', 'Telepon', 'NIP AR', 'NIP JS']);
 
                 $query = MasterfileWp::query();
-                if (!empty($keyword)) {
+                if (! empty($keyword)) {
                     if (is_numeric($keyword)) {
-                        $query->where(function($q) use ($keyword) {
+                        $query->where(function ($q) use ($keyword) {
                             $q->where('npwp15', 'LIKE', "{$keyword}%")
-                              ->orWhere('npwp16', 'LIKE', "{$keyword}%");
+                                ->orWhere('npwp16', 'LIKE', "{$keyword}%");
                         });
                     } else {
-                        $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
-                        $query->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                        $searchPhrase = '+'.implode(' +', explode(' ', $keyword)).'*';
+                        $query->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$searchPhrase]);
                     }
                 }
 
@@ -267,29 +267,39 @@ class WpSearchController extends Controller
 
                 $query = DB::table('detil_transaksi_wp as t');
 
-                if (!empty($keyword)) {
+                if (! empty($keyword)) {
                     if (is_numeric($keyword)) {
                         $query->where('t.npwp15', 'LIKE', "{$keyword}%");
                     } else {
-                        $searchPhrase = '+' . implode(' +', explode(' ', $keyword)) . '*';
-                        $query->whereRaw("MATCH(t.nama_wp) AGAINST(? IN BOOLEAN MODE)", [$searchPhrase]);
+                        $searchPhrase = '+'.implode(' +', explode(' ', $keyword)).'*';
+                        $query->whereRaw('MATCH(t.nama_wp) AGAINST(? IN BOOLEAN MODE)', [$searchPhrase]);
                     }
                 }
 
                 $thnSetor = (array) $request->get('thn_setor', []);
                 $blnSetor = (array) $request->get('bln_setor', []);
-                $fungsi   = (array) $request->get('fungsi', []);
-                $nipAr    = (array) $request->get('nip_ar', []);
-                $nipJs    = (array) $request->get('nip_js', []);
+                $fungsi = (array) $request->get('fungsi', []);
+                $nipAr = (array) $request->get('nip_ar', []);
+                $nipJs = (array) $request->get('nip_js', []);
 
-                if (!empty($thnSetor)) $query->whereIn('t.thn_setor', $thnSetor);
-                if (!empty($blnSetor)) $query->whereIn('t.bln_setor', $blnSetor);
-                if (!empty($fungsi))   $query->whereIn('t.fungsi', $fungsi);
+                if (! empty($thnSetor)) {
+                    $query->whereIn('t.thn_setor', $thnSetor);
+                }
+                if (! empty($blnSetor)) {
+                    $query->whereIn('t.bln_setor', $blnSetor);
+                }
+                if (! empty($fungsi)) {
+                    $query->whereIn('t.fungsi', $fungsi);
+                }
 
-                if (!empty($nipAr) || !empty($nipJs)) {
+                if (! empty($nipAr) || ! empty($nipJs)) {
                     $query->join('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15');
-                    if (!empty($nipAr)) $query->whereIn('mf.nip_ar', $nipAr);
-                    if (!empty($nipJs)) $query->whereIn('mf.nip_js', $nipJs);
+                    if (! empty($nipAr)) {
+                        $query->whereIn('mf.nip_ar', $nipAr);
+                    }
+                    if (! empty($nipJs)) {
+                        $query->whereIn('mf.nip_js', $nipJs);
+                    }
                 }
 
                 $query->orderBy('t.tgl_setor', 'desc')->cursor()->each(function ($row) use ($file) {

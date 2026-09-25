@@ -2,13 +2,14 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class RebuildSummaryMart extends Command
 {
     protected $signature = 'summary:rebuild';
+
     protected $description = 'Rekapitulasi total penerimaan ke summary_mart_penerimaan menggunakan teknik Temp-Table Swap';
 
     public function handle()
@@ -41,7 +42,7 @@ class RebuildSummaryMart extends Command
 
             // 3. Swap tabel secara atomic (Instan < 0.01 detik tanpa downtime)
             DB::statement('CREATE TABLE IF NOT EXISTS summary_mart_penerimaan_old LIKE summary_mart_penerimaan;');
-            
+
             DB::statement('RENAME TABLE 
                 summary_mart_penerimaan TO summary_mart_penerimaan_old,
                 summary_mart_penerimaan_temp TO summary_mart_penerimaan;
@@ -52,11 +53,12 @@ class RebuildSummaryMart extends Command
 
             $executionTime = round(microtime(true) - $startTime, 2);
             $this->info("   [OK] Summary Mart berhasil diperbarui dalam {$executionTime} detik!");
+
             return Command::SUCCESS;
 
         } catch (Exception $e) {
             // Fallback jika terjadi error pada Temp Swap: Jalankan metode langsung
-            $this->warn("   [!] Menjalankan fallback direct rebuild...");
+            $this->warn('   [!] Menjalankan fallback direct rebuild...');
             try {
                 DB::statement('TRUNCATE TABLE summary_mart_penerimaan;');
                 DB::statement("
@@ -69,9 +71,11 @@ class RebuildSummaryMart extends Command
                     FROM detil_transaksi_wp
                     GROUP BY thn_setor, bln_setor, jenis, fungsi
                 ");
+
                 return Command::SUCCESS;
             } catch (Exception $fallbackEx) {
-                $this->error("   [ERROR] Gagal rebuild summary mart: " . $fallbackEx->getMessage());
+                $this->error('   [ERROR] Gagal rebuild summary mart: '.$fallbackEx->getMessage());
+
                 return Command::FAILURE;
             }
         }

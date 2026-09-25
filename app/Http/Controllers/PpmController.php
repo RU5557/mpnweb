@@ -73,7 +73,7 @@ class PpmController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'KD KLU', 'SEKTOR',
@@ -161,7 +161,7 @@ class PpmController extends Controller
     {
         $allowedColumns = ['nama_wp', 'nm_kategori', 'jenis_pajak'];
 
-        if (!in_array($column, $allowedColumns, true)) {
+        if (! in_array($column, $allowedColumns, true)) {
             throw new \InvalidArgumentException('Kolom grouping PPM tidak valid.');
         }
 

@@ -17,24 +17,24 @@ class PkmPengawasanController extends Controller
     public function index(Request $request)
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
-        $seksiFilter  = trim((string) $request->input('seksi', ''));
-        $sortColumn   = (string) $request->input('sort', 'nama_seksi');
+        $seksiFilter = trim((string) $request->input('seksi', ''));
+        $sortColumn = (string) $request->input('sort', 'nama_seksi');
         $sortDirection = (string) $request->input('direction', 'asc');
 
         $allowedSorts = [
-            'nama_seksi'           => DB::raw("COALESCE(s.nama, 'Unassign')"),
-            'nama_ar'              => DB::raw("COALESCE(p.nama, 'Unassign')"),
+            'nama_seksi' => DB::raw("COALESCE(s.nama, 'Unassign')"),
+            'nama_ar' => DB::raw("COALESCE(p.nama, 'Unassign')"),
             'total_akt_pengawasan' => 'total_akt_pengawasan',
-            'total_lainnya'        => 'total_lainnya',
+            'total_lainnya' => 'total_lainnya',
             'total_wra_pengawasan' => 'total_wra_pengawasan',
             'total_pkm_pengawasan' => 'total_pkm_pengawasan',
         ];
 
-        $sortBy   = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(s.nama, 'Unassign')");
-        $sortDir  = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
+        $sortBy = $allowedSorts[$sortColumn] ?? DB::raw("COALESCE(s.nama, 'Unassign')");
+        $sortDir = strtolower($sortDirection) === 'desc' ? 'desc' : 'asc';
         $sortColumn = array_key_exists($sortColumn, $allowedSorts) ? $sortColumn : 'nama_seksi';
 
-        $cacheKey = "pkm_pengawasan_{$tahun}_{$bulan}_" . md5($seksiFilter) . "_{$sortColumn}_{$sortDir}";
+        $cacheKey = "pkm_pengawasan_{$tahun}_{$bulan}_".md5($seksiFilter)."_{$sortColumn}_{$sortDir}";
 
         try {
             $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $seksiFilter, $sortColumn, $sortBy, $sortDir) {
@@ -46,7 +46,7 @@ class PkmPengawasanController extends Controller
                         DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'akt%' THEN dt.jml_setor ELSE 0 END) as total_akt_pengawasan"),
                         DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'lain%' THEN dt.jml_setor ELSE 0 END) as total_lainnya"),
                         DB::raw("SUM(CASE WHEN LOWER(dt.fungsi) LIKE 'wra%' THEN dt.jml_setor ELSE 0 END) as total_wra_pengawasan"),
-                        DB::raw("SUM(dt.jml_setor) as total_pkm_pengawasan")
+                        DB::raw('SUM(dt.jml_setor) as total_pkm_pengawasan')
                     )
                     ->groupBy(
                         DB::raw("COALESCE(mw.nip_ar, 'Unassign')"),
@@ -54,7 +54,7 @@ class PkmPengawasanController extends Controller
                         DB::raw("COALESCE(s.nama, 'Unassign')")
                     )
                     ->orderBy($sortBy, $sortDir)
-                    ->when($sortColumn === 'nama_seksi', function ($q) use ($sortDir) {
+                    ->when($sortColumn === 'nama_seksi', function ($q) {
                         return $q->orderBy(DB::raw("COALESCE(p.nama, 'Unassign')"), 'asc');
                     })
                     ->get();
@@ -72,8 +72,8 @@ class PkmPengawasanController extends Controller
             });
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary PKM Pengawasan.', [
-                'tahun'   => $tahun,
-                'bulan'   => $bulan,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
                 'message' => $e->getMessage(),
             ]);
 
@@ -97,7 +97,7 @@ class PkmPengawasanController extends Controller
     public function exportDetil(Request $request): StreamedResponse
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
-        $seksiFilter     = trim((string) $request->input('seksi', ''));
+        $seksiFilter = trim((string) $request->input('seksi', ''));
 
         $filename = "Export_Detil_PKM_Pengawasan_{$tahun}_{$bulan}.csv";
 
@@ -106,7 +106,7 @@ class PkmPengawasanController extends Controller
 
             $file = fopen('php://output', 'w');
             // Write UTF-8 BOM for Excel compatibility
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'SEKSI', 'NAMA AR',
@@ -135,7 +135,7 @@ class PkmPengawasanController extends Controller
                 foreach ($query->cursor() as $row) {
                     fputcsv($file, [
                         $index++,
-                        !empty($row->npwp15) ? "{$row->npwp15}" : '',
+                        ! empty($row->npwp15) ? "{$row->npwp15}" : '',
                         $row->nama_wp,
                         $row->nama_seksi,
                         $row->nama_ar,
@@ -153,8 +153,8 @@ class PkmPengawasanController extends Controller
                 }
             } catch (QueryException $e) {
                 Log::error('Gagal mengekspor detil PKM Pengawasan.', [
-                    'tahun'   => $tahun,
-                    'bulan'   => $bulan,
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
                     'message' => $e->getMessage(),
                 ]);
 
@@ -221,11 +221,11 @@ class PkmPengawasanController extends Controller
     private function csvDownloadHeaders(string $filename): array
     {
         return [
-            'Content-type'        => 'text/csv; charset=UTF-8',
+            'Content-type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
     }
 

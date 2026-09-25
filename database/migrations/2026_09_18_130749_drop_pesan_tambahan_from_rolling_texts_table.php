@@ -8,13 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('rolling_texts', function (Blueprint $table) {$table->dropColumn('pesan_tambahan');
+        Schema::table('rolling_texts', function (Blueprint $table) {
+            $table->dropColumn('pesan_tambahan');
         });
     }
 
     public function down(): void
     {
-        Schema::table('rolling_texts', function (Blueprint $table) {$table->text('pesan_tambahan')->nullable()->after('ranking_kanwil');
+        Schema::table('rolling_texts', function (Blueprint $table) {
+            $table->text('pesan_tambahan')->nullable()->after('ranking_kanwil');
         });
     }
 };

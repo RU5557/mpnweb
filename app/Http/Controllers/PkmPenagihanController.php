@@ -15,7 +15,7 @@ class PkmPenagihanController extends Controller
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $dspcFilter = $this->resolveDspcFilter($request);
-        
+
         $sortInput = (string) $request->input('sort', 'nip_jspn');
         $sortDirectionInput = (string) $request->input('direction', 'asc');
 
@@ -55,8 +55,8 @@ class PkmPenagihanController extends Controller
                         }
 
                         return $query->where(function ($q) {
-                            $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
-                              ->orWhereNull('dt.flag_skp');
+                            $q->whereRaw('UPPER(TRIM(dt.flag_skp)) != ?', ['DSPC'])
+                                ->orWhereNull('dt.flag_skp');
                         });
                     })
                     ->groupBy(
@@ -78,11 +78,11 @@ class PkmPenagihanController extends Controller
         }
 
         return view('penerimaan.pkmpenagihan', compact(
-            'pkmData', 
-            'sortColumn', 
-            'sortDirection', 
-            'tahun', 
-            'bulan', 
+            'pkmData',
+            'sortColumn',
+            'sortDirection',
+            'tahun',
+            'bulan',
             'dspcFilter'
         ));
     }
@@ -101,7 +101,7 @@ class PkmPenagihanController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
 
             fputcsv($file, [
                 'NO', 'NPWP', 'NAMA WP', 'NIP JSPN', 'NAMA JSPN', 'FLAG SKP',
@@ -138,8 +138,8 @@ class PkmPenagihanController extends Controller
                         }
 
                         return $query->where(function ($q) {
-                            $q->whereRaw("UPPER(TRIM(dt.flag_skp)) != ?", ['DSPC'])
-                              ->orWhereNull('dt.flag_skp');
+                            $q->whereRaw('UPPER(TRIM(dt.flag_skp)) != ?', ['DSPC'])
+                                ->orWhereNull('dt.flag_skp');
                         });
                     })
                     ->orderBy('p.nama', 'asc')
