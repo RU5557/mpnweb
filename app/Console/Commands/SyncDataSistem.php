@@ -10,23 +10,28 @@ use Exception;
 
 class SyncDataSistem extends Command
 {
+    // Signature mencantumkan flag {--maintenance} agar dapat dipanggil via .bat
     protected $signature = 'sync:data-sistem 
                             {--only=all : Pilihan target: all, ref, master, tx}
                             {--thnsetor= : Filter tahun setor (contoh: 2026)}
-                            {--blnsetor= : Filter bulan setor (contoh: 09 atau 9)}';
+                            {--blnsetor= : Filter bulan setor (contoh: 09 atau 9)}
+                            {--maintenance : Aktifkan mode maintenance selama sync}';
 
-    protected $description = 'ETL data dari mpninfo ke mpnweb dengan auto rebuild mart dan cache invalidation';
+    protected $description = 'ETL data dari mpninfo ke mpnweb dengan auto maintenance mode, rebuild summary mart, dan cache invalidation';
 
     public function handle()
     {
         $target = $this->option('only');
-        $thnSetor = $this->option('thnsetor') ? (int) $this->option('thnsetor') : null;
-        $blnSetor = $this->option('blnsetor') ? (int) $this->option('blnsetor') : null;
+        $thnSetor = $this->option('thnsetor');
+        $blnSetor = $this->option('blnsetor');
+        $useMaintenance = $this->option('maintenance');
 
         $this->info("====================================================");
         $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
         if ($thnSetor || $blnSetor) {
-            $infoPeriode = array_filter(["Tahun: {$thnSetor}", "Bulan: {$blnSetor}"]);
+            $infoPeriode = [];
+            if ($thnSetor) $infoPeriode[] = "Tahun: {$thnSetor}";
+            if ($blnSetor) $infoPeriode[] = "Bulan: {$blnSetor}";
             $this->info("  FILTER PERIODE -> " . implode(', ', $infoPeriode));
         }
         $this->info("====================================================");
@@ -34,11 +39,18 @@ class SyncDataSistem extends Command
 
         DB::disableQueryLog();
 
+        // 1. OTOMATIS: Aktifkan mode maintenance jika flag --maintenance dikirim
+        if ($useMaintenance) {
+            $this->comment('-> Mengaktifkan Mode Maintenance...');
+            Artisan::call('down', ['--secret' => 'etl-sync-mode']);
+        }
+
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
             DB::statement('SET UNIQUE_CHECKS = 0;');
+            DB::statement('SET AUTOCOMMIT = 0;');
 
-            // 1. Sinkronisasi Referensi
+            // A. Sinkronisasi Referensi (Opsi 1 & Opsi 4)
             if (in_array($target, ['all', 'ref'])) {
                 $this->syncSeksi();
                 $this->syncKlu();
@@ -46,34 +58,43 @@ class SyncDataSistem extends Command
                 $this->syncPegawai();
             }
 
-            // 2. Sinkronisasi Masterfile WP
+            // B. Sinkronisasi Masterfile WP (Opsi 1 & Opsi 3)
             if (in_array($target, ['all', 'master'])) {
                 $this->syncMasterfileWp();
             }
 
-            // 3. Sinkronisasi Transaksi
+            // C. Sinkronisasi Detil Transaksi WP (Opsi 1 & Opsi 2)
             if (in_array($target, ['all', 'tx'])) {
                 $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
             }
 
-            // Rekapitulasi Mart & Cache Invalidation
+            DB::commit();
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            DB::statement('SET UNIQUE_CHECKS = 1;');
+            DB::statement('SET AUTOCOMMIT = 1;');
+
+            // 2. OTOMATIS: Rebuild Summary Mart
             $this->newLine();
             $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
             Artisan::call('summary:rebuild');
             $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
 
+            // 3. OTOMATIS: Flush / Clear Cache
             $this->newLine();
-            $this->comment('-> Memicu rekapitulasi Summary Mart PPM...');
-            $ppmParams = $thnSetor ? ['--tahun' => $thnSetor] : [];
-            Artisan::call('app:populate-summary-mart-ppm', $ppmParams);
-            $this->info('   [OK] Summary Mart PPM berhasil diperbarui!');
-
-            $this->newLine();
-            $this->comment('-> Membersihkan Cache Aplikasi...');
+            $this->comment('-> Membersihkan Cache Laravel...');
             Cache::flush();
+            Artisan::call('cache:clear');
             $this->info('   [OK] Cache aplikasi berhasil dibersihkan!');
 
             $executionTime = round(microtime(true) - $startTime, 2);
+
+            // Matikan mode maintenance
+            if ($useMaintenance) {
+                Artisan::call('up');
+                $this->comment('-> Mode Maintenance dinonaktifkan.');
+            }
+
             $this->newLine();
             $this->info("====================================================");
             $this->info("  ETL SINKRONISASI SELESAI DALAM {$executionTime} DETIK!");
@@ -82,13 +103,18 @@ class SyncDataSistem extends Command
             return Command::SUCCESS;
 
         } catch (Exception $e) {
+            DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            DB::statement('SET UNIQUE_CHECKS = 1;');
+            DB::statement('SET AUTOCOMMIT = 1;');
+
+            if ($useMaintenance) {
+                Artisan::call('up');
+            }
+
             $this->newLine();
             $this->error("ETL ERROR DETECTED: " . $e->getMessage());
             return Command::FAILURE;
-        } finally {
-            // Gunakan FINALLY agar constraint selalu dinyalakan kembali walau ada error
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
-            DB::statement('SET UNIQUE_CHECKS = 1;');
         }
     }
 
@@ -132,6 +158,7 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: pegawai...');
         DB::statement('TRUNCATE TABLE pegawai;');
+        // Menggunakan INSERT IGNORE karena tabel pegawai sudah memiliki UNIQUE KEY uq_pegawai_nip_tahun (nip, tahun)
         DB::statement("
             INSERT IGNORE INTO pegawai (kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh) 
             SELECT kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh 
@@ -144,6 +171,8 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: masterfile_wp...');
         DB::statement('TRUNCATE TABLE masterfile_wp;');
+        
+        // Menggunakan INSERT IGNORE untuk memanfaatkan PRIMARY KEY (npwp15)
         DB::statement("
             INSERT IGNORE INTO masterfile_wp (
                 admin, npwp, kpp, cabang, npwp15, nama, alamat, kelurahan, kecamatan,
@@ -158,64 +187,60 @@ class SyncDataSistem extends Command
                 nipar, nipeks, nipjs, npwp16
             FROM mpninfo.masterfile
         ");
+        
         $this->info('   [OK] Tabel masterfile_wp synchronized.');
     }
 
-    private function syncDetilTransaksiWp(?int $thnSetor = null, ?int $blnSetor = null)
+    private function syncDetilTransaksiWp($thnSetor = null, $blnSetor = null)
     {
         $this->comment('-> Synchronizing: detil_transaksi_wp...');
 
-        $bindings = [];
         $whereConditions = [];
-
-        if (!empty($thnSetor)) {
-            $whereConditions[] = "thnsetor = ?";
-            $bindings[] = $thnSetor;
-        }
-
-        if (!empty($blnSetor)) {
-            $whereConditions[] = "blnsetor = ?";
-            $bindings[] = $blnSetor;
-        }
+        if (!empty($thnSetor)) $whereConditions[] = "thnsetor = " . (int)$thnSetor;
+        if (!empty($blnSetor)) $whereConditions[] = "blnsetor = " . (int)$blnSetor;
 
         if (count($whereConditions) > 0) {
-            // Hapus data lokal dengan Prepared Statements Aman
-            $deleteWhere = [];
-            $deleteBindings = [];
-
-            if (!empty($thnSetor)) {
-                $deleteWhere[] = "thn_setor = ?";
-                $deleteBindings[] = $thnSetor;
-            }
-            if (!empty($blnSetor)) {
-                $deleteWhere[] = "bln_setor = ?";
-                $deleteBindings[] = $blnSetor;
-            }
-
-            DB::delete("DELETE FROM detil_transaksi_wp WHERE " . implode(' AND ', $deleteWhere), $deleteBindings);
-            $this->comment("   [i] Menghapus data periode tertentu di detil_transaksi_wp sebelum re-sync.");
-
             $whereSql = " WHERE " . implode(' AND ', $whereConditions);
+
+            $deleteWhereConditions = [];
+            if (!empty($thnSetor)) $deleteWhereConditions[] = "thn_setor = " . (int)$thnSetor;
+            if (!empty($blnSetor)) $deleteWhereConditions[] = "bln_setor = " . (int)$blnSetor;
+            $deleteWhereSql = " WHERE " . implode(' AND ', $deleteWhereConditions);
+
+            DB::statement("DELETE FROM detil_transaksi_wp{$deleteWhereSql};");
+            $this->comment("   [i] Menghapus data periode terpilih sebelum re-sync.");
+
+            DB::statement("
+                INSERT INTO detil_transaksi_wp (
+                    kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
+                    tgl_setor, thn_setor, bln_setor, thn_pajak, masa_pajak, jml_setor, 
+                    kd_map, kd_bayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
+                )
+                SELECT 
+                    kdkanwil, kppadm, npwp, kpp, cabang,
+                    CONCAT(LPAD(npwp, 9, '0'), LPAD(kpp, 3, '0'), LPAD(cabang, 3, '0')) AS npwp15,
+                    nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
+                    jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
+                FROM mpninfo.ppmpkm_drm
+                {$whereSql}
+            ");
         } else {
             DB::statement('TRUNCATE TABLE detil_transaksi_wp;');
-            $whereSql = "";
-        }
 
-        // Jalankan Insert dengan Parameter Binding Safe
-        DB::insert("
-            INSERT IGNORE INTO detil_transaksi_wp (
-                kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
-                tgl_setor, thn_setor, bln_setor, thn_pajak, masa_pajak, jml_setor, 
-                kd_map, kd_bayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
-            )
-            SELECT 
-                kdkanwil, kppadm, npwp, kpp, cabang,
-                CONCAT(LPAD(npwp, 9, '0'), LPAD(kpp, 3, '0'), LPAD(cabang, 3, '0')) AS npwp15,
-                nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
-                jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
-            FROM mpninfo.ppmpkm_drm
-            {$whereSql}
-        ", $bindings);
+            DB::statement("
+                INSERT INTO detil_transaksi_wp (
+                    kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
+                    tgl_setor, thn_setor, bln_setor, thn_pajak, masa_pajak, jml_setor, 
+                    kd_map, kd_bayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
+                )
+                SELECT 
+                    kdkanwil, kppadm, npwp, kpp, cabang,
+                    CONCAT(LPAD(npwp, 9, '0'), LPAD(kpp, 3, '0'), LPAD(cabang, 3, '0')) AS npwp15,
+                    nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
+                    jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
+                FROM mpninfo.ppmpkm_drm
+            ");
+        }
 
         $this->info('   [OK] Tabel detil_transaksi_wp synchronized.');
     }
