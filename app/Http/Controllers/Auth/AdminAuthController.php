@@ -12,6 +12,7 @@ class AdminAuthController extends Controller
         if (session('is_admin')) {
             return redirect()->route('admin.index');
         }
+
         return view('auth.login');
     }
 
@@ -30,6 +31,7 @@ class AdminAuthController extends Controller
         if ($request->username === $adminUser && $request->password === $adminPass) {
             // Simpan session status login admin
             session(['is_admin' => true]);
+
             return redirect()->route('admin.index')->with('success', 'Berhasil login sebagai Admin!');
         }
 

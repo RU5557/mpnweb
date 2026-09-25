@@ -1,6 +1,7 @@
 <?php
 
 // app/Repositories/WpRepository.php
+
 namespace App\Repositories;
 
 use App\Models\MasterfileWp;
@@ -20,14 +21,14 @@ class WpRepository
         // Filter berdasarkan input (NPWP / FULLTEXT Nama)
         if (is_numeric($keyword)) {
             $query->where(function ($q) use ($keyword) {
-                $q->where('npwp15', 'LIKE', $keyword . '%')
-                  ->orWhere('npwp16', 'LIKE', $keyword . '%');
+                $q->where('npwp15', 'LIKE', $keyword.'%')
+                    ->orWhere('npwp16', 'LIKE', $keyword.'%');
             });
         } else {
-            $searchTerm = '+' . implode('* +', explode(' ', trim($keyword))) . '*';
+            $searchTerm = '+'.implode('* +', explode(' ', trim($keyword))).'*';
             $query->where(function ($q) use ($searchTerm, $keyword) {
-                $q->whereRaw("MATCH(nama) AGAINST(? IN BOOLEAN MODE)", [$searchTerm])
-                  ->orWhere('npwp15', 'LIKE', $keyword . '%');
+                $q->whereRaw('MATCH(nama) AGAINST(? IN BOOLEAN MODE)', [$searchTerm])
+                    ->orWhere('npwp15', 'LIKE', $keyword.'%');
             });
         }
 
@@ -38,23 +39,23 @@ class WpRepository
             ->map(function ($wp) {
                 // Transformasi output agar sesuai format DTO / Response API
                 return [
-                    'npwp15'    => $wp->npwp15,
-                    'npwp16'    => $wp->npwp16,
-                    'nama_wp'   => $wp->nama,
-                    'alamat'    => $wp->alamat,
+                    'npwp15' => $wp->npwp15,
+                    'npwp16' => $wp->npwp16,
+                    'nama_wp' => $wp->nama,
+                    'alamat' => $wp->alamat,
                     'kelurahan' => $wp->kelurahan,
                     'kecamatan' => $wp->kecamatan,
-                    'kota'      => $wp->kota,
+                    'kota' => $wp->kota,
                     'status_wp' => $wp->status,
-                    'jenis_wp'  => $wp->jenis,
-                    'telp'      => $wp->telp,
-                    'nama_ar'   => $wp->ar->nama ?? null, // Diambil via relasi $wp->ar
+                    'jenis_wp' => $wp->jenis,
+                    'telp' => $wp->telp,
+                    'nama_ar' => $wp->ar->nama ?? null, // Diambil via relasi $wp->ar
                 ];
             });
     }
 
     /**
-     * Pencarian Detil Transaksi WP 
+     * Pencarian Detil Transaksi WP
      * (Tetap menggunakan Late Join Query Builder untuk performa query ribuan data transaksi)
      */
     public function searchTransactions(array $filters, int $limit = 20, int $offset = 0)
@@ -67,24 +68,24 @@ class WpRepository
 
         if ($keyword) {
             if (is_numeric($keyword)) {
-                $subQuery->where('t_sub.npwp15', 'LIKE', $keyword . '%');
+                $subQuery->where('t_sub.npwp15', 'LIKE', $keyword.'%');
             } else {
-                $searchTerm = '+' . implode('* +', explode(' ', trim($keyword))) . '*';
+                $searchTerm = '+'.implode('* +', explode(' ', trim($keyword))).'*';
                 $subQuery->leftJoin('masterfile_wp as mf_sub', 't_sub.npwp15', '=', 'mf_sub.npwp15')
                     ->where(function ($q) use ($searchTerm) {
-                        $q->whereRaw("MATCH(t_sub.nama_wp) AGAINST(? IN BOOLEAN MODE)", [$searchTerm])
-                          ->orWhereRaw("MATCH(mf_sub.nama) AGAINST(? IN BOOLEAN MODE)", [$searchTerm]);
+                        $q->whereRaw('MATCH(t_sub.nama_wp) AGAINST(? IN BOOLEAN MODE)', [$searchTerm])
+                            ->orWhereRaw('MATCH(mf_sub.nama) AGAINST(? IN BOOLEAN MODE)', [$searchTerm]);
                     });
             }
         }
 
-        if (!empty($filters['thn_setor'])) {
+        if (! empty($filters['thn_setor'])) {
             $subQuery->where('t_sub.thn_setor', $filters['thn_setor']);
         }
-        if (!empty($filters['bln_setor'])) {
+        if (! empty($filters['bln_setor'])) {
             $subQuery->where('t_sub.bln_setor', $filters['bln_setor']);
         }
-        if (!empty($filters['fungsi'])) {
+        if (! empty($filters['fungsi'])) {
             $subQuery->where('t_sub.fungsi', $filters['fungsi']);
         }
 
@@ -100,21 +101,21 @@ class WpRepository
             ->leftJoin('masterfile_wp as mf', 't.npwp15', '=', 'mf.npwp15')
             ->leftJoin('kdmap as k', function ($join) {
                 $join->on('t.kd_map', '=', 'k.kd_map')
-                     ->on('t.kd_bayar', '=', 'k.kd_bayar');
+                    ->on('t.kd_bayar', '=', 'k.kd_bayar');
             })
             ->leftJoin('pegawai as p_ar', function ($join) {
                 $join->on('mf.nip_ar', '=', 'p_ar.nip')
-                     ->where('p_ar.tahun', '=', date('Y'));
+                    ->where('p_ar.tahun', '=', date('Y'));
             })
             ->leftJoin('pegawai as p_js', function ($join) {
                 $join->on('mf.nip_js', '=', 'p_js.nip')
-                     ->where('p_js.tahun', '=', date('Y'));
+                    ->where('p_js.tahun', '=', date('Y'));
             })
             ->select([
                 't.id', 't.npwp15', 't.nama_wp', 't.ntpn', 't.tgl_setor',
                 't.thn_pajak', 't.masa_pajak', 't.jml_setor', 't.kd_map', 't.kd_bayar',
                 't.fungsi', 't.jenis as jenis_transaksi', 'k.jenis_pajak',
-                'mf.nama as nama_master', 'p_ar.nama as nama_ar', 'p_js.nama as nama_js'
+                'mf.nama as nama_master', 'p_ar.nama as nama_ar', 'p_js.nama as nama_js',
             ])
             ->orderBy('t.tgl_setor', 'desc')
             ->get();
@@ -151,8 +152,8 @@ class WpRepository
 
         return [
             'fungsi' => $fungsiList,
-            'ar'     => $arList,
-            'js'     => $jsList,
+            'ar' => $arList,
+            'js' => $jsList,
         ];
     }
 }

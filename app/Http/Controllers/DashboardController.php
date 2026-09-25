@@ -47,7 +47,7 @@ class DashboardController extends Controller
                         $thnIni, $thnIni, $thnIni,
                         $thnIni, $thnIni, $thnIni,
                         $thnLalu, $thnLalu, $thnLalu,
-                        $thnLalu, $thnLalu
+                        $thnLalu, $thnLalu,
                     ])
                     ->first();
             });
@@ -132,7 +132,7 @@ class DashboardController extends Controller
         $listBulan = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
         return view('penerimaan.dashboard', compact(
@@ -168,7 +168,7 @@ class DashboardController extends Controller
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             try {
                 $query = DB::table('detil_transaksi_wp as dt')
@@ -182,7 +182,7 @@ class DashboardController extends Controller
                 foreach ($query->cursor() as $row) {
                     $rowArray = (array) $row;
 
-                    if (!$isHeaderWritten) {
+                    if (! $isHeaderWritten) {
                         fputcsv($file, array_keys($rowArray));
                         $isHeaderWritten = true;
                     }
@@ -195,7 +195,7 @@ class DashboardController extends Controller
                     }
                 }
 
-                if (!$isHeaderWritten) {
+                if (! $isHeaderWritten) {
                     fputcsv($file, ['INFO']);
                     fputcsv($file, ['Tidak ada data transaksi']);
                 }
@@ -222,7 +222,7 @@ class DashboardController extends Controller
     {
         $currentYear = (int) date('Y');
         $tahun = (int) $request->input('tahun', $currentYear);
-        
+
         $bulanAwal = (int) $request->input('bulan_awal', 1);
         $bulanAkhir = (int) $request->input('bulan_akhir', $request->input('bulan', date('n')));
 

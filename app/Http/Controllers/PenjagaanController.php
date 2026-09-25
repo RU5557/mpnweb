@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PenjagaanController extends Controller
@@ -31,8 +31,10 @@ class PenjagaanController extends Controller
     {
         if ($request->has('fungsi')) {
             $fungsi = (array) $request->input('fungsi', []);
+
             return array_filter($fungsi); // Buang elemen kosong
         }
+
         return $fungsiOptions->toArray();
     }
 
@@ -46,8 +48,8 @@ class PenjagaanController extends Controller
         $tahunLalu = $tahunIni - 1;
 
         sort($fungsi);
-        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_bulanan_' . md5("y:{$tahunIni}_f:{$fungsiKey}");
+        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
+        $cacheKey = 'penjagaan_bulanan_'.md5("y:{$tahunIni}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($fungsi, $tahunIni, $tahunLalu) {
             $queryTahunLalu = DB::table('detil_transaksi_wp')
@@ -58,14 +60,14 @@ class PenjagaanController extends Controller
                 ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
                 ->where('thn_setor', $tahunIni);
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $queryTahunLalu->whereIn('fungsi', $fungsi);
                 $queryTahunIni->whereIn('fungsi', $fungsi);
             }
 
             return [
                 'lalu' => $queryTahunLalu->groupBy('bln_setor')->pluck('total', 'bln_setor')->toArray(),
-                'ini'  => $queryTahunIni->groupBy('bln_setor')->pluck('total', 'bln_setor')->toArray(),
+                'ini' => $queryTahunIni->groupBy('bln_setor')->pluck('total', 'bln_setor')->toArray(),
             ];
         });
 
@@ -75,7 +77,7 @@ class PenjagaanController extends Controller
 
         for ($m = 1; $m <= 12; $m++) {
             $dataTahunLalu[] = (float) ($data['lalu'][$m] ?? 0);
-            $dataTahunIni[]  = (float) ($data['ini'][$m] ?? 0);
+            $dataTahunIni[] = (float) ($data['ini'][$m] ?? 0);
         }
 
         return view('penerimaan.penjagaan.bulanan', compact(
@@ -94,8 +96,8 @@ class PenjagaanController extends Controller
         $tahunLalu = $tahunIni - 1;
 
         sort($fungsi);
-        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_harian_' . md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
+        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
+        $cacheKey = 'penjagaan_harian_'.md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $fungsi, $tahunIni, $tahunLalu) {
             $queryTahunLalu = DB::table('detil_transaksi_wp')
@@ -108,14 +110,14 @@ class PenjagaanController extends Controller
                 ->where('thn_setor', $tahunIni)
                 ->where('bln_setor', $bulan);
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $queryTahunLalu->whereIn('fungsi', $fungsi);
                 $queryTahunIni->whereIn('fungsi', $fungsi);
             }
 
             return [
                 'lalu' => $queryTahunLalu->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
-                'ini'  => $queryTahunIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
+                'ini' => $queryTahunIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
             ];
         });
 
@@ -125,7 +127,7 @@ class PenjagaanController extends Controller
 
         foreach ($days as $day) {
             $dataTahunLalu[] = (float) ($data['lalu'][$day] ?? 0);
-            $dataTahunIni[]  = (float) ($data['ini'][$day] ?? 0);
+            $dataTahunIni[] = (float) ($data['ini'][$day] ?? 0);
         }
 
         return view('penerimaan.penjagaan.harian', compact(
@@ -145,8 +147,8 @@ class PenjagaanController extends Controller
         $tahunBulanLalu = $bulan == 1 ? $tahunIni - 1 : $tahunIni;
 
         sort($fungsi);
-        $fungsiKey = !empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_vs_bulan_lalu_' . md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
+        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
+        $cacheKey = 'penjagaan_vs_bulan_lalu_'.md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
 
         $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi) {
             $queryBulanIni = DB::table('detil_transaksi_wp')
@@ -159,13 +161,13 @@ class PenjagaanController extends Controller
                 ->where('thn_setor', $tahunBulanLalu)
                 ->where('bln_setor', $bulanLalu);
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $queryBulanIni->whereIn('fungsi', $fungsi);
                 $queryBulanLalu->whereIn('fungsi', $fungsi);
             }
 
             return [
-                'ini'  => $queryBulanIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
+                'ini' => $queryBulanIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
                 'lalu' => $queryBulanLalu->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
             ];
         });
@@ -175,7 +177,7 @@ class PenjagaanController extends Controller
         $dataBulanLalu = [];
 
         foreach ($days as $day) {
-            $dataBulanIni[]  = (float) ($data['ini'][$day] ?? 0);
+            $dataBulanIni[] = (float) ($data['ini'][$day] ?? 0);
             $dataBulanLalu[] = (float) ($data['lalu'][$day] ?? 0);
         }
 
@@ -191,36 +193,36 @@ class PenjagaanController extends Controller
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fileName = 'penjagaan_bulanan_detil_' . date('Ymd_His') . '.csv';
+        $fileName = 'penjagaan_bulanan_detil_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename={$fileName}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15', 
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar', 
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
+            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
+            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
+            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
         ];
 
         $callback = function () use ($fungsi, $columns, $tahunIni, $tahunLalu) {
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($file, $columns);
 
             $query = DB::table('detil_transaksi_wp')
                 ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15', 
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar', 
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
+                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
+                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
+                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
                 ])
                 ->whereIn('thn_setor', [$tahunLalu, $tahunIni]);
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
 
@@ -245,37 +247,37 @@ class PenjagaanController extends Controller
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fileName = 'penjagaan_harian_detil_bln_' . $bulan . '_' . date('Ymd_His') . '.csv';
+        $fileName = 'penjagaan_harian_detil_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename={$fileName}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15', 
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar', 
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
+            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
+            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
+            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
         ];
 
         $callback = function () use ($bulan, $fungsi, $columns, $tahunIni, $tahunLalu) {
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($file, $columns);
 
             $query = DB::table('detil_transaksi_wp')
                 ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15', 
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar', 
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
+                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
+                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
+                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
                 ])
                 ->whereIn('thn_setor', [$tahunLalu, $tahunIni])
                 ->where('bln_setor', $bulan);
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
 
@@ -301,32 +303,32 @@ class PenjagaanController extends Controller
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;
         $tahunBulanLalu = $bulan == 1 ? $tahunIni - 1 : $tahunIni;
 
-        $fileName = 'penjagaan_vs_bulan_lalu_bln_' . $bulan . '_' . date('Ymd_His') . '.csv';
+        $fileName = 'penjagaan_vs_bulan_lalu_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename={$fileName}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15', 
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar', 
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN'
+            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
+            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
+            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
         ];
 
         $callback = function () use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi, $columns) {
             $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($file, $columns);
 
             $query = DB::table('detil_transaksi_wp')
                 ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15', 
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar', 
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn'
+                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
+                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
+                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
                 ])
                 ->where(function ($q) use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu) {
                     $q->where(function ($q1) use ($bulan, $tahunIni) {
@@ -336,7 +338,7 @@ class PenjagaanController extends Controller
                     });
                 });
 
-            if (!empty($fungsi)) {
+            if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
 

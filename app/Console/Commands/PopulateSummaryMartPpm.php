@@ -2,13 +2,14 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class PopulateSummaryMartPpm extends Command
 {
     protected $signature = 'app:populate-summary-mart-ppm {--tahun= : Tahun spesifik yang ingin di-rekap}';
+
     protected $description = 'Melakukan ETL/Rekapitulasi data transaksi ke tabel summary_mart_ppm';
 
     public function handle()
@@ -25,7 +26,7 @@ class PopulateSummaryMartPpm extends Command
                     $this->info("Menghapus data lama di summary_mart_ppm untuk tahun {$tahun}...");
                     DB::table('summary_mart_ppm')->where('thn_setor', $tahun)->delete();
                 } else {
-                    $this->info("Menghapus seluruh data lama di summary_mart_ppm...");
+                    $this->info('Menghapus seluruh data lama di summary_mart_ppm...');
                     DB::table('summary_mart_ppm')->truncate();
                 }
 
@@ -88,10 +89,12 @@ class PopulateSummaryMartPpm extends Command
 
             $executionTime = round(microtime(true) - $startTime, 2);
             $this->info("ETL Summary Mart PPM Selesai dalam {$executionTime} detik!");
+
             return Command::SUCCESS;
 
         } catch (Exception $e) {
-            $this->error("   [ERROR] ETL Summary Mart PPM Gagal: " . $e->getMessage());
+            $this->error('   [ERROR] ETL Summary Mart PPM Gagal: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
