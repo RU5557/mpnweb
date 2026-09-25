@@ -10,7 +10,7 @@
     <!-- Judul & Subjudul -->
     <div>
         <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Penerimaan PKM Pengawasan</h1>
-        <p class="text-xs text-slate-500 mt-1">Rincian realisasi PKM Pengawasan s.d. bulan terpilih per Seksi dan AR</p>
+        <p class="text-xs text-slate-500 mt-1">Rincian realisasi PKM Pengawasan s.d. bulan terpilih per AR</p>
     </div>
 
     <!-- Form Filter Compact -->
@@ -21,7 +21,7 @@
 
         <!-- Select Seksi -->
         <select name="seksi" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer">
-            <option value="">-- Semua Seksi --</option>
+            <option value="">Semua Seksi Pengawasan</option>
             @foreach($daftarSeksi as $seksi)
                 <option value="{{ $seksi }}" {{ $seksiFilter === $seksi ? 'selected' : '' }}>{{ $seksi }}</option>
             @endforeach
