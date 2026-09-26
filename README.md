@@ -91,20 +91,29 @@ It enables leadership to conduct real-time monitoring and make precise, data-dri
    ```
 
 2. **Install Dependencies:**
+   Aktifkan extension 'zip' di php.ini.
    ```bash
    composer install
-   npm install && npm run build
    ```
 
 3. **Environment Setup:**
    Salin berkas `.env.example` menjadi `.env` dan sesuaikan konfigurasi database MySQL Anda (XAMPP).
    ```bash
-   cp .env.example .env
+   copy .env.example .env
    php artisan key:generate
    ```
 
-4. **Database Migration & Run Server:**
+4. **Directory Folder:**
+   Buat folder direktori cache Laravel jika belum ada:.
    ```bash
+   mkdir storage\framework\views
+   mkdir storage\framework\cache
+   mkdir storage\framework\sessions
+   ```
+
+5. **Database Migration & Run Server:**
+   ```bash
+   php artisan migrate:status
    php artisan migrate
    php artisan serve
    ```
