@@ -97,7 +97,7 @@ It enables leadership to conduct real-time monitoring and make precise, data-dri
    ```
 
 3. **Environment Setup:**
-   Salin berkas `.env.example` menjadi `.env` dan sesuaikan konfigurasi database MySQL Anda (XAMPP).
+   Salin berkas `.env.example` menjadi `.env` dan sesuaikan konfigurasi database MySQL Anda.
    ```bash
    copy .env.example .env
    php artisan key:generate
