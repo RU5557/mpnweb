@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class SyncDataSistem extends Command
 {
-    // Signature mencantumkan flag {--maintenance} agar dapat dipanggil via .bat
     protected $signature = 'sync:data-sistem 
                             {--only=all : Pilihan target: all, ref, master, tx}
                             {--thnsetor= : Filter tahun setor (contoh: 2026)}
@@ -43,7 +42,7 @@ class SyncDataSistem extends Command
 
         DB::disableQueryLog();
 
-        // 1. OTOMATIS: Aktifkan mode maintenance jika flag --maintenance dikirim
+        // 1. Mode Maintenance
         if ($useMaintenance) {
             $this->comment('-> Mengaktifkan Mode Maintenance...');
             Artisan::call('down', ['--secret' => 'etl-sync-mode']);
@@ -54,7 +53,7 @@ class SyncDataSistem extends Command
             DB::statement('SET UNIQUE_CHECKS = 0;');
             DB::statement('SET AUTOCOMMIT = 0;');
 
-            // A. Sinkronisasi Referensi (Opsi 1 & Opsi 4)
+            // A. Sinkronisasi Referensi
             if (in_array($target, ['all', 'ref'])) {
                 $this->syncSeksi();
                 $this->syncKlu();
@@ -62,17 +61,17 @@ class SyncDataSistem extends Command
                 $this->syncPegawai();
             }
 
-            // B. Sinkronisasi Masterfile WP (Opsi 1 & Opsi 3)
+            // B. Sinkronisasi Masterfile WP
             if (in_array($target, ['all', 'master'])) {
                 $this->syncMasterfileWp();
             }
 
-            // C. Sinkronisasi Detil Transaksi WP (Opsi 1 & Opsi 2)
+            // C. Sinkronisasi Detil Transaksi WP
             if (in_array($target, ['all', 'tx'])) {
                 $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
             }
 
-            // Commit transaksi database
+            // Commit Transaksi
             $this->comment('-> Menyimpan perubahan ke database (Commit Transaction)...');
             $commitStart = microtime(true);
 
@@ -85,8 +84,7 @@ class SyncDataSistem extends Command
             DB::statement('SET UNIQUE_CHECKS = 1;');
             DB::statement('SET AUTOCOMMIT = 1;');
 
-            // 2. OTOMATIS: Rebuild Summary Mart
-            // Rebuild Summary Mart
+            // 2. Rebuild Summary Mart (Meneruskan $this->output)
             $this->newLine();
             $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
 
@@ -98,10 +96,10 @@ class SyncDataSistem extends Command
                 $summaryOptions['--blnsetor'] = $blnSetor;
             }
 
+            // Memanggil command terpisah dan meneruskan output ke terminal utama
             Artisan::call('summary:rebuild', $summaryOptions, $this->output);
-            $this->info('   [OK] Summary Mart Penerimaan berhasil diperbarui!');
 
-            // 3. OTOMATIS: Flush / Clear Cache
+            // 3. Flush Cache
             $this->newLine();
             $this->comment('-> Membersihkan Cache Laravel...');
             Cache::flush();
@@ -110,7 +108,6 @@ class SyncDataSistem extends Command
 
             $executionTime = round(microtime(true) - $startTime, 2);
 
-            // Matikan mode maintenance
             if ($useMaintenance) {
                 Artisan::call('up');
                 $this->comment('-> Mode Maintenance dinonaktifkan.');
@@ -180,7 +177,6 @@ class SyncDataSistem extends Command
     {
         $this->comment('-> Synchronizing: pegawai...');
         DB::statement('TRUNCATE TABLE pegawai;');
-        // Menggunakan INSERT IGNORE karena tabel pegawai sudah memiliki UNIQUE KEY uq_pegawai_nip_tahun (nip, tahun)
         DB::statement('
             INSERT IGNORE INTO pegawai (kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh) 
             SELECT kantor, nip, nip2, nama, pangkat, seksi, jabatan, tahun, plh 
@@ -224,7 +220,6 @@ class SyncDataSistem extends Command
         ");
 
         $elapsed = round(microtime(true) - $t0, 2);
-        // Menimpa baris [WAIT] menjadi [OK] beserta durasinya
         $this->output->write("\r");
         $this->info("   [OK] Tabel masterfile_wp synchronized ({$elapsed}s).                   ");
     }
@@ -245,7 +240,6 @@ class SyncDataSistem extends Command
             $deleteConditions[] = 'bln_setor = '.(int) $blnSetor;
         }
 
-        // 1. Eksekusi Pembersihan Target (Partial Delete / Full Truncate)
         if (count($deleteConditions) > 0) {
             $deleteWhereSql = ' WHERE '.implode(' AND ', $deleteConditions);
             DB::statement("DELETE FROM detil_transaksi_wp{$deleteWhereSql};");
@@ -255,7 +249,6 @@ class SyncDataSistem extends Command
             $this->comment('   [i] Melakukan TRUNCATE pada detil_transaksi_wp.');
         }
 
-        // 2. Eksekusi Single Query INSERT INTO ... SELECT
         $this->output->write('   [WAIT] Memproses salinan data transaksi...');
         $t0 = microtime(true);
 

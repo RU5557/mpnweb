@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class RebuildSummaryMart extends Command
 {
-    // Menerima pilihan thnsetor dan blnsetor
     protected $signature = 'summary:rebuild 
                             {--thnsetor= : Filter tahun setor} 
                             {--blnsetor= : Filter bulan setor}';
@@ -23,18 +22,18 @@ class RebuildSummaryMart extends Command
         $this->comment('-> Memulai rekapitulasi summary mart penerimaan...');
         $startTime = microtime(true);
 
-        // Jika terdapat filter periode, jalankan rekapitulasi separa (Sangat Pantas)
         if ($thnSetor || $blnSetor) {
             return $this->rebuildPartial($thnSetor, $blnSetor, $startTime);
         }
 
-        // Jika tiada filter, jalankan Temp-Table Swap (Full Rebuild)
         return $this->rebuildFull($startTime);
     }
 
     private function rebuildFull($startTime)
     {
         try {
+            $now = now()->toDateTimeString();
+
             DB::statement('CREATE TABLE IF NOT EXISTS summary_mart_penerimaan_temp LIKE summary_mart_penerimaan;');
             DB::statement('TRUNCATE TABLE summary_mart_penerimaan_temp;');
 
@@ -49,8 +48,8 @@ class RebuildSummaryMart extends Command
                     COALESCE(fungsi, '') AS fungsi,
                     SUM(jml_setor) AS total_setor,
                     COUNT(*) AS total_transaksi,
-                    NOW(),
-                    NOW()
+                    '{$now}',
+                    '{$now}'
                 FROM detil_transaksi_wp
                 GROUP BY thn_setor, bln_setor, jenis, fungsi
             ");
@@ -72,6 +71,7 @@ class RebuildSummaryMart extends Command
         } catch (Exception $e) {
             $this->warn('   [!] Menjalankan fallback direct rebuild...');
             try {
+                $now = now()->toDateTimeString();
                 DB::statement('TRUNCATE TABLE summary_mart_penerimaan;');
                 DB::statement("
                     INSERT INTO summary_mart_penerimaan (
@@ -79,7 +79,7 @@ class RebuildSummaryMart extends Command
                     )
                     SELECT 
                         thn_setor, bln_setor, COALESCE(jenis, ''), COALESCE(fungsi, ''), 
-                        SUM(jml_setor), COUNT(*), NOW(), NOW()
+                        SUM(jml_setor), COUNT(*), '{$now}', '{$now}'
                     FROM detil_transaksi_wp
                     GROUP BY thn_setor, bln_setor, jenis, fungsi
                 ");
@@ -96,6 +96,7 @@ class RebuildSummaryMart extends Command
     private function rebuildPartial($thnSetor, $blnSetor, $startTime)
     {
         try {
+            $now = now()->toDateTimeString();
             $whereConditions = [];
             if (! empty($thnSetor)) {
                 $whereConditions[] = 'thn_setor = '.(int) $thnSetor;
@@ -106,10 +107,8 @@ class RebuildSummaryMart extends Command
 
             $whereSql = ' WHERE '.implode(' AND ', $whereConditions);
 
-            // 1. Padam rekod lama untuk periode terpilih sahaja
             DB::statement("DELETE FROM summary_mart_penerimaan{$whereSql};");
 
-            // 2. Masukkan rekapitulasi baru untuk periode terpilih
             DB::statement("
                 INSERT INTO summary_mart_penerimaan (
                     thn_setor, bln_setor, jenis, fungsi, total_setor, total_transaksi, created_at, updated_at
@@ -121,8 +120,8 @@ class RebuildSummaryMart extends Command
                     COALESCE(fungsi, '') AS fungsi,
                     SUM(jml_setor) AS total_setor,
                     COUNT(*) AS total_transaksi,
-                    NOW(),
-                    NOW()
+                    '{$now}',
+                    '{$now}'
                 FROM detil_transaksi_wp
                 {$whereSql}
                 GROUP BY thn_setor, bln_setor, jenis, fungsi
