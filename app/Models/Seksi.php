@@ -6,5 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Seksi extends Model
 {
-    //
+    protected $table = 'seksi';
+
+    public $timestamps = false;
 }
