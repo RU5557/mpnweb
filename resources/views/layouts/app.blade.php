@@ -2,8 +2,18 @@
 <html lang="id" x-data="{
     sidebarOpen: false,
     isPinned: false,
-    handleMouseEnter() { if (!this.isPinned) this.sidebarOpen = true; },
-    handleMouseLeave() { if (!this.isPinned) this.sidebarOpen = false; }
+    handleMouseEnter() {
+        if (!this.isPinned) {
+            this.sidebarOpen = true;
+            $nextTick(() => window.dispatchEvent(new Event('resize')));
+        }
+    },
+    handleMouseLeave() {
+        if (!this.isPinned) {
+            this.sidebarOpen = false;
+            $nextTick(() => window.dispatchEvent(new Event('resize')));
+        }
+    }
 }">
 
 <head>
@@ -38,14 +48,14 @@
 
     <!-- ==================== CONTENT WRAPPER ==================== -->
     <div :class="sidebarOpen || isPinned ? 'ml-60' : 'ml-16'"
-        class="flex-grow transition-all duration-300 flex flex-col min-h-screen">
+        class="flex-grow transition-all duration-300 flex flex-col min-h-screen min-w-0">
 
         <!-- TOPBAR -->
         @include('layouts.partials.topbar')
 
         <!-- MAIN CONTENT CONTAINER -->
-        <main class="px-4 py-6 flex-grow bg-slate-50">
-            <div class="w-full">
+        <main class="px-4 py-6 flex-grow bg-slate-50 min-w-0">
+            <div class="w-full min-w-0">
 
                 {{-- Flash Message Success --}}
                 @if (session('success'))
