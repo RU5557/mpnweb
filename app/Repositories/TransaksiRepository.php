@@ -276,7 +276,7 @@ class TransaksiRepository
                 foreach ($rows as $row) {
                     fputcsv($file, [
                         $row->tgl_setor,
-                        "'".$row->npwp15,
+                        $row->npwp15,
                         $row->nama_wp ?? $row->nama_master,
                         $row->fungsi,
                         $row->kd_map,

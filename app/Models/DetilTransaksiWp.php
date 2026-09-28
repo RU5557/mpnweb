@@ -13,6 +13,14 @@ class DetilTransaksiWp extends Model
 
     public $timestamps = false;
 
+    protected $casts = [
+        'tgl_setor' => 'date',
+        'thn_setor' => 'integer',
+        'bln_setor' => 'integer',
+        'thn_pajak' => 'integer',
+        'jml_setor' => 'decimal:2',
+    ];
+
     /**
      * Relasi ke Masterfile WP
      */
