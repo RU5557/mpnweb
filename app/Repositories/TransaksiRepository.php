@@ -8,6 +8,7 @@ use App\Models\MasterfileWp;
 use App\Models\Pegawai;
 use App\Models\Seksi;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -76,45 +77,12 @@ class TransaksiRepository
     }
 
     /**
-     * Pencarian Detil Transaksi / DRM Teroptimasi & Paginated
+     * Reusable Query Builder untuk Transaksi (Pencarian & Export)
      */
-    public function searchTransaksiPaginated(array $filters, int $perPage = 20, int $tahun = 2026): LengthAwarePaginator
+    private function buildTransaksiQuery(array $filters, int $tahun = 2026): Builder
     {
         $query = DB::table('detil_transaksi_wp as t')
-            ->leftJoin('masterfile_wp as m', 't.npwp15', '=', 'm.npwp15')
-            ->leftJoin('pegawai as ar', function ($join) use ($tahun) {
-                $join->on('m.nip_ar', '=', 'ar.nip')
-                    ->where('ar.tahun', '=', $tahun)
-                    ->where('ar.jabatan', '=', '5');
-            })
-            ->leftJoin('pegawai as js', function ($join) use ($tahun) {
-                $join->on('m.nip_js', '=', 'js.nip')
-                    ->where('js.tahun', '=', $tahun)
-                    ->where('js.jabatan', '=', '11');
-            })
-            ->leftJoin('seksi as s', 'ar.seksi', '=', 's.nama');
-
-        // Select kolom spesifik untuk efisiensi RAM
-        $query->select([
-            't.id',
-            't.tgl_setor',
-            't.npwp15',
-            't.npwp',
-            't.nama_wp',
-            'm.nama as nama_master',
-            't.fungsi',
-            't.kd_map',
-            't.kd_bayar',
-            't.jenis as jenis_pajak',
-            't.masa_pajak',
-            't.thn_pajak',
-            't.jml_setor',
-            't.ntpn',
-            'ar.nama as nama_ar',
-            'js.nama as nama_js',
-            'm.kota',
-            'm.jenis as jenis_wp',
-        ]);
+            ->leftJoin('masterfile_wp as m', 't.npwp15', '=', 'm.npwp15');
 
         // === FILTERING SISI TRANSAKSI ===
 
@@ -156,7 +124,7 @@ class TransaksiRepository
             $query->where('t.tgl_setor', '<=', $filters['tgl_setor_end']);
         }
 
-        // 5. Filter Tahun Setor & Bulan Setor (Array / Multi-select)
+        // 5. Filter Tahun Setor & Bulan Setor
         if (! empty($filters['thn_setor']) && is_array($filters['thn_setor'])) {
             $query->whereIn('t.thn_setor', $filters['thn_setor']);
         }
@@ -169,7 +137,7 @@ class TransaksiRepository
             $query->where('t.ntpn', trim($filters['ntpn']));
         }
 
-        // 7. Fungsi (Array / Multi-select)
+        // 7. Fungsi
         if (! empty($filters['fungsi']) && is_array($filters['fungsi'])) {
             $query->whereIn('t.fungsi', $filters['fungsi']);
         }
@@ -196,7 +164,11 @@ class TransaksiRepository
         if (! empty($filters['seksi_id'])) {
             $seksi = Seksi::find($filters['seksi_id']);
             if ($seksi) {
-                $query->where('ar.seksi', $seksi->nama);
+                $query->join('pegawai as p_ar_filter', function ($join) use ($tahun) {
+                    $join->on('m.nip_ar', '=', 'p_ar_filter.nip')
+                        ->where('p_ar_filter.tahun', '=', $tahun)
+                        ->where('p_ar_filter.jabatan', '=', '5');
+                })->where('p_ar_filter.seksi', $seksi->nama);
             }
         }
 
@@ -210,7 +182,36 @@ class TransaksiRepository
             $query->whereIn('m.nip_js', $filters['nip_js']);
         }
 
-        // === SORTING ===
+        return $query;
+    }
+
+    /**
+     * Pencarian Detil Transaksi / DRM Teroptimasi & Paginated
+     */
+    public function searchTransaksiPaginated(array $filters, int $perPage = 20, int $tahun = 2026): LengthAwarePaginator
+    {
+        $query = $this->buildTransaksiQuery($filters, $tahun);
+
+        // Ambil data AR & JS via LEFT JOIN khusus untuk tampilan Paginated
+        $query->leftJoin('pegawai as ar', function ($join) use ($tahun) {
+            $join->on('m.nip_ar', '=', 'ar.nip')
+                ->where('ar.tahun', '=', $tahun)
+                ->where('ar.jabatan', '=', '5');
+        })
+            ->leftJoin('pegawai as js', function ($join) use ($tahun) {
+                $join->on('m.nip_js', '=', 'js.nip')
+                    ->where('js.tahun', '=', $tahun)
+                    ->where('js.jabatan', '=', '11');
+            });
+
+        $query->select([
+            't.id', 't.tgl_setor', 't.npwp15', 't.npwp', 't.nama_wp',
+            'm.nama as nama_master', 't.fungsi', 't.kd_map', 't.kd_bayar',
+            't.jenis as jenis_pajak', 't.masa_pajak', 't.thn_pajak', 't.jml_setor',
+            't.ntpn', 'ar.nama as nama_ar', 'js.nama as nama_js', 'm.kota', 'm.jenis as jenis_wp',
+        ]);
+
+        // SORTING
         $sortBy = $filters['sort_by'] ?? 't.tgl_setor';
         $sortOrder = strtolower($filters['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
@@ -229,7 +230,7 @@ class TransaksiRepository
     }
 
     /**
-     * Streaming CSV Export untuk Data Transaksi / DRM
+     * Streaming CSV Export untuk Data Transaksi / DRM (Cepat, Mengikuti Filter & Memory-Efficient)
      */
     public function exportTransaksiCsv(array $filters, int $tahun = 2026): StreamedResponse
     {
@@ -243,7 +244,14 @@ class TransaksiRepository
             'Expires' => '0',
         ];
 
-        $callback = function () use ($tahun) {
+        // 1. Pre-load Pegawai Map ke Memory Cache untuk menghilangkan JOIN saat Export
+        $pegawaiMap = Cache::remember("pegawai_map_{$tahun}", 3600, function () use ($tahun) {
+            return Pegawai::where('tahun', $tahun)->pluck('nama', 'nip')->toArray();
+        });
+
+        return response()->stream(function () use ($filters, $tahun, $pegawaiMap) {
+            set_time_limit(0);
+
             $file = fopen('php://output', 'w');
             fwrite($file, "\xEF\xBB\xBF"); // UTF-8 BOM untuk Microsoft Excel
 
@@ -253,48 +261,47 @@ class TransaksiRepository
                 'MASA PAJAK', 'THN PAJAK', 'JUMLAH SETOR', 'NTPN', 'NAMA AR', 'NAMA JS', 'KOTA',
             ]);
 
-            // Eksekusi Paginasi/Chunking untuk performa ekspor memori rendah
-            $query = DB::table('detil_transaksi_wp as t')
-                ->leftJoin('masterfile_wp as m', 't.npwp15', '=', 'm.npwp15')
-                ->leftJoin('pegawai as ar', function ($join) use ($tahun) {
-                    $join->on('m.nip_ar', '=', 'ar.nip')
-                        ->where('ar.tahun', '=', $tahun)
-                        ->where('ar.jabatan', '=', '5');
-                })
-                ->leftJoin('pegawai as js', function ($join) use ($tahun) {
-                    $join->on('m.nip_js', '=', 'js.nip')
-                        ->where('js.tahun', '=', $tahun)
-                        ->where('js.jabatan', '=', '11');
-                })
+            // 2. Query mematuhi filter pencarian yang diinput user
+            $query = $this->buildTransaksiQuery($filters, $tahun)
                 ->select([
                     't.tgl_setor', 't.npwp15', 't.nama_wp', 'm.nama as nama_master',
                     't.fungsi', 't.kd_map', 't.kd_bayar', 't.masa_pajak', 't.thn_pajak',
-                    't.jml_setor', 't.ntpn', 'ar.nama as nama_ar', 'js.nama as nama_js', 'm.kota',
+                    't.jml_setor', 't.ntpn', 'm.nip_ar', 'm.nip_js', 'm.kota',
                 ]);
 
-            $query->orderBy('t.tgl_setor', 'desc')->chunk(1000, function ($rows) use ($file) {
-                foreach ($rows as $row) {
-                    fputcsv($file, [
-                        $row->tgl_setor,
-                        $row->npwp15,
-                        $row->nama_wp ?? $row->nama_master,
-                        $row->fungsi,
-                        $row->kd_map,
-                        $row->kd_bayar,
-                        $row->masa_pajak,
-                        $row->thn_pajak,
-                        $row->jml_setor,
-                        $row->ntpn,
-                        $row->nama_ar ?? '-',
-                        $row->nama_js ?? '-',
-                        $row->kota ?? '-',
-                    ]);
+            // Sorting default
+            $query->orderBy('t.tgl_setor', 'desc');
+
+            $index = 0;
+            // 3. Gunakan cursor() untuk streaming langsung
+            foreach ($query->cursor() as $row) {
+                $namaAr = ! empty($row->nip_ar) ? ($pegawaiMap[$row->nip_ar] ?? '-') : '-';
+                $namaJs = ! empty($row->nip_js) ? ($pegawaiMap[$row->nip_js] ?? '-') : '-';
+
+                fputcsv($file, [
+                    $row->tgl_setor,
+                    ! empty($row->npwp15) ? $row->npwp15 : '',
+                    $row->nama_wp ?? $row->nama_master,
+                    $row->fungsi,
+                    $row->kd_map,
+                    $row->kd_bayar,
+                    $row->masa_pajak,
+                    $row->thn_pajak,
+                    $row->jml_setor,
+                    $row->ntpn,
+                    $namaAr,
+                    $namaJs,
+                    $row->kota ?? '-',
+                ]);
+
+                $index++;
+                if ($index % 1000 === 0 && ob_get_level() > 0) {
+                    ob_flush();
+                    flush();
                 }
-            });
+            }
 
             fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        }, 200, $headers);
     }
 }

@@ -64,6 +64,8 @@ class WpSearchController extends Controller
      */
     public function exportMasterfileCsv(Request $request): StreamedResponse
     {
+        set_time_limit(0);
+
         return $this->wpRepository->exportMasterfileCsv($request->all());
     }
 }

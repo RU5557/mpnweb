@@ -134,7 +134,7 @@ class WpRepository
     }
 
     /**
-     * Export CSV Masterfile WP menggunakan Stream & Cursor
+     * Export CSV Masterfile WP menggunakan Stream & Cursor (Optimized & Timeout-Free)
      */
     public function exportMasterfileCsv(array $filters, ?int $tahun = null): StreamedResponse
     {
@@ -149,28 +149,45 @@ class WpRepository
             'Expires' => '0',
         ];
 
-        return response()->stream(function () use ($filters, $tahun) {
+        // 1. Ambil Map Pegawai (NIP => Nama) dari Cache untuk eliminasi LEFT JOIN
+        $pegawaiMap = Cache::remember("pegawai_map_{$tahun}", 3600, function () use ($tahun) {
+            return Pegawai::where('tahun', $tahun)->pluck('nama', 'nip')->toArray();
+        });
+
+        return response()->stream(function () use ($filters, $pegawaiMap) {
+            set_time_limit(0); // Mencegah PHP Max Execution Time
+
             $file = fopen('php://output', 'w');
-            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+            fwrite($file, "\xEF\xBB\xBF"); // UTF-8 BOM untuk MS Excel
 
-            fputcsv($file, ['NPWP', 'NPWP15', 'NPWP16', 'Nama WP', 'KLU', 'Alamat', 'Kelurahan', 'Kecamatan', 'Jenis WP', 'Status WP', 'Tgl Daftar', 'AR', 'JS']);
+            fputcsv($file, [
+                'NPWP', 'NPWP15', 'NPWP16', 'Nama WP', 'KLU', 'Alamat',
+                'Kelurahan', 'Kecamatan', 'Jenis WP', 'Status WP',
+                'Tgl Daftar', 'AR', 'JS',
+            ]);
 
-            // Menggunakan base query yang sama, ditambah Left Join Pegawai
-            $query = $this->buildMasterfileQuery($filters)
-                ->leftJoin('pegawai as p_ar', function ($join) use ($tahun) {
-                    $join->on('masterfile_wp.nip_ar', '=', 'p_ar.nip')->where('p_ar.tahun', '=', $tahun);
-                })
-                ->leftJoin('pegawai as p_js', function ($join) use ($tahun) {
-                    $join->on('masterfile_wp.nip_js', '=', 'p_js.nip')->where('p_js.tahun', '=', $tahun);
-                })
-                ->select('masterfile_wp.*', 'p_ar.nama as nama_ar', 'p_js.nama as nama_js');
+            // 2. Murni gunakan Base Query tanpa JOIN berat
+            $query = $this->buildMasterfileQuery($filters);
 
-            // Gunakan cursor() agar efisien penggunaan memori (streaming ribuan data)
+            // Sorting jika ada
+            $allowedSorts = ['npwp15', 'nama', 'jenis', 'tanggal_daftar'];
+            $sortBy = $filters['sort_by'] ?? 'nama';
+            $sortOrder = strtolower($filters['sort_order'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+            if (in_array($sortBy, $allowedSorts, true)) {
+                $query->orderBy($sortBy, $sortOrder);
+            }
+
+            $index = 0;
+            // 3. Loop cursor() efisien & kueri super cepat
             foreach ($query->cursor() as $item) {
+                $namaAr = ! empty($item->nip_ar) ? ($pegawaiMap[$item->nip_ar] ?? '-') : '-';
+                $namaJs = ! empty($item->nip_js) ? ($pegawaiMap[$item->nip_js] ?? '-') : '-';
+
                 fputcsv($file, [
-                    $item->npwp ?? $item->npwp15,
-                    $item->npwp15,
-                    $item->npwp16,
+                    ! empty($item->npwp15) ? $item->npwp15 : ($item->npwp ?? ''),
+                    ! empty($item->npwp15) ? $item->npwp15 : '',
+                    ! empty($item->npwp16) ? $item->npwp16 : '',
                     $item->nama,
                     $item->klu,
                     $item->alamat,
@@ -179,9 +196,15 @@ class WpRepository
                     $item->jenis,
                     $item->status,
                     $item->tanggal_daftar,
-                    $item->nama_ar,
-                    $item->nama_js,
+                    $namaAr,
+                    $namaJs,
                 ]);
+
+                $index++;
+                if ($index % 1000 === 0 && ob_get_level() > 0) {
+                    ob_flush();
+                    flush();
+                }
             }
 
             fclose($file);
