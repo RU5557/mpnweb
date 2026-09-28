@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\PkmPenagihanRepository;
+use App\Repositories\PkmRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PkmPenagihanController extends Controller
 {
     public function __construct(
-        protected PkmPenagihanRepository $repository
+        protected PkmRepository $repository
     ) {}
 
     /**
@@ -26,7 +26,8 @@ class PkmPenagihanController extends Controller
         $sortDirection = (string) $request->input('direction', 'asc');
 
         try {
-            $pkmData = $this->repository->getSummaryPkm(
+            // Panggil method getSummaryPenagihan dari PkmRepository
+            $pkmData = $this->repository->getSummaryPenagihan(
                 $tahun,
                 $bulan,
                 $dspcFilter,
@@ -61,7 +62,8 @@ class PkmPenagihanController extends Controller
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $dspcFilter = $this->resolveDspcFilter($request);
 
-        return $this->repository->exportDetilCsv($tahun, $bulan, $dspcFilter);
+        // Panggil method exportPenagihanCsv dari PkmRepository
+        return $this->repository->exportPenagihanCsv($tahun, $bulan, $dspcFilter);
     }
 
     private function resolveDspcFilter(Request $request): string
