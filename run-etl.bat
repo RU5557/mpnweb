@@ -15,8 +15,8 @@ echo  [3] Masterfile WP Saja
 echo  [4] Tabel Referensi Saja (Pegawai, Seksi, KLU, MAP)
 echo  [5] Keluar
 echo.
-echo * Catatan: Semua opsi otomatis memicu Maintenance Mode,
-echo           Rebuild Summary Mart, dan Pembersihan Cache.
+echo * Catatan: Semua opsi otomatis memicu Maintenance Mode
+echo           	dan Pembersihan Cache.
 echo ========================================================
 set /p pilihan="Pilih opsi menu [1-5]: "
 

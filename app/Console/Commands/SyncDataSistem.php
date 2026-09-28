@@ -84,20 +84,24 @@ class SyncDataSistem extends Command
             DB::statement('SET UNIQUE_CHECKS = 1;');
             DB::statement('SET AUTOCOMMIT = 1;');
 
-            // 2. Rebuild Summary Mart (Meneruskan $this->output)
-            $this->newLine();
-            $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
+            // 2. Rebuild Summary Mart (Hanya dipicu jika target menyangkut transaksi)
+            if (in_array($target, ['all', 'tx'])) {
+                $this->newLine();
+                $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
 
-            $summaryOptions = [];
-            if ($thnSetor) {
-                $summaryOptions['--thnsetor'] = $thnSetor;
-            }
-            if ($blnSetor) {
-                $summaryOptions['--blnsetor'] = $blnSetor;
-            }
+                $summaryOptions = [];
+                if ($thnSetor) {
+                    $summaryOptions['--thnsetor'] = $thnSetor;
+                }
+                if ($blnSetor) {
+                    $summaryOptions['--blnsetor'] = $blnSetor;
+                }
 
-            // Memanggil command terpisah dan meneruskan output ke terminal utama
-            Artisan::call('summary:rebuild', $summaryOptions, $this->output);
+                Artisan::call('summary:rebuild', $summaryOptions, $this->output);
+            } else {
+                $this->newLine();
+                $this->comment('-> [SKIP] Rekapitulasi Summary Mart dilewati (Target bukan transaksi).');
+            }
 
             // 3. Flush Cache
             $this->newLine();
