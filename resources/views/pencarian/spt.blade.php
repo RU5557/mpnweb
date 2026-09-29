@@ -72,9 +72,16 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pembetulan</label>
-                            <input type="number" min="0" name="pembetulan" value="{{ request('pembetulan') }}"
-                                placeholder="0"
+                            <select name="pembetulan"
                                 class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">-- Semua --</option>
+                                @foreach ($pembetulanList as $pem)
+                                    <option value="{{ $pem }}"
+                                        {{ request('pembetulan') == $pem ? 'selected' : '' }}>
+                                        {{ $pem }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -85,7 +92,8 @@
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Semua Jenis SPT --</option>
                             @foreach ($jenisSptList as $jenis)
-                                <option value="{{ $jenis }}" {{ request('jenis_spt') == $jenis ? 'selected' : '' }}>
+                                <option value="{{ $jenis }}"
+                                    {{ request('jenis_spt') == $jenis ? 'selected' : '' }}>
                                     {{ $jenis }}
                                 </option>
                             @endforeach
@@ -156,6 +164,14 @@
                                     class="text-blue-600 font-bold">{{ number_format($sptList->total(), 0, ',', '.') }}</span>
                                 BPE/SPT)
                             </span>
+                            <!-- TAMBAHKAN TOMBOL EXPORT DI SINI -->
+                            @if ($sptList->total() > 0)
+                                <a href="{{ route('pencarian.spt.export', request()->query()) }}"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-emerald-500/20 transition">
+                                    <i class="fa-solid fa-file-excel text-xs"></i>
+                                    <span>Export CSV</span>
+                                </a>
+                            @endif
                         </div>
 
                         <div class="overflow-x-auto">

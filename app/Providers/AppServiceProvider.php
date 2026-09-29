@@ -3,8 +3,6 @@
 namespace App\Providers;
 
 use App\Models\RollingText;
-use App\Repositories\Contracts\SptCoretaxRepositoryInterface;
-use App\Repositories\Eloquent\SptCoretaxRepository;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,10 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(
-            SptCoretaxRepositoryInterface::class,
-            SptCoretaxRepository::class
-        );
+        // Interface binding dihapus agar aplikasi lebih direct dan ringan
     }
 
     /**
@@ -26,7 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Bagikan variabel $rollingText ke SELURUH view di aplikasi
         View::composer('*', function ($view) {
             $rollingText = RollingText::latest('id')->first();
             $view->with('rollingText', $rollingText);

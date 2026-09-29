@@ -96,6 +96,7 @@ Route::prefix('pencarian')->name('pencarian.')->group(function () {
     Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi');
     Route::get('/transaksi/export', [TransaksiController::class, 'exportCsv'])->name('transaksi.export');
 
-    // 3. Tanda Terima SPT (Baru)
+    // 3. Tanda Terima SPT (Coretax)
     Route::get('/spt', [SptSearchController::class, 'index'])->name('spt');
+    Route::get('/spt/export', [SptSearchController::class, 'exportCsv'])->name('spt.export');
 });
