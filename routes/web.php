@@ -8,6 +8,7 @@ use App\Http\Controllers\PkmPemeriksaanController;
 use App\Http\Controllers\PkmPenagihanController;
 use App\Http\Controllers\PkmPengawasanController;
 use App\Http\Controllers\PpmController;
+use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\WpSearchController;
 use App\Http\Middleware\AdminAuthMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -65,10 +66,6 @@ Route::get('/pkm-pengawasan/export-detil', [PkmPengawasanController::class, 'exp
 Route::get('/pkm-pemeriksaan/export-detil', [PkmPemeriksaanController::class, 'exportDetil'])->name('pkm.pemeriksaan.export-detil');
 Route::get('/pkm-penagihan/export-detil', [PkmPenagihanController::class, 'exportDetil'])->name('pkm.penagihan.export-detil');
 
-// Fitur Search WP (URL dan Route Name diselaraskan menjadi /search-wp dan wp.search)
-Route::get('/search-wp', [WpSearchController::class, 'search'])->name('wp.search');
-Route::get('/search-wp/export-detil', [WpSearchController::class, 'exportCsv'])->name('wp.export-detil');
-
 /*
 |--------------------------------------------------------------------------
 | Autentikasi Admin & Panel Admin
@@ -82,4 +79,19 @@ Route::prefix('admin')->name('admin.')->middleware(AdminAuthMiddleware::class)->
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::post('/target', [AdminController::class, 'updateTarget'])->name('target.update');
     Route::post('/rolling-text', [AdminController::class, 'updateRollingText'])->name('rolling-text.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Modul Pencarian WP & Transaksi
+|--------------------------------------------------------------------------
+*/
+Route::prefix('pencarian')->name('pencarian.')->group(function () {
+    // 1. Masterfile WP
+    Route::get('/masterfile', [WpSearchController::class, 'searchMasterfile'])->name('masterfile');
+    Route::get('/masterfile/export', [WpSearchController::class, 'exportMasterfileCsv'])->name('masterfile.export');
+
+    // 2. Detil Transaksi / Penerimaan
+    Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi');
+    Route::get('/transaksi/export', [TransaksiController::class, 'exportCsv'])->name('transaksi.export');
 });

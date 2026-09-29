@@ -2,177 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\PkmRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PkmPemeriksaanController extends Controller
 {
+    public function __construct(
+        protected PkmRepository $repository
+    ) {}
+
+    /**
+     * Tampilkan Ringkasan PKM Pemeriksaan per Wajib Pajak
+     */
     public function index(Request $request)
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $search = trim((string) $request->input('search', ''));
         $sortColumn = (string) $request->input('sort', 'total_akt_pemeriksaan');
-        $sortDirection = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $sortDirection = (string) $request->input('direction', 'desc');
         $page = max(1, (int) $request->input('page', 1));
 
-        // Mapping opsi sorting ke sintaks/alias SQL
-        $allowedSorts = [
-            'npwp' => 'dt.npwp15',
-            'nama_wp' => DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar')"),
-            'kd_klu' => DB::raw("COALESCE(mw.klu, '-')"),
-            'nm_klu' => DB::raw("COALESCE(k.nm_klu, '-')"),
-            'total_akt_pemeriksaan' => 'total_akt_pemeriksaan',
-        ];
-
-        // Validasi kolom sorting
-        if (! array_key_exists($sortColumn, $allowedSorts)) {
-            $sortColumn = 'total_akt_pemeriksaan';
-        }
-        $sortBy = $allowedSorts[$sortColumn];
-
-        // Unique Cache Key
-        $cacheKey = "pkm_pemeriksaan_{$tahun}_{$bulan}_s".md5($search)."_{$sortColumn}_{$sortDirection}_p{$page}";
-
         try {
-            $pkmData = Cache::remember($cacheKey, 600, function () use ($bulan, $tahun, $search, $sortBy, $sortDirection) {
-                $like = '%'.addcslashes($search, '%_\\').'%';
-
-                return DB::table('detil_transaksi_wp as dt')
-                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-                    ->leftJoin('klu as k', 'mw.klu', '=', 'k.kd_klu')
-                    ->select(
-                        'dt.npwp15',
-                        DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar') as nama_wp"),
-                        DB::raw("COALESCE(mw.klu, '-') as kd_klu"),
-                        DB::raw("COALESCE(k.nm_klu, '-') as nm_klu"),
-                        DB::raw('SUM(dt.jml_setor) as total_akt_pemeriksaan')
-                    )
-                    ->whereRaw('LOWER(dt.fungsi) = ?', ['akt pemeriksaan'])
-                    ->where('dt.thn_setor', $tahun)
-                    ->whereBetween('dt.bln_setor', [1, $bulan])
-                    ->when($search !== '', function ($query) use ($like) {
-                        return $query->where(function ($q) use ($like) {
-                            $q->where('dt.npwp15', 'like', $like)
-                                ->orWhere('mw.nama', 'like', $like)
-                                ->orWhere('mw.klu', 'like', $like)
-                                ->orWhere('k.nm_klu', 'like', $like);
-                        });
-                    })
-                    ->groupBy('dt.npwp15', 'mw.nama', 'mw.klu', 'k.nm_klu')
-                    ->orderBy($sortBy, $sortDirection)
-                    ->paginate(10)
-                    ->withQueryString();
-            });
+            // Panggil method getPaginatedPemeriksaan dari PkmRepository
+            $pkmData = $this->repository->getPaginatedPemeriksaan(
+                $tahun,
+                $bulan,
+                $search,
+                $sortColumn,
+                $sortDirection,
+                $page
+            );
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary PKM Pemeriksaan.', [
                 'tahun' => $tahun,
                 'bulan' => $bulan,
+                'search' => $search,
                 'message' => $e->getMessage(),
             ]);
 
             abort(503, 'Data PKM Pemeriksaan sedang tidak tersedia. Silakan coba lagi.');
         }
 
-        return view('penerimaan.pkmpemeriksaan', [
-            'pkmData' => $pkmData,
-            'sortColumn' => $sortColumn,
-            'sortDirection' => $sortDirection,
-            'tahun' => $tahun,
-            'bulan' => $bulan,
-        ]);
+        return view('penerimaan.pkmpemeriksaan', compact(
+            'pkmData',
+            'sortColumn',
+            'sortDirection',
+            'tahun',
+            'bulan'
+        ));
     }
 
     /**
-     * Handle Export CSV Detil Transaksi Pemeriksaan (Streaming & Hemat Memory)
+     * Handle Export CSV Detil Transaksi Pemeriksaan
      */
-    public function exportDetil(Request $request)
+    public function exportDetil(Request $request): StreamedResponse
     {
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $search = trim((string) $request->input('search', ''));
-        $like = '%'.addcslashes($search, '%_\\').'%';
 
-        $filename = "Export_Detil_PKM_Pemeriksaan_{$tahun}_{$bulan}.csv";
-
-        return response()->stream(function () use ($tahun, $bulan, $search, $like) {
-            set_time_limit(0);
-
-            $file = fopen('php://output', 'w');
-            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            fputcsv($file, [
-                'NO', 'NPWP', 'NAMA WP', 'KD KLU', 'NAMA KLU',
-                'KD MAP', 'KD BAYAR', 'FUNGSI', 'BULAN', 'TAHUN', 'JUMLAH SETOR',
-            ]);
-
-            try {
-                $query = DB::table('detil_transaksi_wp as dt')
-                    ->leftJoin('masterfile_wp as mw', 'dt.npwp15', '=', 'mw.npwp15')
-                    ->leftJoin('klu as k', 'mw.klu', '=', 'k.kd_klu')
-                    ->select(
-                        'dt.npwp15',
-                        DB::raw("COALESCE(mw.nama, 'WP Tidak Terdaftar') as nama_wp"),
-                        DB::raw("COALESCE(mw.klu, '-') as kd_klu"),
-                        DB::raw("COALESCE(k.nm_klu, '-') as nm_klu"),
-                        'dt.kd_map',
-                        'dt.kd_bayar',
-                        'dt.jml_setor',
-                        'dt.bln_setor',
-                        'dt.thn_setor',
-                        'dt.fungsi'
-                    )
-                    ->whereRaw('LOWER(dt.fungsi) = ?', ['akt pemeriksaan'])
-                    ->where('dt.thn_setor', $tahun)
-                    ->whereBetween('dt.bln_setor', [1, $bulan])
-                    ->when($search !== '', function ($query) use ($like) {
-                        return $query->where(function ($q) use ($like) {
-                            $q->where('dt.npwp15', 'like', $like)
-                                ->orWhere('mw.nama', 'like', $like)
-                                ->orWhere('mw.klu', 'like', $like)
-                                ->orWhere('k.nm_klu', 'like', $like);
-                        });
-                    })
-                    ->orderBy('mw.nama', 'asc')
-                    ->orderBy('dt.bln_setor', 'asc');
-
-                $index = 1;
-                foreach ($query->cursor() as $row) {
-                    fputcsv($file, [
-                        $index++,
-                        isset($row->npwp15) ? "{$row->npwp15}" : '',
-                        $row->nama_wp,
-                        $row->kd_klu,
-                        $row->nm_klu,
-                        $row->kd_map,
-                        $row->kd_bayar,
-                        $row->fungsi,
-                        $row->bln_setor,
-                        $row->thn_setor,
-                        $row->jml_setor,
-                    ]);
-
-                    if ($index % 1000 === 0) {
-                        $this->flushOutputBuffer();
-                    }
-                }
-            } catch (QueryException $e) {
-                Log::error('Gagal mengekspor detil PKM Pemeriksaan.', [
-                    'tahun' => $tahun,
-                    'bulan' => $bulan,
-                    'message' => $e->getMessage(),
-                ]);
-
-                fputcsv($file, ['ERROR', 'Gagal mengambil data dari database']);
-            }
-
-            fclose($file);
-        }, 200, $this->csvDownloadHeaders($filename));
+        // Panggil method exportPemeriksaanCsv dari PkmRepository
+        return $this->repository->exportPemeriksaanCsv($tahun, $bulan, $search);
     }
 
     /**
-     * @return array{0: int, 1: int}
+     * Helper resolusi periode tahun & bulan
      */
     private function resolvePeriod(Request $request): array
     {
@@ -188,28 +84,5 @@ class PkmPemeriksaanController extends Controller
         }
 
         return [$tahun, $bulan];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function csvDownloadHeaders(string $filename): array
-    {
-        return [
-            'Content-type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-    }
-
-    private function flushOutputBuffer(): void
-    {
-        if (ob_get_level() > 0) {
-            ob_flush();
-        }
-
-        flush();
     }
 }

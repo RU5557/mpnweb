@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MasterfileWp extends Model
 {
@@ -14,52 +16,50 @@ class MasterfileWp extends Model
 
     protected $keyType = 'string';
 
-    // Alias untuk Nama WP
-    public function getNamaWpAttribute()
-    {
-        return $this->attributes['nama'] ?? '-';
-    }
+    public $timestamps = false;
 
-    // Alias untuk Jenis WP
-    public function getJenisWpAttribute()
+    // Relasi ke Pegawai (AR)
+    public function ar(?int $tahun = null): BelongsTo
     {
-        return $this->attributes['jenis'] ?? '-';
-    }
+        $tahun = $tahun ?? (int) date('Y');
 
-    // Alias untuk Status WP
-    public function getStatusWpAttribute()
-    {
-        return $this->attributes['status'] ?? '-';
-    }
-
-    // Alias untuk Nama AR
-    public function getNamaArAttribute()
-    {
-        return $this->ar->nama ?? '-';
-    }
-
-    // Alias untuk Nama JS
-    public function getNamaJsAttribute()
-    {
-        return $this->js->nama ?? '-';
-    }
-
-    // Relasi ke AR (Mengambil data Pegawai berdasarkan NIP & Tahun Saat Ini)
-    public function ar()
-    {
         return $this->belongsTo(Pegawai::class, 'nip_ar', 'nip')
-            ->where('tahun', date('Y'));
+            ->where('tahun', $tahun);
     }
 
-    // Relasi Jurusita (JS)
-    public function js()
+    // Relasi ke Pegawai (JS)
+    public function js(?int $tahun = null): BelongsTo
     {
+        $tahun = $tahun ?? (int) date('Y');
+
         return $this->belongsTo(Pegawai::class, 'nip_js', 'nip')
-            ->where('tahun', date('Y'));
+            ->where('tahun', $tahun);
     }
 
-    // Relasi Detil Transaksi
-    public function transaksi()
+    /**
+     * Accessor untuk $item->nama_ar
+     */
+    public function getNamaArAttribute(): ?string
+    {
+        return $this->ar?->nama;
+    }
+
+    /**
+     * Accessor untuk $item->nama_js
+     */
+    public function getNamaJsAttribute(): ?string
+    {
+        return $this->js?->nama;
+    }
+
+    // Relasi ke KLU
+    public function kluData(): BelongsTo
+    {
+        return $this->belongsTo(Klu::class, 'klu', 'kd_klu');
+    }
+
+    // Relasi ke Transaksi
+    public function transaksi(): HasMany
     {
         return $this->hasMany(DetilTransaksiWp::class, 'npwp15', 'npwp15');
     }

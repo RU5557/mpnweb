@@ -2,37 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\PenjagaanRepository;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PenjagaanController extends Controller
 {
-    /**
-     * Ambil opsi fungsi dengan caching 24 jam.
-     */
-    private function getFungsiOptions()
-    {
-        return Cache::remember('penjagaan_fungsi_options', 86400, function () {
-            return DB::table('detil_transaksi_wp')
-                ->select('fungsi')
-                ->whereNotNull('fungsi')
-                ->distinct()
-                ->orderBy('fungsi')
-                ->pluck('fungsi');
-        });
-    }
+    public function __construct(
+        protected PenjagaanRepository $repository
+    ) {}
 
     /**
      * Resolusi filter fungsi dari Request
      */
-    private function resolveFungsi(Request $request, $fungsiOptions)
+    private function resolveFungsi(Request $request): array
     {
+        $fungsiOptions = $this->repository->getFungsiOptions();
+
         if ($request->has('fungsi')) {
             $fungsi = (array) $request->input('fungsi', []);
 
-            return array_filter($fungsi); // Buang elemen kosong
+            return array_values(array_filter($fungsi));
         }
 
         return $fungsiOptions->toArray();
@@ -41,35 +31,13 @@ class PenjagaanController extends Controller
     // 1. Penjagaan Bulanan
     public function bulanan(Request $request)
     {
-        $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsiOptions = $this->repository->getFungsiOptions();
+        $fungsi = $this->resolveFungsi($request);
 
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        sort($fungsi);
-        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_bulanan_'.md5("y:{$tahunIni}_f:{$fungsiKey}");
-
-        $data = Cache::remember($cacheKey, 3600, function () use ($fungsi, $tahunIni, $tahunLalu) {
-            $queryTahunLalu = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunLalu);
-
-            $queryTahunIni = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('bln_setor, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunIni);
-
-            if (! empty($fungsi)) {
-                $queryTahunLalu->whereIn('fungsi', $fungsi);
-                $queryTahunIni->whereIn('fungsi', $fungsi);
-            }
-
-            return [
-                'lalu' => $queryTahunLalu->groupBy('bln_setor')->pluck('total', 'bln_setor')->toArray(),
-                'ini' => $queryTahunIni->groupBy('bln_setor')->pluck('total', 'bln_setor')->toArray(),
-            ];
-        });
+        $data = $this->repository->getSummaryBulanan($fungsi, $tahunIni, $tahunLalu);
 
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         $dataTahunLalu = [];
@@ -89,45 +57,21 @@ class PenjagaanController extends Controller
     public function harian(Request $request)
     {
         $bulan = (int) $request->input('bulan', date('m'));
-        $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsiOptions = $this->repository->getFungsiOptions();
+        $fungsi = $this->resolveFungsi($request);
 
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        sort($fungsi);
-        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_harian_'.md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
-
-        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $fungsi, $tahunIni, $tahunLalu) {
-            $queryTahunLalu = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunLalu)
-                ->where('bln_setor', $bulan);
-
-            $queryTahunIni = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunIni)
-                ->where('bln_setor', $bulan);
-
-            if (! empty($fungsi)) {
-                $queryTahunLalu->whereIn('fungsi', $fungsi);
-                $queryTahunIni->whereIn('fungsi', $fungsi);
-            }
-
-            return [
-                'lalu' => $queryTahunLalu->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
-                'ini' => $queryTahunIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
-            ];
-        });
+        $data = $this->repository->getSummaryHarian($bulan, $fungsi, $tahunIni, $tahunLalu);
 
         $days = range(1, 31);
         $dataTahunLalu = [];
         $dataTahunIni = [];
 
         foreach ($days as $day) {
-            $dataTahunLalu[] = (float) ($data['lalu'][$day] ?? 0);
             $dataTahunIni[] = (float) ($data['ini'][$day] ?? 0);
+            $dataTahunLalu[] = (float) ($data['lalu'][$day] ?? 0);
         }
 
         return view('penerimaan.penjagaan.harian', compact(
@@ -138,39 +82,15 @@ class PenjagaanController extends Controller
     // 3. Penjagaan vs Bulan Lalu
     public function vsBulanLalu(Request $request)
     {
-        $fungsiOptions = $this->getFungsiOptions();
         $bulan = (int) $request->input('bulan', date('m'));
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsiOptions = $this->repository->getFungsiOptions();
+        $fungsi = $this->resolveFungsi($request);
 
         $tahunIni = (int) date('Y');
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;
         $tahunBulanLalu = $bulan == 1 ? $tahunIni - 1 : $tahunIni;
 
-        sort($fungsi);
-        $fungsiKey = ! empty($fungsi) ? implode(',', $fungsi) : 'all';
-        $cacheKey = 'penjagaan_vs_bulan_lalu_'.md5("y:{$tahunIni}_b:{$bulan}_f:{$fungsiKey}");
-
-        $data = Cache::remember($cacheKey, 3600, function () use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi) {
-            $queryBulanIni = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunIni)
-                ->where('bln_setor', $bulan);
-
-            $queryBulanLalu = DB::table('detil_transaksi_wp')
-                ->select(DB::raw('DAY(tgl_setor) as tgl, SUM(jml_setor) as total'))
-                ->where('thn_setor', $tahunBulanLalu)
-                ->where('bln_setor', $bulanLalu);
-
-            if (! empty($fungsi)) {
-                $queryBulanIni->whereIn('fungsi', $fungsi);
-                $queryBulanLalu->whereIn('fungsi', $fungsi);
-            }
-
-            return [
-                'ini' => $queryBulanIni->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
-                'lalu' => $queryBulanLalu->groupBy('tgl')->pluck('total', 'tgl')->toArray(),
-            ];
-        });
+        $data = $this->repository->getSummaryVsBulanLalu($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi);
 
         $days = range(1, 31);
         $dataBulanIni = [];
@@ -186,171 +106,68 @@ class PenjagaanController extends Controller
         ));
     }
 
+    // EXPORTS
     public function exportBulananCsv(Request $request): StreamedResponse
     {
-        $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsi = $this->resolveFungsi($request);
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fileName = 'penjagaan_bulanan_detil_'.date('Ymd_His').'.csv';
+        $filename = 'penjagaan_bulanan_detil_'.date('Ymd_His').'.csv';
 
-        $headers = [
-            'Content-type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename={$fileName}",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
-        ];
-
-        $callback = function () use ($fungsi, $columns, $tahunIni, $tahunLalu) {
-            $file = fopen('php://output', 'w');
-            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($file, $columns);
-
-            $query = DB::table('detil_transaksi_wp')
-                ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
-                ])
-                ->whereIn('thn_setor', [$tahunLalu, $tahunIni]);
-
+        return $this->repository->exportCsv($filename, function ($query) use ($fungsi, $tahunIni, $tahunLalu) {
+            $query->whereIn('thn_setor', [$tahunLalu, $tahunIni]);
             if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
-
-            $query->orderBy('thn_setor', 'desc')
-                ->orderBy('bln_setor', 'desc')
-                ->cursor()
-                ->each(function ($row) use ($file) {
-                    fputcsv($file, (array) $row);
-                });
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            $query->orderBy('thn_setor', 'desc')->orderBy('bln_setor', 'desc');
+        });
     }
 
     public function exportHarianCsv(Request $request): StreamedResponse
     {
         $bulan = (int) $request->input('bulan', date('m'));
-        $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsi = $this->resolveFungsi($request);
         $tahunIni = (int) date('Y');
         $tahunLalu = $tahunIni - 1;
 
-        $fileName = 'penjagaan_harian_detil_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
+        $filename = 'penjagaan_harian_detil_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
 
-        $headers = [
-            'Content-type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename={$fileName}",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
-        ];
-
-        $callback = function () use ($bulan, $fungsi, $columns, $tahunIni, $tahunLalu) {
-            $file = fopen('php://output', 'w');
-            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($file, $columns);
-
-            $query = DB::table('detil_transaksi_wp')
-                ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
-                ])
-                ->whereIn('thn_setor', [$tahunLalu, $tahunIni])
+        return $this->repository->exportCsv($filename, function ($query) use ($bulan, $fungsi, $tahunIni, $tahunLalu) {
+            $query->whereIn('thn_setor', [$tahunLalu, $tahunIni])
                 ->where('bln_setor', $bulan);
-
             if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
-
-            $query->orderBy('tgl_setor', 'desc')
-                ->cursor()
-                ->each(function ($row) use ($file) {
-                    fputcsv($file, (array) $row);
-                });
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            $query->orderBy('tgl_setor', 'desc');
+        });
     }
 
     public function exportVsBulanLaluCsv(Request $request): StreamedResponse
     {
         $bulan = (int) $request->input('bulan', date('m'));
-        $fungsiOptions = $this->getFungsiOptions();
-        $fungsi = $this->resolveFungsi($request, $fungsiOptions);
+        $fungsi = $this->resolveFungsi($request);
 
         $tahunIni = (int) date('Y');
         $bulanLalu = $bulan == 1 ? 12 : $bulan - 1;
         $tahunBulanLalu = $bulan == 1 ? $tahunIni - 1 : $tahunIni;
 
-        $fileName = 'penjagaan_vs_bulan_lalu_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
+        $filename = 'penjagaan_vs_bulan_lalu_bln_'.$bulan.'_'.date('Ymd_His').'.csv';
 
-        $headers = [
-            'Content-type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename={$fileName}",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $columns = [
-            'Tahun Setor', 'Bulan Setor', 'Tanggal Setor', 'NPWP15',
-            'Nama WP', 'Jenis', 'Fungsi', 'Kode MAP', 'Kode Bayar',
-            'Masa Pajak', 'Tahun Pajak', 'Jumlah Setor (Rp)', 'NTPN',
-        ];
-
-        $callback = function () use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi, $columns) {
-            $file = fopen('php://output', 'w');
-            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($file, $columns);
-
-            $query = DB::table('detil_transaksi_wp')
-                ->select([
-                    'thn_setor', 'bln_setor', 'tgl_setor', 'npwp15',
-                    'nama_wp', 'jenis', 'fungsi', 'kd_map', 'kd_bayar',
-                    'masa_pajak', 'thn_pajak', 'jml_setor', 'ntpn',
-                ])
-                ->where(function ($q) use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu) {
-                    $q->where(function ($q1) use ($bulan, $tahunIni) {
-                        $q1->where('thn_setor', $tahunIni)->where('bln_setor', $bulan);
-                    })->orWhere(function ($q2) use ($bulanLalu, $tahunBulanLalu) {
-                        $q2->where('thn_setor', $tahunBulanLalu)->where('bln_setor', $bulanLalu);
-                    });
+        return $this->repository->exportCsv($filename, function ($query) use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu, $fungsi) {
+            $query->where(function ($q) use ($bulan, $bulanLalu, $tahunIni, $tahunBulanLalu) {
+                $q->where(function ($q1) use ($bulan, $tahunIni) {
+                    $q1->where('thn_setor', $tahunIni)->where('bln_setor', $bulan);
+                })->orWhere(function ($q2) use ($bulanLalu, $tahunBulanLalu) {
+                    $q2->where('thn_setor', $tahunBulanLalu)->where('bln_setor', $bulanLalu);
                 });
+            });
 
             if (! empty($fungsi)) {
                 $query->whereIn('fungsi', $fungsi);
             }
 
-            $query->orderBy('tgl_setor', 'desc')
-                ->cursor()
-                ->each(function ($row) use ($file) {
-                    fputcsv($file, (array) $row);
-                });
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+            $query->orderBy('tgl_setor', 'desc');
+        });
     }
 }

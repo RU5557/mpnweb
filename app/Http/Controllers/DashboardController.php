@@ -2,55 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Target;
+use App\Repositories\DashboardRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected DashboardRepository $dashboardRepository
+    ) {}
+
     public function index(Request $request)
     {
         [$thnIni, $blnAwal, $blnAkhir] = $this->resolvePeriod($request);
-        $thnLalu = $thnIni - 1;
-
-        $cacheKey = "dashboard_summary_{$thnIni}_{$blnAwal}_{$blnAkhir}";
 
         try {
-            $target = Cache::remember("dashboard_target_{$thnIni}", 600, function () use ($thnIni) {
-                return Target::where('tahun', $thnIni)->first();
-            });
-
-            $penerimaanData = Cache::remember($cacheKey, 600, function () use ($thnIni, $thnLalu, $blnAwal, $blnAkhir) {
-                return DB::table('summary_mart_penerimaan')
-                    ->whereIn('thn_setor', [$thnIni, $thnLalu])
-                    ->whereBetween('bln_setor', [$blnAwal, $blnAkhir])
-                    ->selectRaw("
-                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanSaatIni,
-                        SUM(CASE WHEN thn_setor = ? AND bln_setor < ? THEN total_setor ELSE 0 END) as penerimaanBlnLalu,
-                        SUM(CASE WHEN thn_setor = ? THEN total_setor ELSE 0 END) as penerimaanThnLalu,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPM,
-                        SUM(CASE WHEN thn_setor = ? AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKM,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PBP' THEN total_setor ELSE 0 END) as realisasiPBP,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasan,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaan,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihan,
-                        SUM(CASE WHEN thn_setor = ? AND jenis = 'PPM' THEN total_setor ELSE 0 END) as realisasiPPMLalu,
-                        SUM(CASE WHEN thn_setor = ? AND jenis IN ('PKM', 'PKM AKTIVITAS', 'PKM LAINNYA', 'PKM WRA') THEN total_setor ELSE 0 END) as realisasiPKMLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi IN ('akt pengawasan', 'lainnya', 'wra pengawasan') THEN total_setor ELSE 0 END) as realisasiPengawasanLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt pemeriksaan' THEN total_setor ELSE 0 END) as realisasiPemeriksaanLalu,
-                        SUM(CASE WHEN thn_setor = ? AND fungsi = 'akt penagihan' THEN total_setor ELSE 0 END) as realisasiPenagihanLalu
-                    ", [
-                        $thnIni, $thnIni, $blnAkhir, $thnLalu,
-                        $thnIni, $thnIni, $thnIni,
-                        $thnIni, $thnIni, $thnIni,
-                        $thnLalu, $thnLalu, $thnLalu,
-                        $thnLalu, $thnLalu,
-                    ])
-                    ->first();
-            });
+            $target = $this->dashboardRepository->getTargetByTahun($thnIni);
+            $penerimaanData = $this->dashboardRepository->getSummaryMetrics($thnIni, $blnAwal, $blnAkhir);
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary dashboard.', [
                 'tahun' => $thnIni,
@@ -63,23 +33,23 @@ class DashboardController extends Controller
         }
 
         // --- Extrak Nilai Nominal ---
-        $penerimaanSaatIni = $penerimaanData?->penerimaanSaatIni ?? 0;
-        $penerimaanBlnLalu = $penerimaanData?->penerimaanBlnLalu ?? 0;
-        $penerimaanThnLalu = $penerimaanData?->penerimaanThnLalu ?? 0;
+        $penerimaanSaatIni = $penerimaanData->penerimaanSaatIni ?? 0;
+        $penerimaanBlnLalu = $penerimaanData->penerimaanBlnLalu ?? 0;
+        $penerimaanThnLalu = $penerimaanData->penerimaanThnLalu ?? 0;
 
-        $realisasiPPM = $penerimaanData?->realisasiPPM ?? 0;
-        $realisasiPKM = $penerimaanData?->realisasiPKM ?? 0;
-        $realisasiPBP = $penerimaanData?->realisasiPBP ?? 0;
+        $realisasiPPM = $penerimaanData->realisasiPPM ?? 0;
+        $realisasiPKM = $penerimaanData->realisasiPKM ?? 0;
+        $realisasiPBP = $penerimaanData->realisasiPBP ?? 0;
 
-        $realisasiPengawasan = $penerimaanData?->realisasiPengawasan ?? 0;
-        $realisasiPemeriksaan = $penerimaanData?->realisasiPemeriksaan ?? 0;
-        $realisasiPenagihan = $penerimaanData?->realisasiPenagihan ?? 0;
+        $realisasiPengawasan = $penerimaanData->realisasiPengawasan ?? 0;
+        $realisasiPemeriksaan = $penerimaanData->realisasiPemeriksaan ?? 0;
+        $realisasiPenagihan = $penerimaanData->realisasiPenagihan ?? 0;
 
-        $realisasiPPMLalu = $penerimaanData?->realisasiPPMLalu ?? 0;
-        $realisasiPKMLalu = $penerimaanData?->realisasiPKMLalu ?? 0;
-        $realisasiPengawasanLalu = $penerimaanData?->realisasiPengawasanLalu ?? 0;
-        $realisasiPemeriksaanLalu = $penerimaanData?->realisasiPemeriksaanLalu ?? 0;
-        $realisasiPenagihanLalu = $penerimaanData?->realisasiPenagihanLalu ?? 0;
+        $realisasiPPMLalu = $penerimaanData->realisasiPPMLalu ?? 0;
+        $realisasiPKMLalu = $penerimaanData->realisasiPKMLalu ?? 0;
+        $realisasiPengawasanLalu = $penerimaanData->realisasiPengawasanLalu ?? 0;
+        $realisasiPemeriksaanLalu = $penerimaanData->realisasiPemeriksaanLalu ?? 0;
+        $realisasiPenagihanLalu = $penerimaanData->realisasiPenagihanLalu ?? 0;
 
         // --- Kalkulasi Indikator & Growth ---
         $targetKantor = $target?->target_kantor ?? 0;

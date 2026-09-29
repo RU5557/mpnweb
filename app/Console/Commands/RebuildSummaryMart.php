@@ -44,14 +44,14 @@ class RebuildSummaryMart extends Command
                 SELECT 
                     thn_setor,
                     bln_setor,
-                    COALESCE(jenis, '') AS jenis,
-                    COALESCE(fungsi, '') AS fungsi,
+                    UPPER(TRIM(COALESCE(jenis, ''))) AS jenis,
+                    UPPER(TRIM(COALESCE(fungsi, ''))) AS fungsi,
                     SUM(jml_setor) AS total_setor,
                     COUNT(*) AS total_transaksi,
                     '{$now}',
                     '{$now}'
                 FROM detil_transaksi_wp
-                GROUP BY thn_setor, bln_setor, jenis, fungsi
+                GROUP BY thn_setor, bln_setor, UPPER(TRIM(COALESCE(jenis, ''))), UPPER(TRIM(COALESCE(fungsi, '')))
             ");
 
             DB::statement('CREATE TABLE IF NOT EXISTS summary_mart_penerimaan_old LIKE summary_mart_penerimaan;');
@@ -78,10 +78,12 @@ class RebuildSummaryMart extends Command
                         thn_setor, bln_setor, jenis, fungsi, total_setor, total_transaksi, created_at, updated_at
                     )
                     SELECT 
-                        thn_setor, bln_setor, COALESCE(jenis, ''), COALESCE(fungsi, ''), 
+                        thn_setor, bln_setor, 
+                        UPPER(TRIM(COALESCE(jenis, ''))), 
+                        UPPER(TRIM(COALESCE(fungsi, ''))), 
                         SUM(jml_setor), COUNT(*), '{$now}', '{$now}'
                     FROM detil_transaksi_wp
-                    GROUP BY thn_setor, bln_setor, jenis, fungsi
+                    GROUP BY thn_setor, bln_setor, UPPER(TRIM(COALESCE(jenis, ''))), UPPER(TRIM(COALESCE(fungsi, '')))
                 ");
 
                 return Command::SUCCESS;
@@ -116,15 +118,15 @@ class RebuildSummaryMart extends Command
                 SELECT 
                     thn_setor,
                     bln_setor,
-                    COALESCE(jenis, '') AS jenis,
-                    COALESCE(fungsi, '') AS fungsi,
+                    UPPER(TRIM(COALESCE(jenis, ''))) AS jenis,
+                    UPPER(TRIM(COALESCE(fungsi, ''))) AS fungsi,
                     SUM(jml_setor) AS total_setor,
                     COUNT(*) AS total_transaksi,
                     '{$now}',
                     '{$now}'
                 FROM detil_transaksi_wp
                 {$whereSql}
-                GROUP BY thn_setor, bln_setor, jenis, fungsi
+                GROUP BY thn_setor, bln_setor, UPPER(TRIM(COALESCE(jenis, ''))), UPPER(TRIM(COALESCE(fungsi, '')))
             ");
 
             $executionTime = round(microtime(true) - $startTime, 2);
