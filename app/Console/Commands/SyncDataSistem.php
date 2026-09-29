@@ -10,13 +10,19 @@ use Illuminate\Support\Facades\DB;
 
 class SyncDataSistem extends Command
 {
+    /**
+     * Nama dan tanda tangan dari console command.
+     */
     protected $signature = 'sync:data-sistem 
-                            {--only=all : Pilihan target: all, ref, master, tx}
-                            {--thnsetor= : Filter tahun setor (contoh: 2026)}
-                            {--blnsetor= : Filter bulan setor (contoh: 09 atau 9)}
+                            {--only=all : Pilihan target: all, ref, master, tx, spt}
+                            {--thnsetor= : Filter tahun (contoh: 2026)}
+                            {--blnsetor= : Filter bulan (contoh: 09 atau 9)}
                             {--maintenance : Aktifkan mode maintenance selama sync}';
 
-    protected $description = 'ETL data dari mpninfo ke mpnweb dengan auto maintenance mode, rebuild summary mart, dan cache invalidation';
+    /**
+     * Deskripsi console command.
+     */
+    protected $description = 'ETL data dari mpninfo ke mpnweb dengan opsi Full/Parsial, auto maintenance mode, rebuild summary mart, dan cache invalidation';
 
     public function handle()
     {
@@ -26,7 +32,7 @@ class SyncDataSistem extends Command
         $useMaintenance = $this->option('maintenance');
 
         $this->info('====================================================');
-        $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode: {$target})");
+        $this->info("  MEMULAI ETL DATA SINKRONISASI (Mode Target: {$target})");
         if ($thnSetor || $blnSetor) {
             $infoPeriode = [];
             if ($thnSetor) {
@@ -36,6 +42,8 @@ class SyncDataSistem extends Command
                 $infoPeriode[] = "Bulan: {$blnSetor}";
             }
             $this->info('  FILTER PERIODE -> '.implode(', ', $infoPeriode));
+        } else {
+            $this->info('  FILTER PERIODE -> FULL REFRESH (Semua Data)');
         }
         $this->info('====================================================');
         $startTime = microtime(true);
@@ -71,6 +79,11 @@ class SyncDataSistem extends Command
                 $this->syncDetilTransaksiWp($thnSetor, $blnSetor);
             }
 
+            // D. Sinkronisasi SPT Coretax (Dapat dipanggil via --only=all, --only=tx, atau --only=spt)
+            if (in_array($target, ['all', 'tx', 'spt'])) {
+                $this->syncSptCoretax($thnSetor, $blnSetor);
+            }
+
             // Commit Transaksi
             $this->comment('-> Menyimpan perubahan ke database (Commit Transaction)...');
             $commitStart = microtime(true);
@@ -84,8 +97,8 @@ class SyncDataSistem extends Command
             DB::statement('SET UNIQUE_CHECKS = 1;');
             DB::statement('SET AUTOCOMMIT = 1;');
 
-            // 2. Rebuild Summary Mart (Hanya dipicu jika target menyangkut transaksi)
-            if (in_array($target, ['all', 'tx'])) {
+            // 2. Rebuild Summary Mart (Dipicu jika target transaksi / spt)
+            if (in_array($target, ['all', 'tx', 'spt'])) {
                 $this->newLine();
                 $this->comment('-> Memicu rekapitulasi Summary Mart Penerimaan...');
 
@@ -100,7 +113,7 @@ class SyncDataSistem extends Command
                 Artisan::call('summary:rebuild', $summaryOptions, $this->output);
             } else {
                 $this->newLine();
-                $this->comment('-> [SKIP] Rekapitulasi Summary Mart dilewati (Target bukan transaksi).');
+                $this->comment('-> [SKIP] Rekapitulasi Summary Mart dilewati.');
             }
 
             // 3. Flush Cache
@@ -258,7 +271,6 @@ class SyncDataSistem extends Command
 
         $whereSql = count($whereConditions) > 0 ? ' WHERE '.implode(' AND ', $whereConditions) : '';
 
-        // TAMBAHKAN kolom no_produk_hukum pada INSERT & SELECT
         DB::statement("
             INSERT INTO detil_transaksi_wp (
                 kd_kanwil, kpp_adm, npwp, kpp, cabang, no_produk_hukum, npwp15, nama_wp, no_pbk, ntpn, 
@@ -277,5 +289,64 @@ class SyncDataSistem extends Command
         $elapsed = round(microtime(true) - $t0, 2);
         $this->output->write("\r");
         $this->info("   [OK] Tabel detil_transaksi_wp synchronized ({$elapsed}s).                   ");
+    }
+
+    /**
+     * ETL untuk tabel spt_coretax dengan Opsi Full Refresh / Parsial (Tahun & Bulan)
+     */
+    private function syncSptCoretax($thnSetor = null, $blnSetor = null)
+    {
+        $this->comment('-> Synchronizing: spt_coretax...');
+
+        $whereConditions = [];
+        $deleteConditions = [];
+
+        if (! empty($thnSetor)) {
+            $whereConditions[] = 'tahun = '.(int) $thnSetor;
+            $deleteConditions[] = 'tahun = '.(int) $thnSetor;
+        }
+        if (! empty($blnSetor)) {
+            $whereConditions[] = 'bulan = '.(int) $blnSetor;
+            $deleteConditions[] = 'bulan = '.(int) $blnSetor;
+        }
+
+        // Jalankan Hapus Parsial jika ada filter, atau TRUNCATE jika Full Refresh
+        if (count($deleteConditions) > 0) {
+            $deleteWhereSql = ' WHERE '.implode(' AND ', $deleteConditions);
+            DB::statement("DELETE FROM spt_coretax{$deleteWhereSql};");
+            $this->comment('   [i] Menghapus data spt_coretax periode terpilih sebelum re-sync.');
+        } else {
+            DB::statement('TRUNCATE TABLE spt_coretax;');
+            $this->comment('   [i] Melakukan TRUNCATE pada spt_coretax.');
+        }
+
+        $this->output->write('   [WAIT] Memproses salinan data spt_coretax...');
+        $t0 = microtime(true);
+
+        $whereSql = count($whereConditions) > 0 ? ' WHERE '.implode(' AND ', $whereConditions) : '';
+
+        DB::statement("
+            INSERT INTO spt_coretax (
+                tahun, bulan, bulan_data, kanwil, kpp, npwp, nama, 
+                masa1, masa2, thn_pajak, 
+                jenis_spt, nomor_tanda_terima, tgl_terima, nop, 
+                status_spt, pembetulan, kanal_pelaporan, 
+                kd_kpp_administrasi, kpp_administrasi, kd_kpp_penerima, kpp_penerima
+            )
+            SELECT 
+                tahun, bulan, bulan_data, kanwil, kpp, npwp, nama,
+                SUBSTRING(LPAD(masa_pajak, 8, '0'), 1, 2) AS masa1,
+                SUBSTRING(LPAD(masa_pajak, 8, '0'), 3, 2) AS masa2,
+                SUBSTRING(LPAD(masa_pajak, 8, '0'), 5, 4) AS thn_pajak,
+                jenis_spt, nomor_tanda_terima, tgl_terima, nop, 
+                status_spt, pembetulan, kanal_pelaporan, 
+                kd_kpp_administrasi, kpp_administrasi, kd_kpp_penerima, kpp_penerima
+            FROM mpninfo.spt_coretax
+            {$whereSql}
+        ");
+
+        $elapsed = round(microtime(true) - $t0, 2);
+        $this->output->write("\r");
+        $this->info("   [OK] Tabel spt_coretax synchronized ({$elapsed}s).                   ");
     }
 }
