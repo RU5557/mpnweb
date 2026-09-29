@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\RollingText;
+use App\Repositories\Contracts\SptCoretaxRepositoryInterface;
+use App\Repositories\Eloquent\SptCoretaxRepository;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,7 +15,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            SptCoretaxRepositoryInterface::class,
+            SptCoretaxRepository::class
+        );
     }
 
     /**

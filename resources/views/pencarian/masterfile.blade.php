@@ -172,7 +172,7 @@
                             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 rounded-xl transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5">
                             <i x-show="loading" class="fa-solid fa-circle-notch fa-spin text-xs" x-cloak></i>
                             <i x-show="!loading" class="fa-solid fa-search text-xs"></i>
-                            <span x-text="loading ? 'Mencari...' : 'Terapkan Filter'"></span>
+                            <span x-text="loading ? 'Mencari...' : 'Cari WP'"></span>
                         </button>
                     </div>
                 </form>
@@ -313,8 +313,8 @@
                         </div>
                         <h3 class="text-base font-bold text-slate-800">Gunakan Filter di Sebelah Kiri</h3>
                         <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                            Pilih parameter pencarian lalu klik tombol <span class="font-semibold text-blue-600">"Terapkan
-                                Filter"</span> untuk menampilkan data Masterfile.
+                            Pilih parameter pencarian lalu klik tombol <span class="font-semibold text-blue-600">"Cari
+                                WP"</span> untuk menampilkan data Masterfile.
                         </p>
                     </div>
                 @endif
