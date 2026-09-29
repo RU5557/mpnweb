@@ -258,14 +258,15 @@ class SyncDataSistem extends Command
 
         $whereSql = count($whereConditions) > 0 ? ' WHERE '.implode(' AND ', $whereConditions) : '';
 
+        // TAMBAHKAN kolom no_produk_hukum pada INSERT & SELECT
         DB::statement("
             INSERT INTO detil_transaksi_wp (
-                kd_kanwil, kpp_adm, npwp, kpp, cabang, npwp15, nama_wp, no_pbk, ntpn, 
+                kd_kanwil, kpp_adm, npwp, kpp, cabang, no_produk_hukum, npwp15, nama_wp, no_pbk, ntpn, 
                 tgl_setor, thn_setor, bln_setor, thn_pajak, masa_pajak, jml_setor, 
                 kd_map, kd_bayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
             )
             SELECT 
-                kdkanwil, kppadm, npwp, kpp, cabang,
+                kdkanwil, kppadm, npwp, kpp, cabang, no_produk_hukum,
                 CONCAT(LPAD(TRIM(npwp), 9, '0'), LPAD(TRIM(kpp), 3, '0'), LPAD(TRIM(cabang), 3, '0')) AS npwp15,
                 nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
                 jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
