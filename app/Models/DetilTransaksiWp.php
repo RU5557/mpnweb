@@ -18,6 +18,8 @@ class DetilTransaksiWp extends Model
         'thn_setor' => 'integer',
         'bln_setor' => 'integer',
         'thn_pajak' => 'integer',
+        'masa1' => 'string',
+        'masa2' => 'string',
         'jml_setor' => 'decimal:2',
     ];
 

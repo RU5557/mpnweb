@@ -43,6 +43,9 @@ class TransaksiController extends Controller
             'tglSetorStart' => $request->get('tgl_setor_start'),
             'tglSetorEnd' => $request->get('tgl_setor_end'),
             'ntpn' => $request->get('ntpn'),
+            'masa1Selected' => $request->get('masa1'),      // FILTER MASA 1
+            'masa2Selected' => $request->get('masa2'),      // FILTER MASA 2
+            'thnPajakSelected' => $request->get('thn_pajak'), // FILTER THN PAJAK
             'kotaSelected' => $request->get('kota'),
             'jenisWpSelected' => $request->get('jenis_wp'),
             'sektorSelected' => $request->get('sektor'),

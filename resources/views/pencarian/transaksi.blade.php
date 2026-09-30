@@ -33,9 +33,9 @@
                     <input type="hidden" name="sort_by" value="{{ $sortBy ?? 'tgl_setor' }}">
                     <input type="hidden" name="sort_order" value="{{ $sortOrder ?? 'desc' }}">
 
-                    <!-- NPWP (9/15) -->
+                    <!-- NPWP (9 / 15 / 16 Digit) -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">NPWP (9 / 15 Digit)</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">NPWP (9 / 15 / 16 Digit)</label>
                         <input type="text" name="npwp" value="{{ $npwpInput ?? '' }}" placeholder="Masukkan NPWP..."
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
@@ -47,18 +47,18 @@
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
-                    <!-- Kode MAP -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kode MAP</label>
-                        <input type="text" name="kd_map" value="{{ $kdMap ?? '' }}" placeholder="Contoh: 411121"
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-
-                    <!-- Kode Bayar -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kode Bayar</label>
-                        <input type="text" name="kd_bayar" value="{{ $kdBayar ?? '' }}" placeholder="Contoh: 100"
-                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <!-- ==================== FILTER MAP & KODE BAYAR (SIDE BY SIDE) ==================== -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Kode MAP</label>
+                            <input type="text" name="kd_map" value="{{ $kdMap ?? '' }}" placeholder="411121"
+                                class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Kode Bayar</label>
+                            <input type="text" name="kd_bayar" value="{{ $kdBayar ?? '' }}" placeholder="100"
+                                class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
                     </div>
 
                     <!-- Tanggal Bayar/Setor (Start) -->
@@ -73,6 +73,51 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Setor (Sampai)</label>
                         <input type="date" name="tgl_setor_end" value="{{ $tglSetorEnd ?? '' }}"
                             class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+
+                    <!-- ==================== FILTER MASA 1 & MASA 2 (SIDE BY SIDE) ==================== -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Masa Awal</label>
+                            <select name="masa1"
+                                class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">-- Awal --</option>
+                                @foreach ($listMasa ?? [] as $val => $label)
+                                    <option value="{{ $val }}"
+                                        {{ str_pad($masa1Selected ?? '', 2, '0', STR_PAD_LEFT) === (string) $val ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Masa Akhir</label>
+                            <select name="masa2"
+                                class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">-- Akhir --</option>
+                                @foreach ($listMasa ?? [] as $val => $label)
+                                    <option value="{{ $val }}"
+                                        {{ str_pad($masa2Selected ?? '', 2, '0', STR_PAD_LEFT) === (string) $val ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ==================== FILTER TAHUN PAJAK ==================== -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tahun Pajak</label>
+                        <select name="thn_pajak"
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">-- Semua Tahun Pajak --</option>
+                            @foreach ($listTahunPajak ?? [] as $thn)
+                                <option value="{{ $thn }}"
+                                    {{ ((string) ($thnPajakSelected ?? '')) === (string) $thn ? 'selected' : '' }}>
+                                    {{ $thn }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <!-- NTPN -->
@@ -275,8 +320,9 @@
                                                 <div class="text-[11px] text-slate-500">{{ $item->jenis_pajak ?? '-' }}
                                                 </div>
                                             </td>
-                                            <td class="p-3.5 whitespace-nowrap text-xs text-slate-600">
-                                                Masa {{ $item->masa_pajak ?? '-' }} / {{ $item->thn_pajak ?? '-' }}
+                                            <td class="p-3.5 whitespace-nowrap text-xs text-slate-600 font-mono">
+                                                Masa {{ $item->masa1 ?? '00' }}{{ $item->masa2 ?? '00' }} /
+                                                {{ $item->thn_pajak ?? '-' }}
                                             </td>
                                             <td
                                                 class="p-3.5 text-right font-semibold text-emerald-600 whitespace-nowrap text-sm">

@@ -72,6 +72,28 @@ class TransaksiRepository
                     ->distinct()
                     ->orderBy('fungsi')
                     ->pluck('fungsi'),
+
+                // ===== TAMBAHAN DROPDOWN PILIHAN MASA & THN PAJAK =====
+                'listMasa' => [
+                    '01' => '01 - Januari',
+                    '02' => '02 - Februari',
+                    '03' => '03 - Maret',
+                    '04' => '04 - April',
+                    '05' => '05 - Mei',
+                    '06' => '06 - Juni',
+                    '07' => '07 - Juli',
+                    '08' => '08 - Agustus',
+                    '09' => '09 - September',
+                    '10' => '10 - Oktober',
+                    '11' => '11 - November',
+                    '12' => '12 - Desember',
+                ],
+
+                'listTahunPajak' => DetilTransaksiWp::query()
+                    ->whereNotNull('thn_pajak')
+                    ->distinct()
+                    ->orderBy('thn_pajak', 'desc')
+                    ->pluck('thn_pajak'),
             ];
         });
     }
@@ -86,13 +108,24 @@ class TransaksiRepository
 
         // === FILTERING SISI TRANSAKSI ===
 
-        // 1. Filter NPWP (9 / 15 Digit)
+        // 1. Filter NPWP (9 / 15 / 16 Digit)
         if (! empty($filters['npwp'])) {
             $cleanNpwp = preg_replace('/[^0-9]/', '', $filters['npwp']);
-            if (strlen($cleanNpwp) >= 15) {
+            $length = strlen($cleanNpwp);
+
+            if ($length === 16) {
+                // Jika 16 digit, prioritaskan pencarian ke m.npwp16
+                // dan berikan fallback ke t.npwp15 jika format transaksi masih menggunakan NPWP15
+                $query->where(function ($q) use ($cleanNpwp) {
+                    $q->where('m.npwp16', $cleanNpwp)
+                        ->orWhere('t.npwp15', substr($cleanNpwp, 0, 15));
+                });
+            } elseif ($length >= 15) {
+                // Jika 15 digit
                 $npwp15 = substr($cleanNpwp, 0, 15);
                 $query->where('t.npwp15', $npwp15);
             } else {
+                // Jika di bawah 15 digit (misal 9 digit NPWP lama)
                 $query->where('t.npwp', 'LIKE', $cleanNpwp.'%');
             }
         }
@@ -130,6 +163,17 @@ class TransaksiRepository
         }
         if (! empty($filters['bln_setor']) && is_array($filters['bln_setor'])) {
             $query->whereIn('t.bln_setor', $filters['bln_setor']);
+        }
+
+        // ===== TAMBAHAN FILTER MASA1, MASA2 & THN PAJAK =====
+        if (! empty($filters['masa1'])) {
+            $query->where('t.masa1', str_pad($filters['masa1'], 2, '0', STR_PAD_LEFT));
+        }
+        if (! empty($filters['masa2'])) {
+            $query->where('t.masa2', str_pad($filters['masa2'], 2, '0', STR_PAD_LEFT));
+        }
+        if (! empty($filters['thn_pajak'])) {
+            $query->where('t.thn_pajak', $filters['thn_pajak']);
         }
 
         // 6. NTPN
@@ -207,7 +251,7 @@ class TransaksiRepository
         $query->select([
             't.id', 't.tgl_setor', 't.npwp15', 't.npwp', 't.nama_wp',
             'm.nama as nama_master', 't.fungsi', 't.kd_map', 't.kd_bayar',
-            't.jenis as jenis_pajak', 't.masa_pajak', 't.thn_pajak', 't.jml_setor',
+            't.jenis as jenis_pajak', 't.masa1', 't.masa2', 't.thn_pajak', 't.jml_setor',
             't.ntpn', 'ar.nama as nama_ar', 'js.nama as nama_js', 'm.kota', 'm.jenis as jenis_wp',
         ]);
 
@@ -230,7 +274,7 @@ class TransaksiRepository
     }
 
     /**
-     * Streaming CSV Export untuk Data Transaksi / DRM (Cepat, Mengikuti Filter & Memory-Efficient)
+     * Streaming CSV Export untuk Data Transaksi / DRM
      */
     public function exportTransaksiCsv(array $filters, int $tahun = 2026): StreamedResponse
     {
@@ -244,7 +288,6 @@ class TransaksiRepository
             'Expires' => '0',
         ];
 
-        // 1. Pre-load Pegawai Map ke Memory Cache untuk menghilangkan JOIN saat Export
         $pegawaiMap = Cache::remember("pegawai_map_{$tahun}", 3600, function () use ($tahun) {
             return Pegawai::where('tahun', $tahun)->pluck('nama', 'nip')->toArray();
         });
@@ -253,27 +296,24 @@ class TransaksiRepository
             set_time_limit(0);
 
             $file = fopen('php://output', 'w');
-            fwrite($file, "\xEF\xBB\xBF"); // UTF-8 BOM untuk Microsoft Excel
+            fwrite($file, "\xEF\xBB\xBF");
 
             // Header CSV
             fputcsv($file, [
                 'TGL SETOR', 'NPWP15', 'NAMA WP', 'FUNGSI', 'KD MAP', 'KD BAYAR',
-                'MASA PAJAK', 'THN PAJAK', 'JUMLAH SETOR', 'NTPN', 'NAMA AR', 'NAMA JS', 'KOTA',
+                'MASA 1', 'MASA 2', 'THN PAJAK', 'JUMLAH SETOR', 'NTPN', 'NAMA AR', 'NAMA JS', 'KOTA',
             ]);
 
-            // 2. Query mematuhi filter pencarian yang diinput user
             $query = $this->buildTransaksiQuery($filters, $tahun)
                 ->select([
                     't.tgl_setor', 't.npwp15', 't.nama_wp', 'm.nama as nama_master',
-                    't.fungsi', 't.kd_map', 't.kd_bayar', 't.masa_pajak', 't.thn_pajak',
+                    't.fungsi', 't.kd_map', 't.kd_bayar', 't.masa1', 't.masa2', 't.thn_pajak',
                     't.jml_setor', 't.ntpn', 'm.nip_ar', 'm.nip_js', 'm.kota',
                 ]);
 
-            // Sorting default
             $query->orderBy('t.tgl_setor', 'desc');
 
             $index = 0;
-            // 3. Gunakan cursor() untuk streaming langsung
             foreach ($query->cursor() as $row) {
                 $namaAr = ! empty($row->nip_ar) ? ($pegawaiMap[$row->nip_ar] ?? '-') : '-';
                 $namaJs = ! empty($row->nip_js) ? ($pegawaiMap[$row->nip_js] ?? '-') : '-';
@@ -285,7 +325,8 @@ class TransaksiRepository
                     $row->fungsi,
                     $row->kd_map,
                     $row->kd_bayar,
-                    $row->masa_pajak,
+                    $row->masa1,
+                    $row->masa2,
                     $row->thn_pajak,
                     $row->jml_setor,
                     $row->ntpn,
