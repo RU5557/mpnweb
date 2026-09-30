@@ -55,8 +55,8 @@ class DashboardController extends Controller
         $targetKantor = $target?->target_kantor ?? 0;
         $capaianKantor = $targetKantor > 0 ? ($penerimaanSaatIni / $targetKantor) * 100 : 0;
 
-        $growthMoM = $penerimaanBlnLalu > 0 ? (($penerimaanSaatIni - $penerimaanBlnLalu) / $penerimaanBlnLalu) * 100 : 0;
-        $growthYoY = $penerimaanThnLalu > 0 ? (($penerimaanSaatIni - $penerimaanThnLalu) / $penerimaanThnLalu) * 100 : 0;
+        $growthMoM = $penerimaanBlnLalu != 0 ? (($penerimaanSaatIni - $penerimaanBlnLalu) / abs($penerimaanBlnLalu)) * 100 : 0;
+        $growthYoY = $penerimaanThnLalu != 0 ? (($penerimaanSaatIni - $penerimaanThnLalu) / abs($penerimaanThnLalu)) * 100 : 0;
 
         // Metrics Card Configs
         $metrics = [
@@ -64,13 +64,13 @@ class DashboardController extends Controller
                 'target' => $target?->target_ppm ?? 0,
                 'realisasi' => $realisasiPPM,
                 'persen' => ($target?->target_ppm ?? 0) > 0 ? ($realisasiPPM / $target->target_ppm) * 100 : 0,
-                'growthYoY' => $realisasiPPMLalu > 0 ? (($realisasiPPM - $realisasiPPMLalu) / $realisasiPPMLalu) * 100 : 0,
+                'growthYoY' => $realisasiPPMLalu != 0 ? (($realisasiPPM - $realisasiPPMLalu) / abs($realisasiPPMLalu)) * 100 : 0,
             ],
             'pkm' => [
                 'target' => $target?->target_pkm ?? 0,
                 'realisasi' => $realisasiPKM,
                 'persen' => ($target?->target_pkm ?? 0) > 0 ? ($realisasiPKM / $target->target_pkm) * 100 : 0,
-                'growthYoY' => $realisasiPKMLalu > 0 ? (($realisasiPKM - $realisasiPKMLalu) / $realisasiPKMLalu) * 100 : 0,
+                'growthYoY' => $realisasiPKMLalu != 0 ? (($realisasiPKM - $realisasiPKMLalu) / abs($realisasiPKMLalu)) * 100 : 0,
             ],
             'pbp' => [
                 'target' => $target?->target_pbp ?? 0,
@@ -82,19 +82,19 @@ class DashboardController extends Controller
                 'target' => $target?->target_pkm_pengawasan ?? 0,
                 'realisasi' => $realisasiPengawasan,
                 'persen' => ($target?->target_pkm_pengawasan ?? 0) > 0 ? ($realisasiPengawasan / $target->target_pkm_pengawasan) * 100 : 0,
-                'growthYoY' => $realisasiPengawasanLalu > 0 ? (($realisasiPengawasan - $realisasiPengawasanLalu) / $realisasiPengawasanLalu) * 100 : 0,
+                'growthYoY' => $realisasiPengawasanLalu != 0 ? (($realisasiPengawasan - $realisasiPengawasanLalu) / abs($realisasiPengawasanLalu)) * 100 : 0,
             ],
             'pemeriksaan' => [
                 'target' => $target?->target_pkm_pemeriksaan ?? 0,
                 'realisasi' => $realisasiPemeriksaan,
                 'persen' => ($target?->target_pkm_pemeriksaan ?? 0) > 0 ? ($realisasiPemeriksaan / $target->target_pkm_pemeriksaan) * 100 : 0,
-                'growthYoY' => $realisasiPemeriksaanLalu > 0 ? (($realisasiPemeriksaan - $realisasiPemeriksaanLalu) / $realisasiPemeriksaanLalu) * 100 : 0,
+                'growthYoY' => $realisasiPemeriksaanLalu != 0 ? (($realisasiPemeriksaan - $realisasiPemeriksaanLalu) / abs($realisasiPemeriksaanLalu)) * 100 : 0,
             ],
             'penagihan' => [
                 'target' => $target?->target_pkm_penagihan ?? 0,
                 'realisasi' => $realisasiPenagihan,
                 'persen' => ($target?->target_pkm_penagihan ?? 0) > 0 ? ($realisasiPenagihan / $target->target_pkm_penagihan) * 100 : 0,
-                'growthYoY' => $realisasiPenagihanLalu > 0 ? (($realisasiPenagihan - $realisasiPenagihanLalu) / $realisasiPenagihanLalu) * 100 : 0,
+                'growthYoY' => $realisasiPenagihanLalu != 0 ? (($realisasiPenagihan - $realisasiPenagihanLalu) / abs($realisasiPenagihanLalu)) * 100 : 0,
             ],
         ];
 
@@ -185,9 +185,6 @@ class DashboardController extends Controller
         }, 200, $headers);
     }
 
-    /**
-     * @return array{0: int, 1: int, 2: int}
-     */
     private function resolvePeriod(Request $request): array
     {
         $currentYear = (int) date('Y');
