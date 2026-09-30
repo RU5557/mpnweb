@@ -8,6 +8,7 @@ use App\Http\Controllers\PkmPemeriksaanController;
 use App\Http\Controllers\PkmPenagihanController;
 use App\Http\Controllers\PkmPengawasanController;
 use App\Http\Controllers\PpmController;
+use App\Http\Controllers\SptSearchController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\WpSearchController;
 use App\Http\Middleware\AdminAuthMiddleware;
@@ -83,7 +84,7 @@ Route::prefix('admin')->name('admin.')->middleware(AdminAuthMiddleware::class)->
 
 /*
 |--------------------------------------------------------------------------
-| Modul Pencarian WP & Transaksi
+| Modul Pencarian WP, Transaksi & SPT
 |--------------------------------------------------------------------------
 */
 Route::prefix('pencarian')->name('pencarian.')->group(function () {
@@ -94,4 +95,8 @@ Route::prefix('pencarian')->name('pencarian.')->group(function () {
     // 2. Detil Transaksi / Penerimaan
     Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi');
     Route::get('/transaksi/export', [TransaksiController::class, 'exportCsv'])->name('transaksi.export');
+
+    // 3. Tanda Terima SPT (Coretax)
+    Route::get('/spt', [SptSearchController::class, 'index'])->name('spt');
+    Route::get('/spt/export', [SptSearchController::class, 'exportCsv'])->name('spt.export');
 });

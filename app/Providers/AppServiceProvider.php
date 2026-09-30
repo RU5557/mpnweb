@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Interface binding dihapus agar aplikasi lebih direct dan ringan
     }
 
     /**
@@ -21,7 +21,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Bagikan variabel $rollingText ke SELURUH view di aplikasi
         View::composer('*', function ($view) {
             $rollingText = RollingText::latest('id')->first();
             $view->with('rollingText', $rollingText);

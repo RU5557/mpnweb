@@ -117,6 +117,11 @@
                         class="block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('pencarian.transaksi') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                         Penerimaan
                     </a>
+                    {{-- Menu Baru: SPT Coretax --}}
+                    <a href="{{ route('pencarian.spt') }}"
+                        class="block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('pencarian.spt') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        Tanda Terima SPT
+                    </a>
                 </div>
             </div>
         </nav>
