@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title ETL Sinkronisasi Data MPNWEB
 :: Berpindah otomatis ke direktori project Laragon Anda
 cd /d "C:\laragon\www\mpnweb"
@@ -19,6 +20,7 @@ echo.
 echo * Catatan: Semua opsi otomatis memicu Maintenance Mode
 echo           	dan Pembersihan Cache.
 echo ========================================================
+set "pilihan="
 set /p pilihan="Pilih opsi menu [1-6]: "
 
 if "%pilihan%"=="1" goto sync_all
@@ -52,6 +54,8 @@ echo.
 echo --------------------------------------------------------
 echo  FILTER PERIODE TRANSAKSI ^& SPT (Kosongkan jika ingin Sync ALL)
 echo --------------------------------------------------------
+set "thn="
+set "bln="
 set /p thn="Masukkan Tahun Setor/Pajak (Contoh: 2026 / tekan Enter untuk Semua): "
 set /p bln="Masukkan Bulan Setor/Pajak (Contoh: 09 / tekan Enter untuk Semua): "
 
@@ -74,6 +78,8 @@ echo.
 echo --------------------------------------------------------
 echo  FILTER PERIODE SPT CORETAX (Kosongkan jika ingin Sync ALL)
 echo --------------------------------------------------------
+set "thn="
+set "bln="
 set /p thn="Masukkan Tahun Pajak (Contoh: 2026 / tekan Enter untuk Semua): "
 set /p bln="Masukkan Bulan Pajak (Contoh: 09 / tekan Enter untuk Semua): "
 

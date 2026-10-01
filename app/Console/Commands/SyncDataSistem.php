@@ -271,17 +271,22 @@ class SyncDataSistem extends Command
 
         $whereSql = count($whereConditions) > 0 ? ' WHERE '.implode(' AND ', $whereConditions) : '';
 
+        // PERBAIKAN: Extract 8 digit masapajak (MMMMYYYY) -> masa1, masa2, dan thn_pajak
         DB::statement("
             INSERT INTO detil_transaksi_wp (
                 kd_kanwil, kpp_adm, npwp, kpp, cabang, no_produk_hukum, npwp15, nama_wp, no_pbk, ntpn, 
-                tgl_setor, thn_setor, bln_setor, thn_pajak, masa_pajak, jml_setor, 
+                tgl_setor, thn_setor, bln_setor, thn_pajak, masa1, masa2, jml_setor, 
                 kd_map, kd_bayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
             )
             SELECT 
                 kdkanwil, kppadm, npwp, kpp, cabang, no_produk_hukum,
                 CONCAT(LPAD(TRIM(npwp), 9, '0'), LPAD(TRIM(kpp), 3, '0'), LPAD(TRIM(cabang), 3, '0')) AS npwp15,
-                nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, thnpajak, masapajak, 
-                jmlsetor, kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
+                nama_wp, nopbk, ntpn, tglsetor, thnsetor, blnsetor, 
+                CAST(SUBSTRING(LPAD(TRIM(COALESCE(masapajak, '00000000')), 8, '0'), 5, 4) AS UNSIGNED) AS thn_pajak,
+                SUBSTRING(LPAD(TRIM(COALESCE(masapajak, '00000000')), 8, '0'), 1, 2) AS masa1,
+                SUBSTRING(LPAD(TRIM(COALESCE(masapajak, '00000000')), 8, '0'), 3, 2) AS masa2,
+                COALESCE(jmlsetor, 0) AS jml_setor, 
+                kdmap, kdbayar, fungsi, jenis, flag_skp, id_sbr_data, tipe
             FROM mpninfo.ppmpkm_drm
             {$whereSql}
         ");
