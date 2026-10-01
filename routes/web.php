@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KepatuhanSptController;
 use App\Http\Controllers\PenjagaanController;
 use App\Http\Controllers\PkmPemeriksaanController;
 use App\Http\Controllers\PkmPenagihanController;
@@ -99,4 +100,10 @@ Route::prefix('pencarian')->name('pencarian.')->group(function () {
     // 3. Tanda Terima SPT (Coretax)
     Route::get('/spt', [SptSearchController::class, 'index'])->name('spt');
     Route::get('/spt/export', [SptSearchController::class, 'exportCsv'])->name('spt.export');
+});
+
+// Modul Kepatuhan Pelaporan SPT
+Route::prefix('kepatuhan')->name('kepatuhan.')->group(function () {
+    Route::get('/pelaporan', [KepatuhanSptController::class, 'index'])->name('pelaporan.index');
+    Route::get('/pelaporan/export', [KepatuhanSptController::class, 'exportCsv'])->name('pelaporan.export');
 });
