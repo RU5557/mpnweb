@@ -124,6 +124,34 @@
                     </a>
                 </div>
             </div>
+
+            {{-- Kepatuhan Dropdown - BARU --}}
+            @php $isKepatuhan = request()->routeIs('kepatuhan.*'); @endphp
+            <div x-data="{ open: {{ $isKepatuhan ? 'true' : 'false' }} }" class="space-y-1">
+                <button
+                    @click="if(!sidebarOpen && !isPinned) { sidebarOpen = true; open = true; } else { open = !open; }"
+                    :class="open ? 'bg-slate-800/80 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-colors">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-clipboard-check text-sm w-5 text-center shrink-0"></i>
+                        <span x-show="sidebarOpen || isPinned" x-cloak class="truncate">Kepatuhan</span>
+                    </div>
+                    <i x-show="sidebarOpen || isPinned" x-cloak
+                        class="fa-solid text-[10px] transition-transform duration-200"
+                        :class="open ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                </button>
+
+                <div x-show="open && (sidebarOpen || isPinned)" x-cloak
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100" class="pl-8 space-y-1">
+
+                    <a href="{{ route('kepatuhan.pelaporan.index') }}"
+                        class="block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('kepatuhan.pelaporan.*') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        Pelaporan
+                    </a>
+                </div>
+            </div>
         </nav>
     </div>
 
