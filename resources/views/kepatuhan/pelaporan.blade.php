@@ -1,184 +1,197 @@
 @extends('layouts.app')
 
+@section('title', 'Matriks Kepatuhan Pelaporan SPT')
+
 @section('content')
-    <div class="p-6">
-        <!-- Title Header -->
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-xl font-bold text-slate-800">Matriks Kepatuhan Pelaporan SPT Coretax</h1>
-                <p class="text-xs text-slate-500 mt-1">Status: Submitted | Pembetulan: Normal (0)</p>
-            </div>
-            <a href="{{ route('kepatuhan.pelaporan.export', request()->query()) }}"
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export CSV
-            </a>
+    <div x-data="{ loading: false }">
+        <!-- HEADER PAGE - SAMA KAYA PENCARIAN SPT -->
+        <div class="mb-4">
+            <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Matriks Kepatuhan Pelaporan SPT Coretax</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Status: Submitted | Pembetulan: Normal (0)</p>
         </div>
 
-        <!-- Layout Kiri - Kanan -->
-        <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <div class="flex flex-col lg:flex-row gap-5 items-start">
 
-            <!-- PANEL KIRI: FILTER (FIXED/STICKY) -->
-            <div
-                class="w-full lg:w-80 bg-white rounded-xl shadow-sm border border-slate-200 p-5 lg:sticky lg:top-6 shrink-0">
-                <h2 class="text-sm font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Filter Data
-                </h2>
+            <div class="w-full lg:w-80 flex-shrink-0 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                        <i class="fa-solid fa-filter text-blue-600"></i>
+                        <span>Filter Data</span>
+                    </div>
+                    <a href="{{ route('kepatuhan.pelaporan.index') }}"
+                        class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                        <span>Reset</span>
+                    </a>
+                </div>
 
-                <form method="GET" action="{{ route('kepatuhan.pelaporan.index') }}" class="space-y-4">
-                    <!-- NPWP -->
+                <form method="GET" action="{{ route('kepatuhan.pelaporan.index') }}" @submit="loading = true"
+                    class="space-y-3.5">
+
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">NPWP (9/15/16 Digit)</label>
                         <input type="text" name="npwp" value="{{ $filters['npwp'] ?? '' }}" placeholder="NPWP..."
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
-                    <!-- Nama WP -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Wajib Pajak</label>
                         <input type="text" name="nama" value="{{ $filters['nama'] ?? '' }}"
                             placeholder="Nama Wajib Pajak..."
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
-                    <!-- Jenis SPT -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis SPT</label>
                         <select name="jenis_spt"
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Semua Jenis SPT --</option>
                             @foreach ($optJenisSpt as $jenis)
-                                <option value="{{ $jenis }}"
-                                    {{ ($filters['jenis_spt'] ?? '') === $jenis ? 'selected' : '' }}>{{ $jenis }}
-                                </option>
+                                @php
+                                    $isNull = is_null($jenis) || trim((string) $jenis) === '';
+                                    $value = $isNull ? '__NULL__' : $jenis;
+                                    $label = $isNull ? '(Tanpa Jenis / Kosong)' : $jenis;
+                                    $selected = ($filters['jenis_spt'] ?? '') === $value ? 'selected' : '';
+                                @endphp
+                                <option value="{{ $value }}" {{ $selected }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
 
-                    <!-- Tahun Pajak -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Tahun Pajak</label>
-                        <input type="number" name="thn_pajak" value="{{ $filters['thn_pajak'] ?? date('Y') }}"
-                            placeholder="2025"
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                        <input type="number" name="thn_pajak" value="{{ $filters['thn_pajak'] ?? '' }}"
+                            placeholder="Semua Tahun (contoh: {{ date('Y') }})"
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <p class="text-[10px] text-slate-400 mt-1">Kosongkan untuk tampil semua tahun</p>
                     </div>
 
-                    <!-- Range Tgl Terima -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Tgl Terima (Mulai)</label>
                         <input type="date" name="tgl_terima_mulai" value="{{ $filters['tgl_terima_mulai'] ?? '' }}"
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Tgl Terima (Selesai)</label>
                         <input type="date" name="tgl_terima_selesai" value="{{ $filters['tgl_terima_selesai'] ?? '' }}"
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
-                    <!-- Account Representative -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Account Representative (AR)</label>
                         <select name="nip_ar"
-                            class="w-full text-xs rounded-md border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                            class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Semua AR --</option>
                             @foreach ($optAr as $ar)
                                 <option value="{{ $ar->nip }}"
-                                    {{ ($filters['nip_ar'] ?? '') === $ar->nip ? 'selected' : '' }}>
-                                    {{ $ar->nama }}
+                                    {{ ($filters['nip_ar'] ?? '') === $ar->nip ? 'selected' : '' }}>{{ $ar->nama }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="pt-2 flex gap-2">
-                        <a href="{{ route('kepatuhan.pelaporan.index') }}"
-                            class="w-1/2 text-center py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-md transition">Reset</a>
-                        <button type="submit"
-                            class="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-md shadow-sm transition">Terapkan</button>
+                    <div class="pt-1">
+                        <button type="submit" :disabled="loading"
+                            class="w-full inline-flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                            <i class="fa-solid fa-magnifying-glass text-[11px]" x-show="!loading"></i>
+                            <i class="fa-solid fa-spinner fa-spin text-[11px]" x-show="loading" x-cloak></i>
+                            <span x-text="loading ? 'Memuat...' : 'Terapkan Filter'"></span>
+                        </button>
                     </div>
                 </form>
             </div>
 
-            <!-- PANEL KANAN: TABEL MATRIX HASSIL -->
-            <div class="flex-1 w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-[11px] text-left text-slate-600 border-collapse">
-                        <thead class="uppercase bg-slate-50 text-slate-700 border-b border-slate-200">
-                            <tr>
-                                <th class="px-3 py-3 font-semibold border-r border-slate-200 min-w-[120px]">NPWP</th>
-                                <th class="px-3 py-3 font-semibold border-r border-slate-200 min-w-[180px]">Nama WP</th>
-                                <th class="px-3 py-3 font-semibold border-r border-slate-200 min-w-[130px]">Jenis SPT</th>
-                                @for ($m = 1; $m <= 12; $m++)
-                                    <th class="px-2 py-3 font-semibold text-center border-r border-slate-200 min-w-[75px]">
-                                        Masa {{ $m }}
-                                    </th>
-                                @endfor
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @forelse($matrixData as $row)
-                                <tr class="hover:bg-slate-50/80 transition">
-                                    <td class="px-3 py-2.5 font-mono text-slate-800 border-r border-slate-100">
-                                        {{ $row->npwp ?? '-' }}</td>
-                                    <td class="px-3 py-2.5 font-medium text-slate-900 border-r border-slate-100 uppercase truncate max-w-[200px]"
-                                        title="{{ $row->nama }}">
-                                        {{ $row->nama ?? '-' }}
-                                    </td>
-                                    <td class="px-3 py-2.5 text-slate-700 border-r border-slate-100 font-semibold">
-                                        {{ $row->jenis_spt ?? '-' }}</td>
+            <div class="flex-1 min-w-0">
+                @if (isset($matrixData) && $matrixData->count() > 0)
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                        <!-- HEADER HASIL - SAMA KAYA PENCARIAN SPT -->
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                            <div class="text-xs text-slate-500">Menampilkan <span
+                                    class="font-bold text-slate-800">{{ $matrixData->total() }}</span> data kepatuhan</div>
+                            <a href="{{ route('kepatuhan.pelaporan.export', request()->query()) }}"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
+                                <i class="fa-solid fa-file-excel text-xs"></i>
+                                <span>Export CSV</span>
+                            </a>
+                        </div>
 
-                                    {{-- Kolom Masa 1 s.d. 12 --}}
-                                    @for ($m = 1; $m <= 12; $m++)
-                                        @php
-                                            $colKey = 'm_' . sprintf('%02d', $m);
-                                            $valDate = $row->$colKey;
-                                        @endphp
-                                        <td class="px-1 py-2 text-center border-r border-slate-100">
-                                            @if ($valDate)
-                                                <span
-                                                    class="inline-block px-1.5 py-0.5 bg-emerald-50 text-emerald-700 font-mono text-[10px] rounded font-semibold border border-emerald-200/60"
-                                                    title="Tanggal Terima: {{ $valDate }}">
-                                                    {{ date('d/m/y', strtotime($valDate)) }}
-                                                </span>
-                                            @else
-                                                <span class="text-slate-300 font-mono">-</span>
-                                            @endif
-                                        </td>
-                                    @endfor
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="15" class="px-6 py-12 text-center text-slate-400">
-                                        <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        Data tidak ditemukan untuk kriteria filter ini.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination Links -->
-                @if ($matrixData->hasPages())
-                    <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-                        {{ $matrixData->links() }}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-700">
+                                <thead
+                                    class="bg-slate-100/80 text-slate-600 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3.5 whitespace-nowrap border-r border-slate-200/60">NPWP</th>
+                                        <th class="p-3.5 whitespace-nowrap border-r border-slate-200/60 min-w-[180px]">Nama
+                                            WP</th>
+                                        <th class="p-3.5 whitespace-nowrap border-r border-slate-200/60 min-w-[130px]">Jenis
+                                            SPT</th>
+                                        @for ($m = 1; $m <= 12; $m++)
+                                            <th
+                                                class="p-3.5 font-bold text-center border-r border-slate-200/60 min-w-[75px] whitespace-nowrap">
+                                                Masa {{ $m }}</th>
+                                        @endfor
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @forelse($matrixData as $row)
+                                        <tr class="hover:bg-blue-50/40 transition odd:bg-white even:bg-slate-50/50">
+                                            <td
+                                                class="p-3.5 font-mono text-xs font-bold text-slate-800 whitespace-nowrap border-r border-slate-100">
+                                                {{ $row->npwp ?? '-' }}</td>
+                                            <td class="p-3.5 border-r border-slate-100 max-w-[220px]">
+                                                <div class="font-bold text-slate-900 text-xs uppercase truncate"
+                                                    title="{{ $row->nama }}">{{ $row->nama ?? '-' }}</div>
+                                            </td>
+                                            <td
+                                                class="p-3.5 text-xs font-semibold text-slate-700 border-r border-slate-100">
+                                                @if (is_null($row->jenis_spt) || trim($row->jenis_spt) === '')
+                                                    <span class="text-slate-400 italic">(Tanpa
+                                                        Jenis)</span>@else{{ $row->jenis_spt }}
+                                                @endif
+                                            </td>
+                                            @for ($m = 1; $m <= 12; $m++)
+                                                @php
+                                                    $colKey = 'm_' . sprintf('%02d', $m);
+                                                    $valDate = $row->$colKey;
+                                                @endphp<td class="p-2.5 text-center border-r border-slate-100">
+                                                    @if ($valDate)
+                                                        <span
+                                                            class="inline-block px-2 py-1 bg-emerald-50 text-emerald-700 font-mono text-[10px] rounded-md font-bold border border-emerald-200/60"
+                                                        title="{{ $valDate }}">{{ date('d/m/y', strtotime($valDate)) }}</span>@else<span
+                                                            class="text-slate-300 font-mono text-xs">-</span>
+                                                    @endif
+                                                </td>
+                                            @endfor
+                                        </tr>
+                                    @empty<tr>
+                                            <td colspan="15" class="p-8 text-center text-slate-400 italic">Data tidak
+                                                ditemukan untuk kriteria filter ini.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if ($matrixData->hasPages())
+                            <div class="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+                                {{ $matrixData->appends(request()->query())->links() }}</div>
+                        @endif
+                    </div>
+                @else
+                    <div class="bg-white p-12 rounded-2xl shadow-sm border border-slate-200/80 text-center">
+                        <div
+                            class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-magnifying-glass text-2xl"></i></div>
+                        <h3 class="text-base font-bold text-slate-800">Gunakan Filter di Sebelah Kiri</h3>
+                        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Pilih parameter filter lalu klik tombol
+                            <span class="font-semibold text-blue-600">"Terapkan Filter"</span> untuk menampilkan data.</p>
+                        @if (request()->hasAny(['npwp', 'nama', 'jenis_spt', 'thn_pajak', 'tgl_terima_mulai', 'tgl_terima_selesai', 'nip_ar']))
+                            <p class="text-xs text-amber-600 mt-3 italic">Data tidak ditemukan untuk kriteria filter ini.
+                            </p>
+                        @endif
                     </div>
                 @endif
             </div>
-
         </div>
     </div>
 @endsection
