@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\PkmRepository;
+use App\Repositories\PkmPengawasanRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PkmPengawasanController extends Controller
 {
     public function __construct(
-        protected PkmRepository $repository
+        protected PkmPengawasanRepository $repository
     ) {}
 
     /**
@@ -25,9 +25,8 @@ class PkmPengawasanController extends Controller
         $sortDirection = (string) $request->input('direction', 'asc');
 
         try {
-            // Panggil method getSummaryPengawasan & getDaftarSeksiPengawasan dari PkmRepository
-            $pkmData = $this->repository->getSummaryPengawasan($tahun, $bulan, $seksiFilter, $sortColumn, $sortDirection);
-            $daftarSeksi = $this->repository->getDaftarSeksiPengawasan();
+            $pkmData = $this->repository->getSummaryPkm($tahun, $bulan, $seksiFilter, $sortColumn, $sortDirection);
+            $daftarSeksi = $this->repository->getDaftarSeksi();
         } catch (QueryException $e) {
             Log::error('Gagal memuat summary PKM Pengawasan.', [
                 'tahun' => $tahun,
@@ -57,8 +56,7 @@ class PkmPengawasanController extends Controller
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $seksiFilter = trim((string) $request->input('seksi', ''));
 
-        // Panggil method exportPengawasanCsv dari PkmRepository
-        return $this->repository->exportPengawasanCsv($tahun, $bulan, $seksiFilter);
+        return $this->repository->exportDetilCsv($tahun, $bulan, $seksiFilter);
     }
 
     /**
