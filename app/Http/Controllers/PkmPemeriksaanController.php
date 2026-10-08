@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\PkmRepository;
+use App\Repositories\PkmPemeriksaanRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PkmPemeriksaanController extends Controller
 {
     public function __construct(
-        protected PkmRepository $repository
+        protected PkmPemeriksaanRepository $repository
     ) {}
 
     /**
@@ -26,8 +26,7 @@ class PkmPemeriksaanController extends Controller
         $page = max(1, (int) $request->input('page', 1));
 
         try {
-            // Panggil method getPaginatedPemeriksaan dari PkmRepository
-            $pkmData = $this->repository->getPaginatedPemeriksaan(
+            $pkmData = $this->repository->getPaginatedPkm(
                 $tahun,
                 $bulan,
                 $search,
@@ -63,8 +62,7 @@ class PkmPemeriksaanController extends Controller
         [$tahun, $bulan] = $this->resolvePeriod($request);
         $search = trim((string) $request->input('search', ''));
 
-        // Panggil method exportPemeriksaanCsv dari PkmRepository
-        return $this->repository->exportPemeriksaanCsv($tahun, $bulan, $search);
+        return $this->repository->exportDetilCsv($tahun, $bulan, $search);
     }
 
     /**
