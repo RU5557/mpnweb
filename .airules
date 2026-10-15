@@ -1,0 +1,9 @@
+1. database dan aplikasi web dibuat dan dibangun untuk dijalankan di pc server dengan spesifikasi i5 gen 9 ram 8gb dual channel hdd 1tb window 10 ltsc di internal kantor kpp
+2. metode yang digunakan harus sesuai dengan standar dan kaidah penggunaan laravel 12 dan mariadb 10.4
+3. tujuan utama tetap efisien, performa cepat, dan tidak membebankan memory php ataupun memory server serta I/O disk
+4. jangan pernah berasumsi, jika ada hal yang diperlukan atau dibutuhkan mintalah user untuk melampirkan hal yang dibutuhkan seperti file php, csv, txt atau apapun.
+5. sebelum menjawab, carilah rujukan penerapan kaidah laravel 12 terbaik sesuai dengan hal yang sedang didiskusikan
+6. export csv menggunakan kaidah laravel 12 dan mariadb 10.4 terbaik sesuai kebutuhan dan jenis datanya
+7. query builder ditaruh semua di repository
+8. WAJIB menggunakan kaidah thin controller
+9. jika ada masukan silahkan disampaikan dan diselesaikan menggunakan metode klinis laravel 12 dan mariadb
