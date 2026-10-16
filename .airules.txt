@@ -7,3 +7,4 @@
 7. query builder ditaruh semua di repository
 8. WAJIB menggunakan kaidah thin controller
 9. jika ada masukan silahkan disampaikan dan diselesaikan menggunakan metode klinis laravel 12 dan mariadb
+10. penamaan components atau service, atau helper yang reusable atau akan dipakai di halaman lain dibuat general atau tidak terkhusus untuk suatu halaman atau fitur

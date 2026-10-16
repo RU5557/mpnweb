@@ -4,38 +4,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Dashboard Monitoring Pajak' }}</title>
+    <title>{{ $title ?? 'MPN Web' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', system-ui, sans-serif
+        }
+
+        .tab {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #64748b;
+            transition: .15s
+        }
+
+        .tab:hover {
+            background: #f1f5f9;
+            color: #0f172a
+        }
+
+        .tab.active {
+            background: #0f172a;
+            color: #fff
+        }
+
+        .field {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: 6px;
+            height: 28px;
+            font-size: 11px;
+            padding: 0 8px;
+            width: 100%
+        }
+
+        .field:disabled {
+            background: #f8fafc;
+            color: #94a3b8
+        }
+
+        .btn-primary {
+            background: #0f172a;
+            color: #fff;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .btn-secondary {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 text-gray-800 font-sans antialiased">
-
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-yellow-500 text-slate-900 font-bold px-2.5 py-1 rounded text-lg">DJP</div>
-                    <span class="font-semibold text-lg tracking-wide">Monitoring KPP</span>
+<body class="h-screen flex flex-col bg-[#f8fafc] text-slate-800 overflow-hidden text-[11px]">
+    <header class="h-[44px] bg-white border-b border-slate-200 flex items-center justify-between px-3 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold">M
                 </div>
-
-                <nav class="hidden md:flex space-x-1">
-                    <a href="{{ route('home') }}"
-                        class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('home') ? 'bg-slate-800 text-yellow-400' : 'text-gray-300 hover:bg-slate-800 hover:text-white' }}">Dashboard</a>
-                    <a href="{{ route('mfwp.index') }}"
-                        class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('mfwp.*') ? 'bg-slate-800 text-yellow-400' : 'text-gray-300 hover:bg-slate-800 hover:text-white' }}">Pencarian
-                        MFWP</a>
-                </nav>
-
-                <div class="text-xs text-gray-300">Server Internal KPP</div>
+                <div class="font-semibold text-[12px]">MPN Web</div>
             </div>
+            <div class="h-4 w-px bg-slate-200"></div>
+            <nav class="flex items-center gap-1">
+                <a href="{{ route('home') }}" class="tab {{ request()->routeIs('home') ? 'active' : '' }}">Home</a>
+                <a href="{{ route('mfwp.index') }}" class="tab {{ request()->routeIs('mfwp.*') ? 'active' : '' }}">Cari
+                    WP</a>
+            </nav>
         </div>
     </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {{ $slot }}
-    </main>
-
+    <div class="flex-1 flex overflow-hidden">{{ $slot }}</div>
+    <footer
+        class="h-6 bg-white border-t border-slate-200 flex items-center justify-between px-3 text-[10px] text-slate-500 shrink-0">
+        <span>{{ $statusText ?? 'Siap' }}</span>
+        <span>{{ date('d/m/Y') }}</span>
+    </footer>
 </body>
 
 </html>
